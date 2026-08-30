@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+defaults:
+  run:
+    working-directory: web
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Extract vehicle data
+        run: node scripts/extract-vehicles.mjs
+
+      - name: Sync assets
+        run: node scripts/sync-assets.mjs
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build:app

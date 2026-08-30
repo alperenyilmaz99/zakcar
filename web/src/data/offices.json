@@ -1,0 +1,20 @@
+{
+  "offices": [
+    {
+      "id": "saw",
+      "name": "İstanbul Sabiha Gökçen Havalimanı (SAW)",
+      "address": "Sabiha Gökçen Havalimanı, Pendik / İstanbul",
+      "phone": "0532 388 29 96",
+      "email": "info@zakcar.com",
+      "hours": "7/24"
+    },
+    {
+      "id": "merkez",
+      "name": "ZakCar Merkez Ofis",
+      "address": "İstanbul Sabiha Gökçen Havalimanı Karşısı",
+      "phone": "0532 388 29 96",
+      "email": "info@zakcar.com",
+      "hours": "08:00 - 22:00"
+    }
+  ]
+}

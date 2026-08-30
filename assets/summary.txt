@@ -1,0 +1,9 @@
+Elitcar Rental - Asset Özeti
+==============================
+css: 3 dosya
+fonts: 21 dosya
+icons: 7 dosya
+images: 60 dosya
+js: 31 dosya
+
+Toplam: 122 indirildi, 22 başarısız
