@@ -10,15 +10,6 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-surface-border bg-white/95 backdrop-blur">
-      <div className="hidden border-b border-surface-border bg-surface-soft md:block">
-        <div className="container-page flex h-10 items-center justify-between text-xs text-ink-muted">
-          <span>{SITE.address}</span>
-          <a href={`tel:${SITE.phone.replace(/\s/g, "")}`} className="font-medium text-brand hover:underline">
-            {SITE.phone}
-          </a>
-        </div>
-      </div>
-
       <div className="container-page flex h-16 items-center justify-between gap-4 lg:h-[72px]">
         <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Ana Sayfa">
           <Image

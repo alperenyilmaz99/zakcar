@@ -12,6 +12,7 @@ export interface Vehicle {
   price: string;
   image: string;
   banner: string;
+  deposit?: string;
 }
 
 export interface Office {

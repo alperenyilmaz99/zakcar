@@ -1,19 +1,59 @@
 import type { VehicleCatalog, Vehicle, Office, SeoPage } from "./types";
 import vehiclesData from "@/data/vehicles.json";
 import officesData from "@/data/offices.json";
+import {
+  ELITCAR_ORDER,
+  ELITCAR_PRICES,
+  GROUP_OVERRIDES,
+  GROUP_RANK,
+  META_OVERRIDES,
+} from "./sort-order";
 
 const catalog = vehiclesData as VehicleCatalog;
 
+function enrich(v: Vehicle): Vehicle {
+  const meta = META_OVERRIDES[v.slug];
+  const group = GROUP_OVERRIDES[v.slug] ?? v.group;
+  return {
+    ...v,
+    group,
+    price: ELITCAR_PRICES[v.slug] ?? v.price,
+    fuel: meta?.fuel ?? v.fuel,
+    transmission: meta?.transmission ?? v.transmission,
+    capacity: meta?.capacity ?? v.capacity,
+    deposit: meta?.deposit ?? (group === "SUV" || group === "Lüks" ? "18.500 TL" : "15.540 TL"),
+  };
+}
+
+function sortVehicles(list: Vehicle[]): Vehicle[] {
+  const rank = new Map(ELITCAR_ORDER.map((slug, i) => [slug, i]));
+  return [...list].sort((a, b) => {
+    const ga = GROUP_RANK[a.group] ?? 99;
+    const gb = GROUP_RANK[b.group] ?? 99;
+    if (ga !== gb) return ga - gb;
+    const oa = rank.get(a.slug) ?? 10_000;
+    const ob = rank.get(b.slug) ?? 10_000;
+    if (oa !== ob) return oa - ob;
+    return a.name.localeCompare(b.name, "tr");
+  });
+}
+
+const vehiclesSorted = sortVehicles(catalog.vehicles.map(enrich));
+
 export function getCatalog(): VehicleCatalog {
-  return catalog;
+  return {
+    ...catalog,
+    vehicles: vehiclesSorted,
+    groups: ["Ekonomik", "SUV", "Minibüs", "Lüks"],
+  };
 }
 
 export function getVehicles(): Vehicle[] {
-  return catalog.vehicles;
+  return vehiclesSorted;
 }
 
 export function getGroups(): string[] {
-  return catalog.groups;
+  return ["Ekonomik", "SUV", "Minibüs", "Lüks"];
 }
 
 export function getBrands(): string[] {
@@ -22,7 +62,7 @@ export function getBrands(): string[] {
 
 export function getVehicleBySlug(slug: string): Vehicle | undefined {
   const normalized = slug.replace(/-arac-kiralama$/, "");
-  return catalog.vehicles.find(
+  return vehiclesSorted.find(
     (v) => v.slug === normalized || v.slug === slug,
   );
 }
@@ -36,7 +76,7 @@ export function filterVehicles(opts: {
   brand?: string;
   brandSlug?: string;
 }): Vehicle[] {
-  let list = catalog.vehicles;
+  let list = vehiclesSorted;
   if (opts.group) list = list.filter((v) => v.group === opts.group);
   if (opts.brand) list = list.filter((v) => v.brand === opts.brand);
   if (opts.brandSlug)

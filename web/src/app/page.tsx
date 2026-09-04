@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { SearchBar } from "@/components/search/SearchBar";
+import { Hero } from "@/components/home/Hero";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
-import { FEATURES, NAV, SITE } from "@/lib/constants";
+import { FEATURES, NAV } from "@/lib/constants";
 import { getBrands, getGroups, getVehicles } from "@/lib/data";
 
 export default function HomePage() {
@@ -11,31 +11,9 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand via-brand-dark to-[#0f172a] text-white">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute -right-20 top-10 h-72 w-72 rounded-full bg-white/20 blur-3xl" />
-          <div className="absolute -left-10 bottom-0 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
-        </div>
-        <div className="container-page relative py-14 lg:py-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-widest text-white/80">
-              Güvenilir Araç Kiralama
-            </p>
-            <h1 className="mt-3 font-display text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              Araç Kiralama, Burada Konfor Var
-            </h1>
-            <p className="mt-4 text-base text-white/85 sm:text-lg">
-              {SITE.name} olarak İstanbul Sabiha Gökçen Havalimanı başta olmak üzere
-              güvenilir ve uygun fiyatlı araç kiralama hizmeti sunuyoruz.
-            </p>
-          </div>
-          <div className="mx-auto mt-10 max-w-5xl">
-            <SearchBar />
-          </div>
-        </div>
-      </section>
+      <Hero />
 
-      <section className="container-page -mt-8 grid gap-4 sm:grid-cols-3">
+      <section className="container-page relative z-10 -mt-6 grid gap-4 sm:grid-cols-3">
         {FEATURES.map((f) => (
           <div key={f.title} className="card p-5">
             <h2 className="font-display text-lg font-bold text-ink">{f.title}</h2>

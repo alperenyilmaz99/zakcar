@@ -37,3 +37,18 @@
     @apply mt-3 max-w-2xl text-base text-ink-muted sm:text-lg;
   }
 }
+
+@layer utilities {
+  @keyframes hero-zoom {
+    from {
+      transform: scale(1);
+    }
+    to {
+      transform: scale(1.08);
+    }
+  }
+
+  .animate-hero-zoom {
+    animation: hero-zoom 6s ease-out forwards;
+  }
+}

@@ -42,7 +42,11 @@ export function SearchBar({
   }
 
   return (
-    <div className={`card ${compact ? "p-4" : "p-4 sm:p-6"} shadow-search`}>
+    <div
+      className={`rounded-2xl border border-white/60 bg-white/95 shadow-search backdrop-blur-sm ${
+        compact ? "p-4" : "p-4 sm:p-5 lg:p-6"
+      }`}
+    >
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
         <Field label="Alış / Dönüş Yeri">
           <div className="relative">

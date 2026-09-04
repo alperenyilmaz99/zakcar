@@ -5,8 +5,6 @@ import { VehicleCatalog } from "@/components/vehicles/VehicleCatalog";
 import {
   filterVehicles,
   getAllSeoSlugs,
-  getBrands,
-  getGroups,
   getVehicleBySlug,
   resolveSeoPage,
 } from "@/lib/data";
@@ -47,7 +45,6 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
         <SearchBar
           defaultPickup={seo.defaultPickup}
           defaultGroup={seo.filterGroup}
-          defaultBrand={seo.filterBrand}
           compact
         />
       </div>
@@ -56,9 +53,6 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
         <VehicleCatalog
           vehicles={vehicles}
           initialGroup={seo.filterGroup}
-          initialBrand={seo.filterBrand}
-          groups={getGroups()}
-          brands={getBrands()}
         />
       ) : (
         <div className="card p-8 text-center">
