@@ -10,6 +10,9 @@ export default function Page() {
     { href: "/arac-modelleri", label: "Araç Modelleri" },
     ...NAV.main,
     ...NAV.top,
+    { href: "/kiralama-kosullari", label: "Kiralama Koşulları" },
+    { href: "/gizlilik-politikasi", label: "Gizlilik Politikası" },
+    { href: "/kisisel-verilerin-korunmasi", label: "Kişisel Verilerin Korunması" },
   ];
   const posts = getAllBlogPosts();
 

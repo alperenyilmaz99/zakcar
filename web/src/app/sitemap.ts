@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "site-haritasi",
     "kiralama-kosullari",
     "gizlilik-politikasi",
+    "kisisel-verilerin-korunmasi",
   ];
 
   const entries: MetadataRoute.Sitemap = staticPages.map((p) => ({

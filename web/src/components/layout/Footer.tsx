@@ -53,15 +53,18 @@ export function Footer() {
         <div>
           <h3 className="font-semibold text-ink">Kurumsal</h3>
           <ul className="mt-3 space-y-2">
-            {[...NAV.top, { href: "/kiralama-kosullari", label: "Koşullar" }, { href: "/gizlilik-politikasi", label: "Gizlilik" }].map(
-              (item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="text-sm text-ink-muted hover:text-brand">
-                    {item.label}
-                  </Link>
-                </li>
-              ),
-            )}
+            {[
+              ...NAV.top,
+              { href: "/kiralama-kosullari", label: "Kiralama Koşulları" },
+              { href: "/gizlilik-politikasi", label: "Gizlilik Politikası" },
+              { href: "/kisisel-verilerin-korunmasi", label: "Kişisel Verilerin Korunması" },
+            ].map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="text-sm text-ink-muted hover:text-brand">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

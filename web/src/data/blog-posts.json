@@ -1,279 +1,5 @@
 [
   {
-    "slug": "2025-trafik-cezalari",
-    "title": "2025 Trafik Cezaları Listesi ve Ücretleri",
-    "excerpt": "2025 trafik cezaları ve ücretleri hakkında bilgi almak için tıklayın! Zakcar'da güvenli sürüş ve ödeme süreci hakkında bilgi edinin.",
-    "image": "/assets/blog/2025-trafik-cezalari.png",
-    "blocks": [
-      {
-        "type": "heading",
-        "level": 2,
-        "text": "2025 Yılı Trafik Cezaları: Güncel Ücretler ve Artış Oranları"
-      },
-      {
-        "type": "paragraph",
-        "text": "2025 yılı itibarıyla trafik cezalarında önemli artışlar gündeme gelmiş ve sürücülerin karşı karşıya kalabilecekleri para cezaları yeniden düzenlenmiştir. Trafik güvenliğini artırmaya ve kural ihlallerini caydırmaya yönelik olarak yapılan bu düzenlemeler, 2025 Yılı Trafik Cezaları konusunda bilgi sahibi olmanın önemini daha da artırmaktadır."
-      },
-      {
-        "type": "paragraph",
-        "text": "Bu rehber yazıda, 2025 yılına ait güncel ceza tutarlarının yanı sıra, cezaların ödeme, sorgulama ve itiraz süreçlerine dair tüm detayları sade ve kullanıcı odaklı bir dille bulabilirsiniz. Hız sınırı ihlallerinden kırmızı ışık cezasına, telefon kullanımından drift yapmaya kadar geniş bir yelpazede trafik cezası türleri maddeler halinde ele alınmıştır."
-      },
-      {
-        "type": "heading",
-        "level": 2,
-        "text": "2025 Trafik Cezası Ücretlerine Genel Bakış"
-      },
-      {
-        "type": "paragraph",
-        "text": "2025 yılının başında yürürlüğe giren yeni düzenlemelerle birlikte, trafik cezalarına ortalama %43,93 oranında zam yapılmıştır. Bu artışla birlikte birçok cezanın tutarı neredeyse yarı yarıya yükselmiştir. Özellikle hız limitini aşma, kırmızı ışık ihlali ve alkollü araç kullanımı gibi kritik cezalar dikkat çekici şekilde artırılmıştır."
-      },
-      {
-        "type": "paragraph",
-        "text": "Sürücülerin, yasalara uygun bir şekilde trafikte bulunmaları hem kendi güvenlikleri hem de diğer yol kullanıcılarının emniyeti açısından hayati öneme sahiptir. Bu nedenle 2025 trafik cezası ücretlerindeki değişimleri takip etmek, olası ihlal risklerinde bilgi sahibi olarak hareket etmeyi sağlar."
-      },
-      {
-        "type": "heading",
-        "level": 2,
-        "text": "2025 Yılı Trafik Cezası Artış Oranı Ne Kadar?"
-      },
-      {
-        "type": "paragraph",
-        "text": "Zam oranı, 2024 yılına göre belirlenen yeniden değerleme oranı olan %43,93 üzerinden hesaplanmıştır. Aşağıdaki tabloda, sık uygulanan bazı cezalardaki değişim oranları açıkça gösterilmiştir:"
-      },
-      {
-        "type": "paragraph",
-        "text": "Bu artışlar, trafikte caydırıcılığı artırmayı ve kurallara daha sıkı uyulmasını sağlamayı hedefliyor. Ancak erken ödeme imkânıyla bu cezaların %25 indirimli şekilde ödenmesi mümkündür."
-      },
-      {
-        "type": "heading",
-        "level": 2,
-        "text": "Yeni Yılda Trafik Cezalarında Hangi Değişiklikler Yapıldı?"
-      },
-      {
-        "type": "paragraph",
-        "text": "2025 trafik düzenlemeleriyle birlikte, sürücülere uygulanan çoğu ceza detayları güncellenmiş; bazı ihlaller için ceza puanı artarken, bazıları için ek yaptırımlar uygulanmaya başlanmıştır. Örneğin kırmızı ışık ihlalinde, sadece para cezası değil aynı zamanda 20 ceza puanı da uygulanır."
-      },
-      {
-        "type": "paragraph",
-        "text": "Alkollü araç kullanımı, sık tekrar eden hız ihlalleri gibi durumlarda sürücü belgesine geçici el koyma sürelerinin artırıldığı da gözlemlenmektedir. Ceza listelerine yeni eklentiler yapılmamış olsa da mevcut cezaların etkisi hukuki ve mali açıdan çok daha hissedilir hale gelmiştir."
-      },
-      {
-        "type": "heading",
-        "level": 2,
-        "text": "2025 Yılına Ait Güncel Trafik Cezası Listesi"
-      },
-      {
-        "type": "paragraph",
-        "text": "Aşağıda 2025 yılına ait en güncel trafik cezası ücretleri listelenmiştir. Ceza miktarları ihlalin türüne ve tehlike seviyesine göre değişiklik göstermektedir."
-      },
-      {
-        "type": "paragraph",
-        "text": "Tüm bu tutarlar cezanın tebliğ edildiği tarihten itibaren 30 gün içinde ödenirse %25 indirim uygulanabilir."
-      },
-      {
-        "type": "heading",
-        "level": 2,
-        "text": "Kritik Trafik İhlallerine Uygulanan 2025 Cezalar"
-      },
-      {
-        "type": "heading",
-        "level": 3,
-        "text": "Kırmızı Işıkta Geçme Cezası"
-      },
-      {
-        "type": "paragraph",
-        "text": "Kırmızı ışık ihlali, hem cezai yaptırımı en sık uygulanan hem de yüksek risk içeren ihlallerden biridir. 2025 yılında kırmızı ışık ihlalinin cezası 2.168 TL olarak belirlenmiştir. Ayrıca, sürücüye 20 ceza puanı uygulanır."
-      },
-      {
-        "type": "paragraph",
-        "text": "Bu kuralın ihlalinin tekrarlanması durumunda ehliyete el konulma süreleri devreye girer. Aynı yıl içinde ihlalin üç kez tekrarlanması hâlinde, sürücü belgesi 30 gün süreyle geçici olarak alınır."
-      },
-      {
-        "type": "heading",
-        "level": 3,
-        "text": "Hız Sınırı İhlali Cezaları"
-      },
-      {
-        "type": "paragraph",
-        "text": "Hız sınırı ihlalleri farklı oranlara göre değerlendirilerek ceza miktarları belirlenir:"
-      },
-      {
-        "type": "listItem",
-        "text": "%10 - %30 arası hız aşımı: 2.168 TL + 10 ceza puanı"
-      },
-      {
-        "type": "listItem",
-        "text": "%30 - %50 arası hız aşımı: 4.512 TL + 15 ceza puanı"
-      },
-      {
-        "type": "listItem",
-        "text": "%50'den fazla hız aşımı: 9.268 TL + 15 ceza puanı"
-      },
-      {
-        "type": "paragraph",
-        "text": "Hız ihlali tekrarı, ehliyete geçici olarak el konulmasıyla sonuçlanabilir. Bir yıl içinde beş kez hız limitini %30'dan fazla aşan kişilerin ehliyetine 1 yıl süreyle el konulur."
-      },
-      {
-        "type": "heading",
-        "level": 3,
-        "text": "Alkollü Araç Kullanma Cezası"
-      },
-      {
-        "type": "paragraph",
-        "text": "2025 yılında alkollü olarak araç kullandığı tespit edilen sürücülere şu yaptırımlar uygulanır:"
-      },
-      {
-        "type": "listItem",
-        "text": "İlk yakalanmada: 9.268 TL ceza + 6 ay ehliyete el konulması"
-      },
-      {
-        "type": "listItem",
-        "text": "İkinci sefer: 11.622 TL ceza + 2 yıl ehliyetsiz kalma"
-      },
-      {
-        "type": "listItem",
-        "text": "Üçüncü defadan sonra: 18.678 TL ceza + ehliyet iptali"
-      },
-      {
-        "type": "paragraph",
-        "text": "Bu cezaların yanı sıra sürücüye 20 ceza puanı da verilir. Yüksek oranlı alkol durumunda TCK kapsamında yargılama da söz konusu olabilir."
-      },
-      {
-        "type": "heading",
-        "level": 2,
-        "text": "Sık Karşılaşılan Diğer Trafik Cezaları"
-      },
-      {
-        "type": "heading",
-        "level": 3,
-        "text": "Emniyet Kemeri Takmama"
-      },
-      {
-        "type": "paragraph",
-        "text": "2025 yılında emniyet kemeri takmama cezası 993 TL olarak uygulanmaktadır. Cezanın yanı sıra, sürücüye 15 ceza puanı da yöneltilmektedir. Bu basit görünen ama hayati önem taşıyan ihlal, kaza risklerini önemli ölçüde artırır."
-      },
-      {
-        "type": "paragraph",
-        "text": "Sürücülerin sadece ön koltuk değil, arka koltukta otururken de emniyet kemeri takması zorunludur."
-      },
-      {
-        "type": "heading",
-        "level": 3,
-        "text": "Telefonla Konuşma Cezası"
-      },
-      {
-        "type": "paragraph",
-        "text": "Seyir halindeyken cep telefonu kullanmak, dikkat dağınıklığına yol açarak kazaların başlıca nedenleri arasında yer alır. Bu nedenle 2025 yılı ceza tutarı 2.168 TL olarak uygulanmaktadır."
-      },
-      {
-        "type": "paragraph",
-        "text": "Bu ihlale karşı 10 ceza puanı sistemi de devrededir. Sürücülerin araç kullanımı sırasında Bluetooth veya araç kiti harici iletişim cihazları kullanmaması önerilir."
-      },
-      {
-        "type": "heading",
-        "level": 3,
-        "text": "Muayenesiz Araçla Trafiğe Çıkma"
-      },
-      {
-        "type": "paragraph",
-        "text": "Aracın teknik yeterliliklerini ölçen yıllık araç muayenesini yaptırmayanlar için kesilen ceza 2025'te 2.168 TL'ye yükseltilmiştir. Ayrıca sürücüye 10 ceza puanı verilir."
-      },
-      {
-        "type": "paragraph",
-        "text": "Aracın muayene yaptırılmadığı halde trafikte yakalanması durumunda trafikten men gibi ciddi yaptırımlar da uygulanabilir. Bu nedenle TÜVTÜRK üzerinden düzenli muayene işlemini yapmak gereklidir."
-      },
-      {
-        "type": "heading",
-        "level": 2,
-        "text": "Trafik Cezası Ödeme ve Sorgulama İşlemleri"
-      },
-      {
-        "type": "heading",
-        "level": 3,
-        "text": "Trafik Cezası Nasıl ve Nereden Ödenir?"
-      },
-      {
-        "type": "paragraph",
-        "text": "Trafik cezaları birçok farklı kanaldan kolayca ödenebilir. Ödemelerinizi aşağıdaki sistemlerden gerçekleştirebilirsiniz:"
-      },
-      {
-        "type": "listItem",
-        "text": "e-Devlet üzerinden \"Trafik Cezası Ödeme\" hizmeti"
-      },
-      {
-        "type": "listItem",
-        "text": "İnteraktif Vergi Dairesi web sitesi"
-      },
-      {
-        "type": "listItem",
-        "text": "Banka şubeleri ve internet bankacılığı"
-      },
-      {
-        "type": "listItem",
-        "text": "PTT şubeleri ve mobil uygulamalar"
-      },
-      {
-        "type": "paragraph",
-        "text": "Ayrıca trafik cezanızı cezanın kesildiği tarihten itibaren 30 gün içinde ödemeniz durumunda %25 indirim hakkına sahip olursunuz."
-      },
-      {
-        "type": "heading",
-        "level": 3,
-        "text": "Trafik Cezası Sorgulama Yöntemleri (e-Devlet - EGM)"
-      },
-      {
-        "type": "paragraph",
-        "text": "e-Devlet sistemi üzerinden T.C. kimlik numarasıyla ya da araç plakası girilerek ceza sorgulaması yapılabilir. Kullanabileceğiniz sorgulama başlıkları şunlardır:"
-      },
-      {
-        "type": "listItem",
-        "text": "Emniyet Genel Müdürlüğü (EGM) – Araç Plakasına Yazılan Ceza Sorgulama"
-      },
-      {
-        "type": "listItem",
-        "text": "Gelir İdaresi Başkanlığı – Ceza Bilgisi Sorgulama"
-      },
-      {
-        "type": "paragraph",
-        "text": "Bunlara ek olarak PTT ve bankalar üzerinden de ceza miktarları ve ödeme durumları görülebilmektedir. Böylelikle cezalara zamanında müdahale edebilir, faiz ve ekstra yaptırım riskinden korunursunuz."
-      },
-      {
-        "type": "heading",
-        "level": 2,
-        "text": "Trafik Cezalarına İtiraz Etme Süreci"
-      },
-      {
-        "type": "heading",
-        "level": 3,
-        "text": "2025 Yılında Trafik Cezasına Nasıl İtiraz Edilir?"
-      },
-      {
-        "type": "paragraph",
-        "text": "Her vatandaş, haksız olduğunu düşündüğü trafik cezasına karşı itiraz hakkına sahiptir. Bunun için ilk adım, cezanın size tebliğ edildiği günden itibaren en geç 30 gün içinde başvuruda bulunmaktır."
-      },
-      {
-        "type": "paragraph",
-        "text": "İtiraz işlemi için gerekli belgeler şunlardır:"
-      },
-      {
-        "type": "listItem",
-        "text": "İtiraz dilekçesi"
-      },
-      {
-        "type": "listItem",
-        "text": "Varsa delil (kamera görüntüsü, tanık beyanı, fotoğraf)"
-      },
-      {
-        "type": "listItem",
-        "text": "Ceza tutanağı ve kimlik fotokopisi"
-      },
-      {
-        "type": "paragraph",
-        "text": "İtiraz başvurusu, cezanın kesildiği trafik denetleme şubesi ya da sulh ceza hâkimlikleri üzerinden yapılabilir. Başvuru süreci sonrası idarenin kararı doğrultusunda cezanın iptali mümkün olabilir."
-      }
-    ]
-  },
-  {
     "slug": "2026-kopru-ve-otoyol-ucretleri",
     "title": "2026 Köprü ve Otoyol Ücretleri",
     "excerpt": "Türkiye’de ücretli otoyol ve köprüler, 2026 güncel fiyatlar, HGS sistemi ve araç kiralamada alınan depozitonun nasıl iade edildiğini öğrenin.",
@@ -2247,7 +1973,7 @@
     "slug": "enuygun-vs-direkt-rezervasyon-arac-kiralamada-hangisi-avantajli",
     "title": "Enuygun vs Direkt Rezervasyon: Araç Kiralamada Hangisi Avantajlı?",
     "excerpt": "Enuygun vs Direkt Rezervasyon: Araç Kiralamada Hangisi Avantajlı? Ön Ödeme YOK ! Ücretsiz Rezervasyon Fırsatı ! En Uygun Fiyatlarla Havalimanı Araç Kiralama Hizmeti. SAW - IST. Araç Başında Ödeme",
-    "image": "",
+    "image": "/assets/blog/enuygun-vs-direkt-rezervasyon-arac-kiralamada-hangisi-avantajli.svg",
     "blocks": [
       {
         "type": "paragraph",
@@ -2459,7 +2185,7 @@
     "slug": "gurbetci-rehberi-arac-kiralama-2026",
     "title": "Gurbetçi Türkiye Tatili Araç Kiralama Rehberi 2026",
     "excerpt": "Almanya, Hollanda, İngiltere gurbetçileri için Türkiye tatilinde araç kiralama. Kredi kartsız, EUR nakit, Wise, AB ehliyeti — tam rehber 2026.",
-    "image": "",
+    "image": "/assets/blog/gurbetci-rehberi-arac-kiralama-2026.svg",
     "blocks": [
       {
         "type": "heading",
@@ -2894,7 +2620,7 @@
     "slug": "havalimani-arac-teslim-rehberi-2026",
     "title": "Havalimanı Araç Teslim Rehberi Türkiye 2026",
     "excerpt": "Türkiye havalimanlarında araç teslim süreci, terminal karşılama, gece uçuşları, kredi kartsız ödeme — SAW, IST, AYT, ADB, DLM, BJV detaylı rehber 2026.",
-    "image": "",
+    "image": "/assets/blog/havalimani-arac-teslim-rehberi-2026.svg",
     "blocks": [
       {
         "type": "heading",
@@ -4695,7 +4421,7 @@
     "slug": "sixt-istanbul-vs-zakcar-premium-arac-kiralama-karsilastirmasi-2026",
     "title": "Sixt İstanbul vs Zakcar: Premium Araç Kiralama Karşılaştırması 2026",
     "excerpt": "Sixt İstanbul vs Zakcar: Premium Araç Kiralama Karşılaştırması 2026 Ön Ödeme YOK ! Ücretsiz Rezervasyon Fırsatı ! En Uygun Fiyatlarla Havalimanı Araç Kiralama Hizmeti. SAW - IST. Araç Başında Ödeme",
-    "image": "",
+    "image": "/assets/blog/sixt-istanbul-vs-zakcar-premium-arac-kiralama-karsilastirmasi-2026.svg",
     "blocks": [
       {
         "type": "paragraph",
@@ -5428,7 +5154,7 @@
     "slug": "yolcu360-vs-zakcar-hangisi-daha-avantajli-2026-karsilastirma",
     "title": "Yolcu360 vs Zakcar: Hangisi Daha Avantajlı? (2026 Karşılaştırma)",
     "excerpt": "Yolcu360 vs Zakcar: Hangisi Daha Avantajlı? (2026 Karşılaştırma) Ön Ödeme YOK ! Ücretsiz Rezervasyon Fırsatı ! En Uygun Fiyatlarla Havalimanı Araç Kiralama Hizmeti. SAW - IST. Araç Başında Ödeme",
-    "image": "",
+    "image": "/assets/blog/yolcu360-vs-zakcar-hangisi-daha-avantajli-2026-karsilastirma.svg",
     "blocks": [
       {
         "type": "paragraph",
