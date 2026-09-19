@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getAllBlogSlugs } from "@/lib/blog";
 import { getAllSeoSlugs, getAllVehicleSlugs } from "@/lib/data";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zakcar.com";
@@ -33,6 +34,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
+    });
+  }
+
+  for (const slug of getAllBlogSlugs()) {
+    entries.push({
+      url: `${BASE}/blog/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
     });
   }
 

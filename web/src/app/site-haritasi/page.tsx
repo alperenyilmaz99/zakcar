@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NAV } from "@/lib/constants";
+import { getAllBlogPosts } from "@/lib/blog";
 
 export const metadata = { title: "Site Haritası" };
 
@@ -10,14 +11,27 @@ export default function Page() {
     ...NAV.main,
     ...NAV.top,
   ];
+  const posts = getAllBlogPosts();
+
   return (
-    <div className="container-page max-w-xl py-10 lg:py-14">
+    <div className="container-page max-w-3xl py-10 lg:py-14">
       <h1 className="section-title">Site Haritası</h1>
       <ul className="mt-8 space-y-2">
         {links.map((l) => (
           <li key={l.href}>
             <Link href={l.href} className="text-brand hover:underline">
               {l.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <h2 className="mt-12 font-display text-xl font-bold text-ink">Blog Yazıları</h2>
+      <ul className="mt-4 space-y-2">
+        {posts.map((p) => (
+          <li key={p.slug}>
+            <Link href={`/blog/${p.slug}`} className="text-brand hover:underline">
+              {p.title}
             </Link>
           </li>
         ))}
