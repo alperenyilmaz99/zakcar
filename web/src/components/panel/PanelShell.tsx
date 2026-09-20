@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { panelLogout } from "@/components/panel/PanelGate";
 import { SITE } from "@/lib/constants";
 
 const NAV = [
@@ -46,10 +47,8 @@ export function PanelShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const logout = () => {
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("zakcar-panel-auth");
-    }
+  const logout = async () => {
+    await panelLogout();
     router.push("/panel/giris");
   };
 

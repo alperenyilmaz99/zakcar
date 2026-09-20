@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { getFleet, STATUS_LABEL } from "@/lib/panel-data";
-import type { FleetStatus } from "@/lib/panel-types";
+import { fetchFleet } from "@/lib/panel-api";
+import { STATUS_LABEL } from "@/lib/panel-data";
+import type { FleetStatus, FleetVehicle } from "@/lib/panel-types";
 import { FleetStatusBadge, formatRelative } from "@/components/panel/Badges";
 
 const FILTERS: Array<FleetStatus | "hepsi"> = ["hepsi", "musait", "kirada", "rezerveli", "bakimda"];
@@ -16,9 +17,29 @@ function VehiclesInner() {
     FILTERS.includes(initial) ? initial : "hepsi",
   );
   const [q, setQ] = useState("");
+  const [fleet, setFleet] = useState<FleetVehicle[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchFleet();
+        if (!cancelled) setFleet(data);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Yüklenemedi");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const list = useMemo(() => {
-    let items = getFleet();
+    let items = fleet;
     if (filter !== "hepsi") items = items.filter((v) => v.status === filter);
     if (q.trim()) {
       const s = q.toLowerCase();
@@ -31,18 +52,19 @@ function VehiclesInner() {
       );
     }
     return items;
-  }, [filter, q]);
+  }, [fleet, filter, q]);
+
+  if (loading) return <p className="text-sm text-ink-muted">Yükleniyor…</p>;
+  if (error) {
+    return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>;
+  }
 
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-            Araçlar
-          </h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Filo durumu, plaka, yakıt ve son konum bilgisi.
-          </p>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Araçlar</h1>
+          <p className="mt-1 text-sm text-ink-muted">Filo durumu, plaka, yakıt ve son konum.</p>
         </div>
         <p className="text-sm text-ink-muted">{list.length} kayıt</p>
       </div>

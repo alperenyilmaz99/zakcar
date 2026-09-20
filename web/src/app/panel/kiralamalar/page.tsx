@@ -1,8 +1,10 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getRentals, RENTAL_STATUS_LABEL } from "@/lib/panel-data";
+import { fetchRentals } from "@/lib/panel-api";
+import { RENTAL_STATUS_LABEL } from "@/lib/panel-data";
+import type { Rental } from "@/lib/panel-types";
 import { RentalStatusBadge, formatDateTime } from "@/components/panel/Badges";
 
 const FILTERS = ["hepsi", "aktif", "bekliyor", "tamamlandi", "iptal"] as const;
@@ -17,9 +19,29 @@ function RentalsInner() {
   );
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [rentals, setRentals] = useState<Rental[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchRentals();
+        if (!cancelled) setRentals(data);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Yüklenemedi");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const list = useMemo(() => {
-    let items = getRentals();
+    let items = rentals;
     if (filter !== "hepsi") items = items.filter((r) => r.status === filter);
     if (q.trim()) {
       const s = q.toLowerCase();
@@ -32,9 +54,14 @@ function RentalsInner() {
       );
     }
     return items;
-  }, [filter, q]);
+  }, [rentals, filter, q]);
 
   const detail = list.find((r) => r.id === selected) ?? list[0] ?? null;
+
+  if (loading) return <p className="text-sm text-ink-muted">Yükleniyor…</p>;
+  if (error) {
+    return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>;
+  }
 
   return (
     <div>
@@ -43,9 +70,7 @@ function RentalsInner() {
           <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
             Kiralamalar
           </h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Kiracı bilgileri, PNR, teslim / iade ve depozito detayları.
-          </p>
+          <p className="mt-1 text-sm text-ink-muted">Kiracı, PNR, teslim / iade ve depozito.</p>
         </div>
         <p className="text-sm text-ink-muted">{list.length} kayıt</p>
       </div>
@@ -123,7 +148,6 @@ function RentalsInner() {
                 </div>
                 <RentalStatusBadge status={detail.status} />
               </div>
-
               <dl className="space-y-3 text-sm">
                 <div>
                   <dt className="text-ink-muted">Telefon</dt>
@@ -135,11 +159,11 @@ function RentalsInner() {
                 </div>
                 <div>
                   <dt className="text-ink-muted">E-posta</dt>
-                  <dd className="font-medium text-ink break-all">{detail.customer.email}</dd>
+                  <dd className="break-all font-medium text-ink">{detail.customer.email || "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-ink-muted">Ehliyet no</dt>
-                  <dd className="font-medium text-ink">{detail.customer.licenseNo}</dd>
+                  <dd className="font-medium text-ink">{detail.customer.licenseNo || "—"}</dd>
                 </div>
                 <div className="border-t border-surface-border pt-3">
                   <dt className="text-ink-muted">Araç</dt>
@@ -148,19 +172,11 @@ function RentalsInner() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-ink-muted">Alış</dt>
-                  <dd className="font-medium text-ink">{detail.pickup}</dd>
-                </div>
-                <div>
-                  <dt className="text-ink-muted">Bırakış</dt>
-                  <dd className="font-medium text-ink">{detail.dropoff}</dd>
-                </div>
-                <div>
-                  <dt className="text-ink-muted">Tarih aralığı</dt>
+                  <dt className="text-ink-muted">Alış / Bırakış</dt>
                   <dd className="font-medium text-ink">
-                    {formatDateTime(detail.startAt)}
+                    {detail.pickup}
                     <br />
-                    {formatDateTime(detail.endAt)}
+                    {detail.dropoff}
                   </dd>
                 </div>
                 <div className="grid grid-cols-2 gap-3 border-t border-surface-border pt-3">
@@ -174,9 +190,7 @@ function RentalsInner() {
                   </div>
                 </div>
                 {detail.notes && (
-                  <div className="rounded-xl bg-surface-soft px-3 py-2 text-ink-muted">
-                    {detail.notes}
-                  </div>
+                  <div className="rounded-xl bg-surface-soft px-3 py-2 text-ink-muted">{detail.notes}</div>
                 )}
               </dl>
             </div>

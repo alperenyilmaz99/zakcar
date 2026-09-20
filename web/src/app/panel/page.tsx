@@ -1,9 +1,9 @@
+"use client";
+
 import Link from "next/link";
-import {
-  getFleet,
-  getPanelStats,
-  getRentals,
-} from "@/lib/panel-data";
+import { useEffect, useState } from "react";
+import { fetchFleet, fetchPanelStats, fetchRentals } from "@/lib/panel-api";
+import type { FleetVehicle, PanelStats, Rental } from "@/lib/panel-types";
 import {
   FleetStatusBadge,
   RentalStatusBadge,
@@ -12,9 +12,47 @@ import {
 } from "@/components/panel/Badges";
 
 export default function PanelDashboardPage() {
-  const stats = getPanelStats();
-  const fleet = getFleet();
-  const rentals = getRentals().filter((r) => r.status === "aktif" || r.status === "bekliyor");
+  const [stats, setStats] = useState<PanelStats | null>(null);
+  const [fleet, setFleet] = useState<FleetVehicle[]>([]);
+  const [rentals, setRentals] = useState<Rental[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [s, f, r] = await Promise.all([fetchPanelStats(), fetchFleet(), fetchRentals()]);
+        if (cancelled) return;
+        setStats(s);
+        setFleet(f);
+        setRentals(r.filter((x) => x.status === "aktif" || x.status === "bekliyor"));
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Veri yüklenemedi");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (loading) {
+    return <p className="text-sm text-ink-muted">Veriler yükleniyor…</p>;
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        {error || "İstatistik alınamadı"}
+        <p className="mt-2 text-rose-600/80">
+          grants.sql ve seed-fleet.sql dosyalarını Supabase’te çalıştırdığınızdan emin olun.
+        </p>
+      </div>
+    );
+  }
+
   const recent = [...fleet].sort(
     (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime(),
   );
@@ -36,7 +74,7 @@ export default function PanelDashboardPage() {
             Operasyon özeti
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Canlı filo durumu, aktif kiralamalar ve güncel hareketler.
+            Supabase canlı veri — filo, kiralama ve konum.
           </p>
         </div>
         <Link href="/panel/konumlar" className="btn-primary text-sm">
@@ -66,27 +104,31 @@ export default function PanelDashboardPage() {
             </Link>
           </div>
           <div className="overflow-hidden rounded-2xl border border-surface-border bg-white">
-            <ul className="divide-y divide-surface-border">
-              {rentals.slice(0, 6).map((r) => (
-                <li key={r.id} className="px-4 py-3.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-ink">
-                        {r.customer.name}{" "}
-                        <span className="font-normal text-ink-muted">· {r.pnr}</span>
-                      </p>
-                      <p className="mt-0.5 truncate text-sm text-ink-muted">
-                        {r.vehicleName} · {r.plate}
-                      </p>
-                      <p className="mt-1 text-xs text-ink-muted">
-                        {formatDateTime(r.startAt)} → {formatDateTime(r.endAt)}
-                      </p>
+            {rentals.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-ink-muted">Henüz kiralama yok.</p>
+            ) : (
+              <ul className="divide-y divide-surface-border">
+                {rentals.slice(0, 6).map((r) => (
+                  <li key={r.id} className="px-4 py-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-ink">
+                          {r.customer.name}{" "}
+                          <span className="font-normal text-ink-muted">· {r.pnr}</span>
+                        </p>
+                        <p className="mt-0.5 truncate text-sm text-ink-muted">
+                          {r.vehicleName} · {r.plate}
+                        </p>
+                        <p className="mt-1 text-xs text-ink-muted">
+                          {formatDateTime(r.startAt)} → {formatDateTime(r.endAt)}
+                        </p>
+                      </div>
+                      <RentalStatusBadge status={r.status} />
                     </div>
-                    <RentalStatusBadge status={r.status} />
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 
@@ -98,21 +140,25 @@ export default function PanelDashboardPage() {
             </Link>
           </div>
           <div className="overflow-hidden rounded-2xl border border-surface-border bg-white">
-            <ul className="divide-y divide-surface-border">
-              {recent.slice(0, 6).map((v) => (
-                <li key={v.id} className="flex items-center gap-3 px-4 py-3.5">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-ink">
-                      {v.name}{" "}
-                      <span className="font-normal text-ink-muted">· {v.plate}</span>
-                    </p>
-                    <p className="mt-0.5 truncate text-sm text-ink-muted">{v.locationLabel}</p>
-                    <p className="mt-1 text-xs text-ink-muted">{formatRelative(v.lastUpdated)}</p>
-                  </div>
-                  <FleetStatusBadge status={v.status} />
-                </li>
-              ))}
-            </ul>
+            {recent.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm text-ink-muted">Filo kaydı yok — seed çalıştırın.</p>
+            ) : (
+              <ul className="divide-y divide-surface-border">
+                {recent.slice(0, 6).map((v) => (
+                  <li key={v.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-ink">
+                        {v.name}{" "}
+                        <span className="font-normal text-ink-muted">· {v.plate}</span>
+                      </p>
+                      <p className="mt-0.5 truncate text-sm text-ink-muted">{v.locationLabel}</p>
+                      <p className="mt-1 text-xs text-ink-muted">{formatRelative(v.lastUpdated)}</p>
+                    </div>
+                    <FleetStatusBadge status={v.status} />
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
       </div>

@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { getFleet, STATUS_LABEL } from "@/lib/panel-data";
+import { useEffect, useMemo, useState } from "react";
+import { fetchFleet } from "@/lib/panel-api";
+import { STATUS_LABEL } from "@/lib/panel-data";
 import type { FleetStatus, FleetVehicle } from "@/lib/panel-types";
 import { FleetStatusBadge, formatRelative } from "@/components/panel/Badges";
 
-/** Rough bounds covering Istanbul metro area */
 const BOUNDS = {
   minLat: 40.82,
   maxLat: 41.35,
@@ -30,16 +30,39 @@ const DOT: Record<FleetStatus, string> = {
 };
 
 export default function PanelLocationsPage() {
-  const fleet = getFleet();
+  const [fleet, setFleet] = useState<FleetVehicle[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [filter, setFilter] = useState<FleetStatus | "hepsi">("hepsi");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchFleet();
+        if (!cancelled) setFleet(data);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Yüklenemedi");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const visible = useMemo(
     () => (filter === "hepsi" ? fleet : fleet.filter((v) => v.status === filter)),
     [fleet, filter],
   );
-
   const active = visible.find((v) => v.id === selected) ?? null;
+
+  if (loading) return <p className="text-sm text-ink-muted">Yükleniyor…</p>;
+  if (error) {
+    return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>;
+  }
 
   return (
     <div>
@@ -48,9 +71,7 @@ export default function PanelLocationsPage() {
           <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
             Konumlar
           </h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Filo araçlarının anlık konum haritası (demo koordinatlar).
-          </p>
+          <p className="mt-1 text-sm text-ink-muted">Canlı filo konumları (Supabase).</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {(["hepsi", "musait", "kirada", "rezerveli", "bakimda"] as const).map((f) => (
@@ -72,7 +93,6 @@ export default function PanelLocationsPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <div className="relative overflow-hidden rounded-2xl border border-surface-border bg-white lg:col-span-2">
-          {/* Map plane */}
           <div
             className="relative aspect-[4/3] w-full sm:aspect-[16/10]"
             style={{
@@ -80,7 +100,6 @@ export default function PanelLocationsPage() {
                 "linear-gradient(160deg, #dbeafe 0%, #e0f2fe 35%, #ecfdf5 70%, #f0f9ff 100%)",
             }}
           >
-            {/* soft grid */}
             <div
               className="absolute inset-0 opacity-40"
               style={{
@@ -89,14 +108,9 @@ export default function PanelLocationsPage() {
                 backgroundSize: "48px 48px",
               }}
             />
-            {/* water / land suggestion blobs */}
-            <div className="absolute left-[18%] top-[28%] h-24 w-40 rounded-full bg-sky-300/30 blur-2xl" />
-            <div className="absolute bottom-[20%] right-[15%] h-32 w-48 rounded-full bg-emerald-300/25 blur-2xl" />
-
             <p className="absolute left-4 top-4 rounded-lg bg-white/90 px-2.5 py-1 text-xs font-medium text-ink-muted shadow-sm">
-              İstanbul bölgesi · {visible.length} araç
+              İstanbul · {visible.length} araç
             </p>
-
             {visible.map((v) => {
               const { left, top } = toPercent(v);
               const isSel = active?.id === v.id;
@@ -120,7 +134,6 @@ export default function PanelLocationsPage() {
               );
             })}
           </div>
-
           <div className="flex flex-wrap gap-4 border-t border-surface-border px-4 py-3 text-xs text-ink-muted">
             {(Object.keys(STATUS_LABEL) as FleetStatus[]).map((s) => (
               <span key={s} className="inline-flex items-center gap-1.5">
@@ -154,16 +167,6 @@ export default function PanelLocationsPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-ink-muted">Bağlı ofis</dt>
-                  <dd className="font-medium text-ink">{active.office}</dd>
-                </div>
-                <div>
-                  <dt className="text-ink-muted">Yakıt / Km</dt>
-                  <dd className="font-medium text-ink">
-                    %{active.fuelLevel} · {active.km.toLocaleString("tr-TR")} km
-                  </dd>
-                </div>
-                <div>
                   <dt className="text-ink-muted">Son sinyal</dt>
                   <dd className="font-medium text-ink">{formatRelative(active.lastUpdated)}</dd>
                 </div>
@@ -179,11 +182,9 @@ export default function PanelLocationsPage() {
             </div>
           ) : (
             <p className="text-sm leading-relaxed text-ink-muted">
-              Haritadaki bir noktaya tıklayarak araç detayını ve koordinatları görün. Kiradaki araçlar
-              nabız animasyonuyla işaretlenir.
+              Haritadaki bir noktaya tıklayarak araç detayını görün.
             </p>
           )}
-
           <div className="mt-6 max-h-64 space-y-2 overflow-y-auto border-t border-surface-border pt-4">
             {visible.slice(0, 12).map((v) => (
               <button

@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { setPanelAuth } from "@/components/panel/PanelGate";
+import { signInStaff } from "@/lib/panel-api";
+import { hasSupabaseConfig } from "@/lib/supabase/client";
 import { SITE } from "@/lib/constants";
 
 export default function PanelLoginPage() {
@@ -11,16 +12,30 @@ export default function PanelLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
+    if (!hasSupabaseConfig()) {
+      setError("Supabase env eksik (.env.local).");
+      return;
+    }
     if (!email.trim() || !password.trim()) {
       setError("E-posta ve şifre gerekli.");
       return;
     }
-    // Demo auth — herhangi bir dolu alan ile giriş
-    setPanelAuth(true);
-    router.replace("/panel");
+
+    setLoading(true);
+    try {
+      await signInStaff(email.trim(), password);
+      router.replace("/panel");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Giriş başarısız");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,7 +62,7 @@ export default function PanelLoginPage() {
             Personel Paneli
           </h1>
           <p className="mt-2 text-sm text-ink-muted">
-            Filo, kiralama ve konum takibi için giriş yapın.
+            Supabase hesabınızla giriş yapın.
           </p>
         </div>
 
@@ -81,13 +96,9 @@ export default function PanelLoginPage() {
 
           {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
 
-          <button type="submit" className="btn-primary mt-6 w-full">
-            Giriş Yap
+          <button type="submit" className="btn-primary mt-6 w-full" disabled={loading}>
+            {loading ? "Giriş yapılıyor…" : "Giriş Yap"}
           </button>
-
-          <p className="mt-4 text-center text-xs text-ink-muted">
-            Demo: herhangi bir e-posta ve şifre ile girebilirsiniz.
-          </p>
         </form>
       </div>
     </div>
