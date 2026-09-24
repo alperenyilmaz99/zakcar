@@ -4,6 +4,7 @@ import Link from "next/link";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import { PromoBanners } from "@/components/home/PromoBanners";
 import { SegmentSection } from "@/components/home/SegmentSection";
+import { HomeFaq } from "@/components/faq/HomeFaq";
 import { NAV } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { Vehicle } from "@/lib/types";
@@ -69,11 +70,13 @@ export function HomeSections({
               href={c.href}
               className="rounded-2xl border border-surface-border bg-white px-4 py-5 text-center font-semibold transition hover:border-brand hover:text-brand"
             >
-              {c.label}
+              {t(c.labelKey)}
             </Link>
           ))}
         </div>
       </section>
+
+      <HomeFaq />
 
       <section className="border-t border-surface-border bg-white py-14">
         <div className="container-page text-center">

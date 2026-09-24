@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "ofisler",
     "blog",
     "site-haritasi",
+    "sik-sorulan-sorular",
     "kiralama-kosullari",
     "gizlilik-politikasi",
     "kisisel-verilerin-korunmasi",

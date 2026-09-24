@@ -5,16 +5,27 @@ import { useEffect, useState } from "react";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { DateTimeField } from "@/components/search/DateTimeField";
+import { DICTS, LOCALES, type MessageKey } from "@/lib/i18n";
 
 const PICKUP_OPTIONS = [
-  { id: "saw", name: "İstanbul Sabiha Gökçen Havalimanı (SAW)", soon: false },
-  { id: "iga", name: "İstanbul Havalimanı (IGA)", soon: false },
-  { id: "merkez", name: "ZakCar Merkez Ofis", soon: false },
-  { id: "esenboga", name: "Ankara Esenboğa Havalimanı", soon: true },
-  { id: "antalya", name: "Antalya Havalimanı", soon: true },
-  { id: "izmir", name: "İzmir Adnan Menderes Havalimanı", soon: true },
-  { id: "bodrum", name: "Bodrum-Milas Havalimanı", soon: true },
+  { id: "saw", nameKey: "loc.saw.full", soon: false },
+  { id: "iga", nameKey: "loc.iga.full", soon: false },
+  { id: "merkez", nameKey: "loc.merkez.full", soon: false },
+  { id: "esenboga", nameKey: "loc.esenboga.full", soon: true },
+  { id: "antalya", nameKey: "loc.antalya.full", soon: true },
+  { id: "izmir", nameKey: "loc.izmir.full", soon: true },
+  { id: "bodrum", nameKey: "loc.bodrum.full", soon: true },
 ] as const;
+
+function resolvePickupId(value: string): (typeof PICKUP_OPTIONS)[number]["id"] | undefined {
+  if (!value) return undefined;
+  const byId = PICKUP_OPTIONS.find((o) => o.id === value);
+  if (byId) return byId.id;
+  for (const o of PICKUP_OPTIONS) {
+    if (LOCALES.some((loc) => DICTS[loc.code][o.nameKey as MessageKey] === value)) return o.id;
+  }
+  return undefined;
+}
 
 interface SearchBarProps {
   defaultPickup?: string;
@@ -33,6 +44,10 @@ export function SearchBar({
   const { search, update } = useSearch();
   const { t } = usePrefs();
   const [openMenu, setOpenMenu] = useState<"pickup" | "from" | "to" | null>(null);
+  const selectedPickup = resolvePickupId(search.pickup);
+  const pickupLabel = selectedPickup
+    ? t(PICKUP_OPTIONS.find((o) => o.id === selectedPickup)!.nameKey)
+    : search.pickup;
 
   useEffect(() => {
     if (defaultPickup && !search.pickup) update({ pickup: defaultPickup });
@@ -65,8 +80,8 @@ export function SearchBar({
               onClick={() => setOpenMenu((v) => (v === "pickup" ? null : "pickup"))}
             >
               <span className="text-brand">📍</span>
-              <span className={search.pickup ? "text-ink" : "text-ink-muted"}>
-                {search.pickup || t("search.placeholder")}
+              <span className={pickupLabel ? "text-ink" : "text-ink-muted"}>
+                {pickupLabel || t("search.placeholder")}
               </span>
             </button>
             {openMenu === "pickup" && (
@@ -75,9 +90,9 @@ export function SearchBar({
                   <li key={o.id}>
                     {o.soon ? (
                       <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-[#5A5A5A]">
-                        <span>{o.name}</span>
+                        <span>{t(o.nameKey)}</span>
                         <span className="rounded-full bg-[#F7F7F7] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#5A5A5A]">
-                          Soon
+                          {t("search.soon")}
                         </span>
                       </div>
                     ) : (
@@ -85,11 +100,12 @@ export function SearchBar({
                         type="button"
                         className="w-full px-4 py-2.5 text-left text-sm text-[#111] hover:bg-[#FFF1F2]"
                         onClick={() => {
-                          update({ pickup: o.name, drop: o.name });
+                          const name = t(o.nameKey);
+                          update({ pickup: name, drop: name });
                           setOpenMenu(null);
                         }}
                       >
-                        {o.name}
+                        {t(o.nameKey)}
                       </button>
                     )}
                   </li>

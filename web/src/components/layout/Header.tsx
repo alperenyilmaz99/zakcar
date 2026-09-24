@@ -15,6 +15,7 @@ export function Header() {
     { href: "/hakkimizda", label: t("nav.about") },
     { href: "/ofisler", label: t("nav.offices") },
     { href: "/iletisim", label: t("nav.contact") },
+    { href: "/sik-sorulan-sorular", label: t("nav.faq") },
   ];
   const vehicles = [
     { href: "/4x4-suv-arac-kiralama", label: t("nav.suv") },
@@ -26,6 +27,7 @@ export function Header() {
     { href: "/kredi-kartsiz-arac-kiralama", label: t("nav.noCard") },
     { href: "/uzun-donem-arac-kiralama", label: t("nav.longTerm") },
     { href: "/kurumsal-arac-kiralama", label: t("nav.corporate") },
+    { href: "/sik-sorulan-sorular", label: t("nav.faq") },
   ];
   const main = [
     { href: "/arac-modelleri", label: t("nav.models") },
@@ -100,8 +102,14 @@ export function Header() {
         <div className="container-page flex flex-wrap items-center gap-x-1 gap-y-1 py-2">
           <NavDrop label={t("nav.vehicles")} items={vehicles} />
           <NavDrop label={t("nav.services")} items={services} />
-          <NavDrop label={t("nav.airports")} items={NAV.airports} />
-          <NavDrop label={t("nav.cities")} items={NAV.cities} />
+          <NavDrop
+            label={t("nav.airports")}
+            items={NAV.airports.map((a) => ({ href: a.href, label: t(a.labelKey) }))}
+          />
+          <NavDrop
+            label={t("nav.cities")}
+            items={NAV.cities.map((c) => ({ href: c.href, label: t(c.labelKey) }))}
+          />
           {main.map((item) => (
             <Link
               key={item.href}

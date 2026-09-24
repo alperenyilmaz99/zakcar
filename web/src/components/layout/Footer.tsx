@@ -21,7 +21,7 @@ export function Footer() {
               className="h-11 w-auto object-contain"
             />
           </Link>
-          <p className="mt-4 text-sm text-ink-muted">{SITE.address}</p>
+          <p className="mt-4 text-sm text-ink-muted">{t("loc.site.address")}</p>
           <p className="mt-2">
             <a href={`tel:${SITE.phoneTel}`} className="text-sm font-semibold text-brand">
               {SITE.phone}
@@ -35,7 +35,7 @@ export function Footer() {
             {NAV.cities.map((c) => (
               <li key={c.href}>
                 <Link href={c.href} className="text-sm text-ink-muted hover:text-brand">
-                  {c.label}
+                  {t(c.labelKey)}
                 </Link>
               </li>
             ))}
@@ -48,7 +48,7 @@ export function Footer() {
             {NAV.airports.slice(0, 5).map((a) => (
               <li key={a.href}>
                 <Link href={a.href} className="text-sm text-ink-muted hover:text-brand">
-                  {a.label}
+                  {t(a.labelKey)}
                 </Link>
               </li>
             ))}
@@ -62,6 +62,7 @@ export function Footer() {
               { href: "/hakkimizda", label: t("nav.about") },
               { href: "/ofisler", label: t("nav.offices") },
               { href: "/iletisim", label: t("nav.contact") },
+              { href: "/sik-sorulan-sorular", label: t("nav.faq") },
               { href: "/kiralama-kosullari", label: t("nav.terms") },
               { href: "/gizlilik-politikasi", label: t("nav.privacy") },
               { href: "/kisisel-verilerin-korunmasi", label: t("nav.kvkk") },

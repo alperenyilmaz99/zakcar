@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Content } from "@/components/content/ContentPage";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 
@@ -31,7 +32,10 @@ export function ContactBody({
         </a>
       </p>
       <p>
-        <strong>{t("contact.address")}:</strong> {site.address}
+        <strong>{t("contact.address")}:</strong> {t("loc.site.address")}
+      </p>
+      <p>
+        <Link href="/sik-sorulan-sorular">{t("nav.faq")}</Link>
       </p>
     </Content>
   );
