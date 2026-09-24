@@ -77,6 +77,9 @@ export default function PanelDashboardPage() {
             Supabase canlı veri — filo, kiralama ve konum.
           </p>
         </div>
+        <Link href="/panel/kapaklar" className="btn-outline text-sm">
+          Kapaklar
+        </Link>
         <Link href="/panel/konumlar" className="btn-primary text-sm">
           Haritada gör
         </Link>

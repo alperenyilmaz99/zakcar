@@ -35,9 +35,9 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative isolate min-h-[min(88vh,820px)] overflow-hidden bg-ink text-white">
+    <section className="relative min-h-[min(88vh,820px)] bg-ink text-white">
       {/* Full-bleed airport slides */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 overflow-hidden">
         {SLIDES.map((slide, i) => (
           <div
             key={slide.src}
@@ -79,7 +79,7 @@ export function Hero() {
           </p>
         </div>
 
-        <div className="relative z-10 mx-auto mt-10 w-full max-w-5xl lg:mt-12">
+        <div className="relative z-[60] mx-auto mt-10 w-full max-w-5xl lg:mt-12">
           <SearchBar />
         </div>
 

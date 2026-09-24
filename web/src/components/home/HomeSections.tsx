@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
+import { PromoBanners } from "@/components/home/PromoBanners";
 import { SegmentSection } from "@/components/home/SegmentSection";
 import { NAV } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
@@ -34,6 +35,8 @@ export function HomeSections({
           </div>
         ))}
       </section>
+
+      <PromoBanners />
 
       <section className="container-page py-14">
         <div className="flex flex-wrap items-end justify-between gap-4">

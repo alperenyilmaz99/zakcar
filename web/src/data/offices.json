@@ -9,6 +9,14 @@
       "hours": "7/24"
     },
     {
+      "id": "iga",
+      "name": "İstanbul Havalimanı (IGA)",
+      "address": "İstanbul Havalimanı, Arnavutköy / İstanbul",
+      "phone": "0532 388 29 96",
+      "email": "info@zakcar.com",
+      "hours": "7/24"
+    },
+    {
       "id": "merkez",
       "name": "ZakCar Merkez Ofis",
       "address": "İstanbul Sabiha Gökçen Havalimanı Karşısı",

@@ -12,6 +12,7 @@ const NAV = [
   { href: "/panel/araclar", label: "Araçlar" },
   { href: "/panel/kiralamalar", label: "Kiralamalar" },
   { href: "/panel/konumlar", label: "Konumlar" },
+  { href: "/panel/kapaklar", label: "Kapaklar" },
 ] as const;
 
 function NavLink({

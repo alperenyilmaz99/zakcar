@@ -2,10 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getOffices } from "@/lib/data";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
-import type { Office } from "@/lib/types";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
+
+const PICKUP_OPTIONS = [
+  { id: "saw", name: "İstanbul Sabiha Gökçen Havalimanı (SAW)", soon: false },
+  { id: "iga", name: "İstanbul Havalimanı (IGA)", soon: false },
+  { id: "merkez", name: "ZakCar Merkez Ofis", soon: false },
+  { id: "esenboga", name: "Ankara Esenboğa Havalimanı", soon: true },
+  { id: "antalya", name: "Antalya Havalimanı", soon: true },
+  { id: "izmir", name: "İzmir Adnan Menderes Havalimanı", soon: true },
+  { id: "bodrum", name: "Bodrum-Milas Havalimanı", soon: true },
+] as const;
 
 interface SearchBarProps {
   defaultPickup?: string;
@@ -23,11 +31,9 @@ export function SearchBar({
   const router = useRouter();
   const { search, update } = useSearch();
   const { t } = usePrefs();
-  const [offices, setOffices] = useState<Office[]>([]);
   const [pickupOpen, setPickupOpen] = useState(false);
 
   useEffect(() => {
-    setOffices(getOffices());
     if (defaultPickup && !search.pickup) update({ pickup: defaultPickup });
     if (defaultGroup) update({ group: defaultGroup });
     if (defaultBrand) update({ brand: defaultBrand });
@@ -45,7 +51,7 @@ export function SearchBar({
 
   return (
     <div
-      className={`rounded-2xl border border-white/60 bg-white/95 shadow-search backdrop-blur-sm ${
+      className={`rounded-2xl border border-white/60 bg-white/95 text-ink shadow-search backdrop-blur-sm ${
         compact ? "p-4" : "p-4 sm:p-5 lg:p-6"
       }`}
     >
@@ -63,19 +69,28 @@ export function SearchBar({
               </span>
             </button>
             {pickupOpen && (
-              <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-auto rounded-xl border border-surface-border bg-white py-1 shadow-search">
-                {offices.map((o) => (
+              <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto rounded-xl border border-surface-border bg-white py-1 text-[#111] shadow-search">
+                {PICKUP_OPTIONS.map((o) => (
                   <li key={o.id}>
-                    <button
-                      type="button"
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-brand-light"
-                      onClick={() => {
-                        update({ pickup: o.name, drop: o.name });
-                        setPickupOpen(false);
-                      }}
-                    >
-                      {o.name}
-                    </button>
+                    {o.soon ? (
+                      <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-[#5A5A5A]">
+                        <span>{o.name}</span>
+                        <span className="rounded-full bg-[#F7F7F7] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#5A5A5A]">
+                          Soon
+                        </span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="w-full px-4 py-2.5 text-left text-sm text-[#111] hover:bg-[#FFF1F2]"
+                        onClick={() => {
+                          update({ pickup: o.name, drop: o.name });
+                          setPickupOpen(false);
+                        }}
+                      >
+                        {o.name}
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -129,7 +144,7 @@ function DateInput({ value, onChange }: { value: string; onChange: (iso: string)
   return (
     <input
       type="datetime-local"
-      className="w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm"
+      className="w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-[#111]"
       value={local}
       onChange={(e) => onChange(new Date(e.target.value).toISOString())}
     />
