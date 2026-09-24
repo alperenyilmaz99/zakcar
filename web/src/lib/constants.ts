@@ -36,11 +36,9 @@ export const NAV = {
     { href: "/adnan-menderes-havalimani-arac-kiralama", label: "Adnan Menderes" },
   ],
   cities: [
-    { href: "/istanbul-arac-kiralama", label: "İstanbul" },
-    { href: "/izmir-arac-kiralama", label: "İzmir" },
-    { href: "/antalya-arac-kiralama", label: "Antalya" },
-    { href: "/ankara-arac-kiralama", label: "Ankara" },
-    { href: "/kayseri-arac-kiralama", label: "Kayseri" },
+    { href: "/istanbul-3-havalimani-arac-kiralama", label: "İstanbul Airport" },
+    { href: "/sabiha-gokcen-havalimani-arac-kiralama", label: "Sabiha Gökçen" },
+    { href: "/ofisler#merkez", label: "Merkez Ofis" },
   ],
   main: [
     { href: "/arac-modelleri", label: "Araç Modelleri" },

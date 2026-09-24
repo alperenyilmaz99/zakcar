@@ -25,11 +25,15 @@ export function useSearch() {
       const raw = localStorage.getItem(STORAGE_KEY);
       const parsed = raw ? JSON.parse(raw) : {};
       const d = defaultDates();
+      const storedFrom = parsed.from ? new Date(parsed.from) : null;
+      const startToday = new Date();
+      startToday.setHours(0, 0, 0, 0);
+      const stale = !storedFrom || Number.isNaN(storedFrom.getTime()) || storedFrom < startToday;
       return {
         pickup: parsed.pickup ?? "",
         drop: parsed.drop ?? "",
-        from: parsed.from ?? d.from,
-        to: parsed.to ?? d.to,
+        from: stale ? d.from : parsed.from,
+        to: stale ? d.to : (parsed.to ?? d.to),
         differentDrop: parsed.differentDrop ?? false,
         group: parsed.group,
         brand: parsed.brand,

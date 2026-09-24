@@ -10,7 +10,7 @@ export default function Page() {
     <Content title="Ofislerimiz">
       <div className="space-y-4">
         {offices.map((o) => (
-          <div key={o.id} className="card p-5">
+          <div key={o.id} id={o.id} className="card p-5">
             <h2 className="font-display text-lg font-bold text-ink">{o.name}</h2>
             <p className="mt-1 text-sm text-ink-muted">{o.address}</p>
             <p className="mt-2 text-sm">

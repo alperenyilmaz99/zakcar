@@ -59,7 +59,7 @@ export function HomeSections({
 
       <section className="container-page py-14">
         <h2 className="section-title">{t("home.cities")}</h2>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-6 grid max-w-3xl gap-3 sm:grid-cols-3">
           {NAV.cities.map((c) => (
             <Link
               key={c.href}

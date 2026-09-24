@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
+import { DateTimeField } from "@/components/search/DateTimeField";
 
 const PICKUP_OPTIONS = [
   { id: "saw", name: "İstanbul Sabiha Gökçen Havalimanı (SAW)", soon: false },
@@ -31,7 +32,7 @@ export function SearchBar({
   const router = useRouter();
   const { search, update } = useSearch();
   const { t } = usePrefs();
-  const [pickupOpen, setPickupOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<"pickup" | "from" | "to" | null>(null);
 
   useEffect(() => {
     if (defaultPickup && !search.pickup) update({ pickup: defaultPickup });
@@ -61,14 +62,14 @@ export function SearchBar({
             <button
               type="button"
               className="flex w-full items-center gap-2 rounded-xl border border-surface-border bg-white px-4 py-3 text-left text-sm"
-              onClick={() => setPickupOpen((v) => !v)}
+              onClick={() => setOpenMenu((v) => (v === "pickup" ? null : "pickup"))}
             >
               <span className="text-brand">📍</span>
               <span className={search.pickup ? "text-ink" : "text-ink-muted"}>
                 {search.pickup || t("search.placeholder")}
               </span>
             </button>
-            {pickupOpen && (
+            {openMenu === "pickup" && (
               <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto rounded-xl border border-surface-border bg-white py-1 text-[#111] shadow-search">
                 {PICKUP_OPTIONS.map((o) => (
                   <li key={o.id}>
@@ -85,7 +86,7 @@ export function SearchBar({
                         className="w-full px-4 py-2.5 text-left text-sm text-[#111] hover:bg-[#FFF1F2]"
                         onClick={() => {
                           update({ pickup: o.name, drop: o.name });
-                          setPickupOpen(false);
+                          setOpenMenu(null);
                         }}
                       >
                         {o.name}
@@ -99,15 +100,28 @@ export function SearchBar({
         </Field>
 
         <Field label={t("search.from")}>
-          <DateInput
+          <DateTimeField
             value={search.from}
-            onChange={(iso) => update({ from: iso })}
+            open={openMenu === "from"}
+            onOpenChange={(open) => setOpenMenu(open ? "from" : null)}
+            onChange={(iso) => {
+              const next: { from: string; to?: string } = { from: iso };
+              if (new Date(iso) >= new Date(search.to)) {
+                const bump = new Date(iso);
+                bump.setDate(bump.getDate() + 1);
+                next.to = bump.toISOString();
+              }
+              update(next);
+            }}
           />
         </Field>
 
         <Field label={t("search.to")}>
-          <DateInput
+          <DateTimeField
             value={search.to}
+            min={search.from}
+            open={openMenu === "to"}
+            onOpenChange={(open) => setOpenMenu(open ? "to" : null)}
             onChange={(iso) => update({ to: iso })}
           />
         </Field>
@@ -131,22 +145,9 @@ export function SearchBar({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block">
+    <div className="block">
       <span className="mb-1.5 block text-xs font-medium text-ink-muted">{label}</span>
       {children}
-    </label>
-  );
-}
-
-function DateInput({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
-  const local = value ? new Date(value).toISOString().slice(0, 16) : "";
-
-  return (
-    <input
-      type="datetime-local"
-      className="w-full rounded-xl border border-surface-border bg-white px-4 py-3 text-sm text-[#111]"
-      value={local}
-      onChange={(e) => onChange(new Date(e.target.value).toISOString())}
-    />
+    </div>
   );
 }
