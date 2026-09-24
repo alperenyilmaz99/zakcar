@@ -1,5 +1,6 @@
 import { VehicleCatalog } from "@/components/vehicles/VehicleCatalog";
 import { SearchBar } from "@/components/search/SearchBar";
+import { PageIntro } from "@/components/content/PageIntro";
 import { getVehicles } from "@/lib/data";
 
 export const metadata = {
@@ -16,8 +17,7 @@ export default async function AracModelleriPage({
 
   return (
     <div className="container-page py-10 lg:py-14">
-      <h1 className="section-title">Araç Modelleri</h1>
-      <p className="section-sub">Size en uygun aracı seçin ve hemen rezervasyon yapın.</p>
+      <PageIntro title="catalog.title" sub="catalog.sub" />
       <div className="my-8">
         <SearchBar
           defaultGroup={params.group}

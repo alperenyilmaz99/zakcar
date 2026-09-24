@@ -146,7 +146,7 @@ export default function Page() {
       <p>
         Bu Gizlilik Politikası ile ilgili sorularınız için{" "}
         <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresinden veya{" "}
-        <a href={`tel:${SITE.phone.replace(/\s/g, "")}`}>{SITE.phone}</a> numaralı hattımızdan
+        <a href={`tel:${SITE.phoneTel}`}>{SITE.phone}</a> numaralı hattımızdan
         bizimle iletişime geçebilirsiniz.
       </p>
       <p>

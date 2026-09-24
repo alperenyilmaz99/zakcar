@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SITE } from "@/lib/constants";
+import { usePrefs } from "@/components/prefs/PrefsProvider";
 
 const SLIDES = [
   {
@@ -20,6 +21,11 @@ const SLIDES = [
 
 export function Hero() {
   const [active, setActive] = useState(0);
+  const { t } = usePrefs();
+  const slides = [
+    { src: "/assets/hero/saw.jpg", label: t("hero.saw"), short: "SAW" },
+    { src: "/assets/hero/iga.jpg", label: t("hero.iga"), short: "IGA" },
+  ];
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -29,7 +35,7 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative isolate min-h-[min(88vh,820px)] overflow-hidden bg-[#0b1220] text-white">
+    <section className="relative isolate min-h-[min(88vh,820px)] overflow-hidden bg-ink text-white">
       {/* Full-bleed airport slides */}
       <div className="absolute inset-0">
         {SLIDES.map((slide, i) => (
@@ -54,8 +60,8 @@ export function Hero() {
         ))}
 
         {/* Elitcar-style dark wash for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0b1220]/85 via-[#0b1220]/55 to-[#0b1220]/75" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0b1220]/40 via-transparent to-[#0b1220]/35" />
+        <div className="absolute inset-0 bg-gradient-to-b from-ink/85 via-ink/55 to-ink/75" />
+        <div className="absolute inset-0 bg-gradient-to-r from-ink/40 via-transparent to-ink/35" />
       </div>
 
       <div className="container-page relative flex min-h-[min(88vh,820px)] flex-col justify-center pb-16 pt-16 lg:pb-24 lg:pt-20">
@@ -64,12 +70,12 @@ export function Hero() {
             {SITE.shortName} Rent A Car
           </p>
           <h1 className="mt-4 font-display text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-5xl lg:text-[3.25rem]">
-            Araç Kiralama, Burada{" "}
-            <span className="text-[#5b8cff]">Konfor</span> Var
+            {t("hero.titleBefore")}{" "}
+            <span className="text-brand">{t("hero.comfort")}</span>
+            {t("hero.titleAfter") ? ` ${t("hero.titleAfter")}` : ""}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base lg:text-lg">
-            Sabiha Gökçen ve İstanbul Havalimanı ofislerimiz başta olmak üzere
-            güvenilir, hızlı ve uygun fiyatlı araç kiralama.
+            {t("hero.subtitle")}
           </p>
         </div>
 
@@ -79,7 +85,7 @@ export function Hero() {
 
         {/* Airport indicator — Elitcar-like location cue */}
         <div className="mx-auto mt-8 flex items-center justify-center gap-2">
-          {SLIDES.map((slide, i) => (
+          {slides.map((slide, i) => (
             <button
               key={slide.short}
               type="button"

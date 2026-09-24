@@ -6,18 +6,18 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#2970ff",
-          dark: "#1d4ed8",
-          light: "#eef4ff",
+          DEFAULT: "#E30613",
+          dark: "#B8000C",
+          light: "#FFF1F2",
         },
         ink: {
-          DEFAULT: "#121926",
-          muted: "#697586",
+          DEFAULT: "#111111",
+          muted: "#5A5A5A",
         },
         surface: {
           DEFAULT: "#ffffff",
-          soft: "#f5f7fa",
-          border: "#e3e8ef",
+          soft: "#F7F7F7",
+          border: "#E6E6E6",
         },
       },
       fontFamily: {

@@ -57,11 +57,11 @@ export function PanelShell({ children }: { children: React.ReactNode }) {
       <div className="border-b border-surface-border px-5 py-5">
         <Link href="/panel" className="flex items-center gap-3" onClick={() => setOpen(false)}>
           <Image
-            src="/assets/zakcar/logo.png"
+            src={SITE.logo}
             alt={SITE.shortName}
-            width={100}
-            height={30}
-            className="h-7 w-auto"
+            width={160}
+            height={44}
+            className="h-8 w-auto"
           />
         </Link>
         <p className="mt-2 text-xs font-medium uppercase tracking-wide text-ink-muted">

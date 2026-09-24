@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { getOffices } from "@/lib/data";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import type { Office } from "@/lib/types";
+import { usePrefs } from "@/components/prefs/PrefsProvider";
 
 interface SearchBarProps {
   defaultPickup?: string;
@@ -21,6 +22,7 @@ export function SearchBar({
 }: SearchBarProps) {
   const router = useRouter();
   const { search, update } = useSearch();
+  const { t } = usePrefs();
   const [offices, setOffices] = useState<Office[]>([]);
   const [pickupOpen, setPickupOpen] = useState(false);
 
@@ -48,7 +50,7 @@ export function SearchBar({
       }`}
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-        <Field label="Alış / Dönüş Yeri">
+        <Field label={t("search.pickup")}>
           <div className="relative">
             <button
               type="button"
@@ -57,7 +59,7 @@ export function SearchBar({
             >
               <span className="text-brand">📍</span>
               <span className={search.pickup ? "text-ink" : "text-ink-muted"}>
-                {search.pickup || "Lütfen Seçiniz"}
+                {search.pickup || t("search.placeholder")}
               </span>
             </button>
             {pickupOpen && (
@@ -81,14 +83,14 @@ export function SearchBar({
           </div>
         </Field>
 
-        <Field label="Alış Tarihi">
+        <Field label={t("search.from")}>
           <DateInput
             value={search.from}
             onChange={(iso) => update({ from: iso })}
           />
         </Field>
 
-        <Field label="Dönüş Tarihi">
+        <Field label={t("search.to")}>
           <DateInput
             value={search.to}
             onChange={(iso) => update({ to: iso })}
@@ -96,14 +98,16 @@ export function SearchBar({
         </Field>
 
         <button type="button" className="btn-primary h-[46px] w-full lg:w-auto" onClick={handleSearch}>
-          Ara
+          {t("search.action")}
         </button>
       </div>
 
       {!compact && (
         <p className="mt-3 text-xs text-ink-muted">
-          Alış: {formatDate(search.from)} {formatTime(search.from)} · Dönüş:{" "}
-          {formatDate(search.to)} {formatTime(search.to)}
+          {t("search.summary", {
+            from: `${formatDate(search.from)} ${formatTime(search.from)}`,
+            to: `${formatDate(search.to)} ${formatTime(search.to)}`,
+          })}
         </p>
       )}
     </div>

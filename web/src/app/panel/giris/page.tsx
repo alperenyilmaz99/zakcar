@@ -44,18 +44,18 @@ export default function PanelLoginPage() {
         className="pointer-events-none absolute inset-0 opacity-90"
         style={{
           background:
-            "radial-gradient(ellipse 80% 50% at 20% 20%, rgba(41,112,255,0.18), transparent), radial-gradient(ellipse 60% 40% at 90% 80%, rgba(29,78,216,0.12), transparent)",
+            "radial-gradient(ellipse 80% 50% at 20% 20%, rgba(227,6,19,0.16), transparent), radial-gradient(ellipse 60% 40% at 90% 80%, rgba(17,17,17,0.08), transparent)",
         }}
       />
 
       <div className="relative w-full max-w-md">
         <div className="mb-8 text-center">
           <Image
-            src="/assets/zakcar/logo.png"
+            src={SITE.logo}
             alt={SITE.shortName}
-            width={140}
-            height={42}
-            className="mx-auto h-10 w-auto"
+            width={220}
+            height={62}
+            className="mx-auto h-14 w-auto"
             priority
           />
           <h1 className="mt-6 font-display text-2xl font-bold tracking-tight text-ink">

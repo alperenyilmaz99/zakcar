@@ -6,13 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { genPnr, formatDate, useSearch } from "@/hooks/useSearch";
 import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
-import { formatPrice } from "@/lib/format";
+import { usePrefs } from "@/components/prefs/PrefsProvider";
 
 export default function RezervasyonClient() {
   const params = useSearchParams();
   const slug = params.get("vehicle") ?? "";
   const vehicle = useMemo(() => (slug ? getVehicleBySlug(slug) : undefined), [slug]);
   const { search } = useSearch();
+  const { t, formatPrice } = usePrefs();
   const [done, setDone] = useState(false);
   const [pnr, setPnr] = useState("");
 
@@ -37,10 +38,10 @@ export default function RezervasyonClient() {
   if (!vehicle) {
     return (
       <div className="container-page py-14 text-center">
-        <h1 className="section-title">Rezervasyon</h1>
-        <p className="mt-4 text-ink-muted">Lütfen önce bir araç seçin.</p>
+        <h1 className="section-title">{t("book.title")}</h1>
+        <p className="mt-4 text-ink-muted">{t("book.pickFirst")}</p>
         <Link href="/arac-modelleri" className="btn-primary mt-6">
-          Araç Seç
+          {t("book.pickCar")}
         </Link>
       </div>
     );
@@ -50,10 +51,10 @@ export default function RezervasyonClient() {
     return (
       <div className="container-page max-w-lg py-14 text-center">
         <div className="card p-8">
-          <h1 className="font-display text-2xl font-bold">Rezervasyonunuz Alındı!</h1>
+          <h1 className="font-display text-2xl font-bold">{t("book.success")}</h1>
           <p className="mt-3 font-display text-3xl font-bold text-brand">{pnr}</p>
           <Link href="/" className="btn-primary mt-8">
-            Ana Sayfaya Dön
+            {t("book.home")}
           </Link>
         </div>
       </div>
@@ -62,7 +63,7 @@ export default function RezervasyonClient() {
 
   return (
     <div className="container-page py-10 lg:py-14">
-      <h1 className="section-title">Rezervasyon</h1>
+      <h1 className="section-title">{t("book.title")}</h1>
       <div className="mt-8 grid gap-8 lg:grid-cols-5">
         <div className="card p-6 lg:col-span-2">
           <div className="relative mx-auto aspect-[16/10] max-w-xs">
@@ -75,12 +76,12 @@ export default function RezervasyonClient() {
           </p>
         </div>
         <form onSubmit={handleSubmit} className="card space-y-4 p-6 lg:col-span-3">
-          <Input name="firstName" label="Ad" required />
-          <Input name="lastName" label="Soyad" required />
-          <Input name="email" label="E-posta" type="email" required />
-          <Input name="phone" label="Telefon" required />
+          <Input name="firstName" label={t("book.firstName")} required />
+          <Input name="lastName" label={t("book.lastName")} required />
+          <Input name="email" label={t("book.email")} type="email" required />
+          <Input name="phone" label={t("book.phone")} required />
           <button type="submit" className="btn-primary w-full">
-            Rezervasyonu Tamamla
+            {t("book.complete")}
           </button>
         </form>
       </div>

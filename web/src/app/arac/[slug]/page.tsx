@@ -1,9 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SearchBar } from "@/components/search/SearchBar";
 import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
-import { formatPrice } from "@/lib/format";
+import { VehicleDetailInfo } from "@/components/vehicles/VehicleDetailInfo";
 
 export async function generateStaticParams() {
   const { getAllVehicleSlugs } = await import("@/lib/data");
@@ -44,24 +43,7 @@ export default async function VehicleDetailPage({ params }: { params: Promise<{ 
           </h1>
           <p className="mt-4 text-ink-muted">{vehicle.summary}</p>
 
-          <dl className="mt-6 grid grid-cols-2 gap-3 text-sm">
-            {[
-              ["Grup", vehicle.group],
-              ["Yakıt", vehicle.fuel],
-              ["Vites", vehicle.transmission],
-              ["Kapasite", `${vehicle.capacity} Kişi`],
-              ["Fiyat", `${formatPrice(vehicle.price)} / gün`],
-            ].map(([k, v]) => (
-              <div key={k} className="rounded-xl bg-surface-soft px-4 py-3">
-                <dt className="text-xs text-ink-muted">{k}</dt>
-                <dd className="font-semibold text-ink">{v}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <Link href={`/rezervasyon?vehicle=${vehicle.slug}`} className="btn-primary mt-8 w-full sm:w-auto">
-            Bu Aracı Kirala
-          </Link>
+          <VehicleDetailInfo vehicle={vehicle} />
         </div>
       </div>
 

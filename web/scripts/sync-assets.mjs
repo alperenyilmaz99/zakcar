@@ -52,9 +52,9 @@ for (const [src, rel] of COPY_FILES) {
 }
 
 // ZakCar logo fallback download path
-const logoPath = path.join(publicDir, "assets/zakcar/logo.png");
+const logoPath = path.join(publicDir, "assets/zakcar/logo-wordmark.png");
 if (!fs.existsSync(logoPath)) {
-  console.warn("  ⚠ logo.png missing — run legacy build once or add manually");
+  console.warn("  ⚠ logo-wordmark.png missing — add ZakCar brand assets");
 }
 
 console.log(copied ? "Done." : "No sources found (public/ may already be populated).");

@@ -126,6 +126,16 @@ const SERVICE_PAGES: Record<string, { title: string; desc: string }> = {
 export function resolveSeoPage(slug: string): SeoPage | null {
   const base = slug.replace(/-arac-kiralama$/, "").replace(/-kiralama$/, "");
 
+  if (slug === "sedan-arac-kiralama") {
+    return {
+      slug,
+      title: "Sedan Araç Kiralama",
+      description: "Konforlu sedan araç kiralama seçenekleri.",
+      type: "group",
+      filterGroup: "Ekonomik",
+    };
+  }
+
   if (GROUP_PAGES[slug]) {
     return {
       slug,
@@ -191,6 +201,7 @@ export function getAllVehicleSlugs(): string[] {
 export function getAllSeoSlugs(): string[] {
   const slugs = new Set<string>([
     ...Object.keys(GROUP_PAGES),
+    "sedan-arac-kiralama",
     ...Object.keys(SERVICE_PAGES),
     ...catalog.brands.map((b) => `${brandSlug(b)}-arac-kiralama`),
     ...Object.keys(CITY_PAGES).map((c) => `${c}-arac-kiralama`),

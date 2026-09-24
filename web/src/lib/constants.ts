@@ -1,10 +1,14 @@
 export const SITE = {
   name: "ZakCar Rent A Car",
   shortName: "ZakCar",
-  phone: "0532 388 29 96",
+  phone: "+90 532 388 2996",
+  phoneTel: "+905323882996",
   email: "info@zakcar.com",
   address: "İstanbul Sabiha Gökçen Havalimanı (SAW), Pendik / İstanbul",
-  whatsapp: "9005323882996",
+  whatsapp: "908503077384",
+  whatsappDisplay: "+90 850 307 7384",
+  logo: "/assets/zakcar/logo-wordmark.png",
+  logoMark: "/assets/zakcar/logo-mark.png",
 } as const;
 
 export const NAV = {
