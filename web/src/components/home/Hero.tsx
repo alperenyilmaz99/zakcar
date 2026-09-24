@@ -109,7 +109,7 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-r from-ink/40 via-transparent to-ink/35" />
       </div>
 
-      <div className="container-page relative flex min-h-[min(88vh,820px)] flex-col justify-center pb-16 pt-16 lg:pb-24 lg:pt-20">
+      <div className="container-page relative flex min-h-[min(88vh,820px)] flex-col justify-center pb-20 pt-16 lg:pb-28 lg:pt-20">
         <div key={active} className="animate-hero-copy mx-auto max-w-3xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70 sm:text-sm">
             {SITE.shortName} Rent A Car

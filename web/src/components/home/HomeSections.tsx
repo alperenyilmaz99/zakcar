@@ -21,19 +21,22 @@ export function HomeSections({
 
   return (
     <>
-      <section className="container-page relative z-10 -mt-6 grid gap-4 sm:grid-cols-3">
-        {(
-          [
-            ["feat.price.title", "feat.price.desc"],
-            ["feat.support.title", "feat.support.desc"],
-            ["feat.trust.title", "feat.trust.desc"],
-          ] as const
-        ).map(([title, desc]) => (
-          <div key={title} className="card p-5">
-            <h2 className="font-display text-lg font-bold text-ink">{t(title)}</h2>
-            <p className="mt-2 text-sm text-ink-muted">{t(desc)}</p>
-          </div>
-        ))}
+      <section className="container-page relative z-10 py-10 pb-24 sm:pb-10">
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          {(
+            [
+              ["feat.nocard.title", "feat.nocard.desc"],
+              ["feat.support.title", "feat.support.desc"],
+              ["feat.price.title", "feat.price.desc"],
+              ["feat.booking.title", "feat.booking.desc"],
+            ] as const
+          ).map(([title, desc]) => (
+            <div key={title} className="card flex h-full min-h-[11.5rem] flex-col p-6">
+              <h2 className="font-display text-lg font-bold leading-snug text-ink">{t(title)}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-ink-muted">{t(desc)}</p>
+            </div>
+          ))}
+        </div>
       </section>
 
       <PromoBanners />

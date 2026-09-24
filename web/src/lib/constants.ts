@@ -49,15 +49,19 @@ export const NAV = {
 
 export const FEATURES = [
   {
-    title: "Uygun Fiyat Garantisi",
-    desc: "Standart kasko, KDV ve havalimanı teslim ücreti fiyatlara dahildir.",
+    title: "Kredi kartsız, Findeks sorgusuz",
+    desc: "Kredi kartı ve Findeks sorgusu olmadan araç kiralayın.",
   },
   {
-    title: "7/24 Müşteri Hizmetleri",
+    title: "7/24 Çağrı Merkezi",
     desc: "Sorunlarınız için her zaman bir destek ekibi yanınızda.",
   },
   {
-    title: "Tecrübe & Güven",
-    desc: "Uzun yıllara dayanan tecrübemiz ve güvenilir hizmet anlayışımız.",
+    title: "Her şey dahil fiyatlar",
+    desc: "Araç başında sürpriz ek ücret yok. Görünen fiyat, ödeyeceğiniz fiyattır.",
+  },
+  {
+    title: "Ücretsiz rezervasyon",
+    desc: "Ön ödeme yok. Ödemeyi araç tesliminde yapın.",
   },
 ] as const;
