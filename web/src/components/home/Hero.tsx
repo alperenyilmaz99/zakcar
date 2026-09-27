@@ -124,7 +124,7 @@ export function Hero() {
           </p>
         </div>
 
-        <div className="relative z-[60] mx-auto mt-10 w-full max-w-5xl lg:mt-12">
+        <div className="relative mx-auto mt-10 w-full max-w-5xl lg:mt-12">
           <SearchBar />
         </div>
 
