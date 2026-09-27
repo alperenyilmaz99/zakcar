@@ -27,6 +27,12 @@ function resolvePickupId(value: string): (typeof PICKUP_OPTIONS)[number]["id"] |
   return undefined;
 }
 
+function locationLabel(value: string, t: (key: MessageKey) => string) {
+  const id = resolvePickupId(value);
+  if (id) return t(PICKUP_OPTIONS.find((o) => o.id === id)!.nameKey);
+  return value;
+}
+
 interface SearchBarProps {
   defaultPickup?: string;
   defaultGroup?: string;
@@ -43,21 +49,19 @@ export function SearchBar({
   const router = useRouter();
   const { search, update } = useSearch();
   const { t } = usePrefs();
-  const [openMenu, setOpenMenu] = useState<"pickup" | "from" | "to" | null>(null);
-  const selectedPickup = resolvePickupId(search.pickup);
-  const pickupLabel = selectedPickup
-    ? t(PICKUP_OPTIONS.find((o) => o.id === selectedPickup)!.nameKey)
-    : search.pickup;
+  const [openMenu, setOpenMenu] = useState<"pickup" | "drop" | "from" | "to" | null>(null);
+  const different = search.differentDrop;
 
   useEffect(() => {
-    if (defaultPickup && !search.pickup) update({ pickup: defaultPickup });
+    if (defaultPickup && !search.pickup) update({ pickup: defaultPickup, drop: search.drop || defaultPickup });
     if (defaultGroup) update({ group: defaultGroup });
     if (defaultBrand) update({ brand: defaultBrand });
-  }, [defaultPickup, defaultGroup, defaultBrand, search.pickup, update]);
+  }, [defaultPickup, defaultGroup, defaultBrand, search.pickup, search.drop, update]);
 
   function handleSearch() {
     const params = new URLSearchParams();
     if (search.pickup) params.set("pickup", search.pickup);
+    if (different && search.drop) params.set("drop", search.drop);
     if (search.group || defaultGroup) params.set("group", search.group || defaultGroup || "");
     if (search.brand || defaultBrand) params.set("brand", search.brand || defaultBrand || "");
     if (search.from) params.set("from", search.from);
@@ -71,49 +75,40 @@ export function SearchBar({
         compact ? "p-4" : "p-4 sm:p-5 lg:p-6"
       }`}
     >
-      <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
-        <Field label={t("search.pickup")}>
-          <div className="relative">
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 rounded-xl border border-surface-border bg-white px-4 py-3 text-left text-sm"
-              onClick={() => setOpenMenu((v) => (v === "pickup" ? null : "pickup"))}
-            >
-              <span className="text-brand">📍</span>
-              <span className={pickupLabel ? "text-ink" : "text-ink-muted"}>
-                {pickupLabel || t("search.placeholder")}
-              </span>
-            </button>
-            {openMenu === "pickup" && (
-              <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto rounded-xl border border-surface-border bg-white py-1 text-[#111] shadow-search">
-                {PICKUP_OPTIONS.map((o) => (
-                  <li key={o.id}>
-                    {o.soon ? (
-                      <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-[#5A5A5A]">
-                        <span>{t(o.nameKey)}</span>
-                        <span className="rounded-full bg-[#F7F7F7] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#5A5A5A]">
-                          {t("search.soon")}
-                        </span>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="w-full px-4 py-2.5 text-left text-sm text-[#111] hover:bg-[#FFF1F2]"
-                        onClick={() => {
-                          const name = t(o.nameKey);
-                          update({ pickup: name, drop: name });
-                          setOpenMenu(null);
-                        }}
-                      >
-                        {t(o.nameKey)}
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+      <div
+        className={`grid grid-cols-1 gap-3 sm:grid-cols-2 lg:items-end ${
+          different
+            ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+            : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+        }`}
+      >
+        <Field label={different ? t("search.pickupOnly") : t("search.pickup")}>
+          <LocationSelect
+            value={search.pickup}
+            open={openMenu === "pickup"}
+            onToggle={() => setOpenMenu((v) => (v === "pickup" ? null : "pickup"))}
+            onSelect={(name) => {
+              update(different ? { pickup: name } : { pickup: name, drop: name });
+              setOpenMenu(null);
+            }}
+            t={t}
+          />
         </Field>
+
+        {different && (
+          <Field label={t("search.dropoff")}>
+            <LocationSelect
+              value={search.drop}
+              open={openMenu === "drop"}
+              onToggle={() => setOpenMenu((v) => (v === "drop" ? null : "drop"))}
+              onSelect={(name) => {
+                update({ drop: name });
+                setOpenMenu(null);
+              }}
+              t={t}
+            />
+          </Field>
+        )}
 
         <Field label={t("search.from")}>
           <DateTimeField
@@ -142,10 +137,27 @@ export function SearchBar({
           />
         </Field>
 
-        <button type="button" className="btn-primary h-[46px] w-full lg:w-auto" onClick={handleSearch}>
+        <button type="button" className="btn-primary h-[52px] w-full lg:w-auto" onClick={handleSearch}>
           {t("search.action")}
         </button>
       </div>
+
+      <label className="mt-4 flex cursor-pointer items-center gap-2.5 text-sm text-ink">
+        <input
+          type="checkbox"
+          checked={different}
+          onChange={(e) => {
+            const on = e.target.checked;
+            update({
+              differentDrop: on,
+              drop: on ? "" : search.pickup,
+            });
+            setOpenMenu(on ? "drop" : null);
+          }}
+          className="h-4 w-4 shrink-0 rounded border-surface-border accent-brand"
+        />
+        <span>{t("search.differentDrop")}</span>
+      </label>
 
       {!compact && (
         <p className="mt-3 text-xs text-ink-muted">
@@ -159,9 +171,64 @@ export function SearchBar({
   );
 }
 
+function LocationSelect({
+  value,
+  open,
+  onToggle,
+  onSelect,
+  t,
+}: {
+  value: string;
+  open: boolean;
+  onToggle: () => void;
+  onSelect: (name: string) => void;
+  t: (key: MessageKey) => string;
+}) {
+  const label = locationLabel(value, t);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        className="flex h-[52px] w-full items-center gap-2 overflow-hidden rounded-xl border border-surface-border bg-white px-4 text-left text-sm"
+        onClick={onToggle}
+      >
+        <span className="shrink-0 text-brand">📍</span>
+        <span className={`min-w-0 flex-1 truncate ${label ? "text-ink" : "text-ink-muted"}`}>
+          {label || t("search.placeholder")}
+        </span>
+      </button>
+      {open && (
+        <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto rounded-xl border border-surface-border bg-white py-1 text-[#111] shadow-search">
+          {PICKUP_OPTIONS.map((o) => (
+            <li key={o.id}>
+              {o.soon ? (
+                <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-[#5A5A5A]">
+                  <span>{t(o.nameKey)}</span>
+                  <span className="rounded-full bg-[#F7F7F7] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#5A5A5A]">
+                    {t("search.soon")}
+                  </span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="w-full px-4 py-2.5 text-left text-sm text-[#111] hover:bg-[#FFF1F2]"
+                  onClick={() => onSelect(t(o.nameKey))}
+                >
+                  {t(o.nameKey)}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="block">
+    <div className="block min-w-0">
       <span className="mb-1.5 block text-xs font-medium text-ink-muted">{label}</span>
       {children}
     </div>

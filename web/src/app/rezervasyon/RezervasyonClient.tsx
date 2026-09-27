@@ -74,6 +74,12 @@ export default function RezervasyonClient() {
           <p className="mt-2 text-sm text-ink-muted">
             {formatDate(search.from)} — {formatDate(search.to)}
           </p>
+          {(search.pickup || search.drop) && (
+            <p className="mt-1 text-sm text-ink-muted">
+              {search.pickup}
+              {search.differentDrop && search.drop && search.drop !== search.pickup ? ` → ${search.drop}` : ""}
+            </p>
+          )}
         </div>
         <form onSubmit={handleSubmit} className="card space-y-4 p-6 lg:col-span-3">
           <Input name="firstName" label={t("book.firstName")} required />

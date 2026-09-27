@@ -93,7 +93,7 @@ export function DateTimeField({
     <div className="relative" ref={rootRef}>
       <button
         type="button"
-        className="flex w-full items-center gap-2 rounded-xl border border-surface-border bg-white px-4 py-3 text-left text-sm text-[#111] transition hover:border-brand"
+        className="flex h-[52px] w-full items-center gap-2 overflow-hidden rounded-xl border border-surface-border bg-white px-4 text-left text-sm text-[#111] transition hover:border-brand"
         aria-expanded={open}
         onClick={() => onOpenChange(!open)}
       >

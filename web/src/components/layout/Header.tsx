@@ -69,7 +69,13 @@ export function Header() {
             href={`tel:${SITE.phoneTel}`}
             className="ms-1 flex items-center gap-2.5 rounded-xl py-0.5 pe-1 ps-0.5 text-brand transition hover:bg-brand-light"
           >
-            <CallCenterMark />
+            <Image
+              src={SITE.logoMark}
+              alt=""
+              width={48}
+              height={48}
+              className="h-12 w-12 shrink-0 rounded-full object-contain"
+            />
             <span className="leading-none">
               <span className="hidden text-[10px] font-semibold uppercase tracking-wider text-brand sm:block">
                 {t("header.callCenter")}
@@ -192,17 +198,6 @@ export function Header() {
         </div>
       </div>
     </header>
-  );
-}
-
-function CallCenterMark() {
-  return (
-    <span
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand font-display text-[11px] font-black leading-none tracking-tight text-white"
-      aria-hidden
-    >
-      7/24
-    </span>
   );
 }
 
