@@ -3,7 +3,7 @@ import { HomeSections } from "@/components/home/HomeSections";
 import { getBrands, getGroups, getVehicles } from "@/lib/data";
 
 export default function HomePage() {
-  const vehicles = getVehicles().slice(0, 6);
+  const vehicles = getVehicles().slice(0, 12);
   const groups = getGroups();
   const brands = getBrands();
 

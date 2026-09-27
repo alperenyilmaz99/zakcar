@@ -6,10 +6,12 @@ import { useState } from "react";
 import { NAV, SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { LocaleCurrencySwitch } from "@/components/layout/LocaleCurrencySwitch";
+import { useCustomer } from "@/hooks/useCustomer";
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const { t } = usePrefs();
+  const { user, logout } = useCustomer();
 
   const top = [
     { href: "/hakkimizda", label: t("nav.about") },
@@ -37,6 +39,49 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-surface-border bg-white/95 backdrop-blur">
+      <div className="border-b border-surface-border bg-white">
+        <div className="container-page flex min-h-12 flex-wrap items-center justify-end gap-x-4 gap-y-1 py-1.5 text-[13px]">
+          <Link
+            href="/rezervasyon-sorgulama"
+            className="hidden font-medium text-ink-muted transition hover:text-ink sm:inline"
+          >
+            {t("nav.myBookings")}
+          </Link>
+          <span className="hidden h-3.5 w-px bg-surface-border sm:block" aria-hidden />
+          {user ? (
+            <span className="hidden items-center gap-2 sm:flex">
+              <span className="max-w-[9rem] truncate font-medium text-ink">{user.name}</span>
+              <button
+                type="button"
+                onClick={logout}
+                className="font-medium text-ink-muted transition hover:text-brand"
+              >
+                {t("nav.logout")}
+              </button>
+            </span>
+          ) : (
+            <Link href="/giris" className="hidden font-medium text-ink-muted transition hover:text-ink sm:inline">
+              {t("nav.loginOrJoin")}
+            </Link>
+          )}
+          <LocaleCurrencySwitch plain />
+          <a
+            href={`tel:${SITE.phoneTel}`}
+            className="ms-1 flex items-center gap-2.5 rounded-xl py-0.5 pe-1 ps-0.5 text-brand transition hover:bg-brand-light"
+          >
+            <CallCenterMark />
+            <span className="leading-none">
+              <span className="hidden text-[10px] font-semibold uppercase tracking-wider text-brand sm:block">
+                {t("header.callCenter")}
+              </span>
+              <span className="font-display text-base font-bold tracking-tight text-brand sm:mt-0.5 sm:block sm:text-xl">
+                {SITE.phone}
+              </span>
+            </span>
+          </a>
+        </div>
+      </div>
+
       <div className="container-page flex h-16 items-center justify-between gap-3 lg:h-[72px]">
         <Link href="/" className="flex shrink-0 items-center gap-2" aria-label={t("nav.home")}>
           <Image
@@ -50,7 +95,6 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">
-          <LocaleCurrencySwitch />
           {top.map((item) => (
             <Link
               key={item.href}
@@ -66,7 +110,6 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2 lg:hidden">
-          <LocaleCurrencySwitch compact />
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-border"
@@ -81,6 +124,33 @@ export function Header() {
       {open && (
         <div className="border-t border-surface-border bg-white px-4 py-4 lg:hidden">
           <div className="flex flex-col gap-1">
+            <Link
+              href="/rezervasyon-sorgulama"
+              className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-surface-soft"
+              onClick={() => setOpen(false)}
+            >
+              {t("nav.myBookings")}
+            </Link>
+            {user ? (
+              <button
+                type="button"
+                className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-surface-soft"
+                onClick={() => {
+                  logout();
+                  setOpen(false);
+                }}
+              >
+                {t("nav.logout")}
+              </button>
+            ) : (
+              <Link
+                href="/giris"
+                className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-surface-soft"
+                onClick={() => setOpen(false)}
+              >
+                {t("nav.loginOrJoin")}
+              </Link>
+            )}
             {[...top, ...main].map((item) => (
               <Link
                 key={item.href}
@@ -122,6 +192,17 @@ export function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function CallCenterMark() {
+  return (
+    <span
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand font-display text-[11px] font-black leading-none tracking-tight text-white"
+      aria-hidden
+    >
+      7/24
+    </span>
   );
 }
 

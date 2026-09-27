@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import { PromoBanners } from "@/components/home/PromoBanners";
+import { PopularSlider } from "@/components/home/PopularSlider";
 import { SegmentSection } from "@/components/home/SegmentSection";
 import { HomeFaq } from "@/components/faq/HomeFaq";
 import { NAV } from "@/lib/constants";
@@ -42,22 +42,7 @@ export function HomeSections({
 
       <PromoBanners />
 
-      <section className="container-page py-14">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="section-title">{t("home.popular")}</h2>
-            <p className="section-sub">{t("home.popularSub")}</p>
-          </div>
-          <Link href="/arac-modelleri" className="btn-outline">
-            {t("home.allCars")}
-          </Link>
-        </div>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {vehicles.map((v) => (
-            <VehicleCard key={v.slug} vehicle={v} />
-          ))}
-        </div>
-      </section>
+      <PopularSlider vehicles={vehicles} />
 
       <SegmentSection />
 

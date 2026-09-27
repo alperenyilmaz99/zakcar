@@ -18,7 +18,10 @@ export const metadata: Metadata = {
   description:
     "ZakCar Rent A Car — İstanbul Sabiha Gökçen Havalimanı başta olmak üzere güvenilir ve uygun fiyatlı araç kiralama.",
   icons: {
-    icon: [{ url: "/favicon.png", type: "image/png" }, { url: "/assets/zakcar/logo-mark.png", type: "image/png" }],
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon.png", type: "image/png", sizes: "48x48" },
+    ],
     apple: "/assets/zakcar/apple-touch-icon.png",
   },
 };

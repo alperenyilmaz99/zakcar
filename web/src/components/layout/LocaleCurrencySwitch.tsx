@@ -5,25 +5,32 @@ import { useEffect, useRef, useState } from "react";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { CURRENCIES, LOCALES } from "@/lib/i18n";
 
-export function LocaleCurrencySwitch({ compact }: { compact?: boolean }) {
+export function LocaleCurrencySwitch({
+  compact,
+  plain,
+}: {
+  compact?: boolean;
+  plain?: boolean;
+}) {
   return (
     <div className="flex items-center gap-1">
-      <LangMenu compact={compact} />
-      <CurrencyMenu compact={compact} />
+      <LangMenu compact={compact} plain={plain} />
+      <CurrencyMenu compact={compact} plain={plain} />
     </div>
   );
 }
 
-function LangMenu({ compact }: { compact?: boolean }) {
+function LangMenu({ compact, plain }: { compact?: boolean; plain?: boolean }) {
   const { locale, setLocale, t } = usePrefs();
   const current = LOCALES.find((l) => l.code === locale) ?? LOCALES[0];
 
   return (
     <Drop
+      plain={plain}
       label={
         <span className="flex items-center gap-1.5">
           <Image src={current.flag} alt="" width={18} height={18} className="h-[14px] w-[18px] rounded-[2px] object-cover" />
-          {!compact && <span>{current.label}</span>}
+          {!compact && <span className={plain ? "hidden sm:inline" : undefined}>{plain ? current.name : current.label}</span>}
         </span>
       }
       ariaLabel={t("prefs.language")}
@@ -45,13 +52,14 @@ function LangMenu({ compact }: { compact?: boolean }) {
   );
 }
 
-function CurrencyMenu({ compact }: { compact?: boolean }) {
+function CurrencyMenu({ compact, plain }: { compact?: boolean; plain?: boolean }) {
   const { currency, setCurrency, t } = usePrefs();
   const current = CURRENCIES.find((c) => c.code === currency) ?? CURRENCIES[0];
 
   return (
     <Drop
-      label={<span>{compact ? current.symbol : `${current.symbol} ${current.label}`}</span>}
+      plain={plain}
+      label={<span>{compact ? current.symbol : plain ? `${current.symbol} ${current.code}` : `${current.symbol} ${current.label}`}</span>}
       ariaLabel={t("prefs.currency")}
     >
       {CURRENCIES.map((item) => (
@@ -77,10 +85,12 @@ function Drop({
   label,
   ariaLabel,
   children,
+  plain,
 }: {
   label: React.ReactNode;
   ariaLabel: string;
   children: React.ReactNode;
+  plain?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -101,7 +111,11 @@ function Drop({
         aria-label={ariaLabel}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 items-center gap-1 rounded-lg border border-surface-border px-2 text-xs font-semibold text-ink transition hover:border-brand hover:text-brand"
+        className={
+          plain
+            ? "inline-flex h-8 items-center gap-1 px-1 text-xs font-medium text-ink-muted transition hover:text-ink"
+            : "inline-flex h-9 items-center gap-1 rounded-lg border border-surface-border px-2 text-xs font-semibold text-ink transition hover:border-brand hover:text-brand"
+        }
       >
         {label}
         <span aria-hidden className="text-[10px] opacity-60">

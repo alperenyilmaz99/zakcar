@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "arac-markalari",
     "rezervasyon",
     "rezervasyon-sorgulama",
+    "giris",
     "hakkimizda",
     "iletisim",
     "ofisler",
