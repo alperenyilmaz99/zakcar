@@ -8,6 +8,7 @@ export default function Page() {
   const links = [
     { href: "/", label: "Ana Sayfa" },
     { href: "/arac-modelleri", label: "Araç Modelleri" },
+    { href: "/kampanyalar", label: "Kampanyalar" },
     ...NAV.main,
     ...NAV.top,
     { href: "/giris", label: "Giriş Yap" },

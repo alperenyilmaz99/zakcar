@@ -70,11 +70,11 @@ export function Header() {
             className="ms-1 flex items-center gap-2.5 rounded-xl py-0.5 pe-1 ps-0.5 text-brand transition hover:bg-brand-light"
           >
             <Image
-              src={SITE.logoMark}
+              src="/assets/zakcar/favicon.png"
               alt=""
-              width={48}
-              height={48}
-              className="h-12 w-12 shrink-0 rounded-full object-contain"
+              width={80}
+              height={32}
+              className="h-8 w-auto shrink-0 object-contain"
             />
             <span className="leading-none">
               <span className="hidden text-[10px] font-semibold uppercase tracking-wider text-brand sm:block">
@@ -88,8 +88,8 @@ export function Header() {
         </div>
       </div>
 
-      <div className="container-page flex h-16 items-center justify-between gap-3 lg:h-[72px]">
-        <Link href="/" className="flex shrink-0 items-center gap-2" aria-label={t("nav.home")}>
+      <div className="container-page flex h-16 items-center gap-3 lg:h-[72px] lg:gap-6">
+        <Link href="/" className="flex shrink-0 items-center" aria-label={t("nav.home")}>
           <Image
             src={SITE.logo}
             alt={SITE.name}
@@ -100,22 +100,34 @@ export function Header() {
           />
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
-          {top.map((item) => (
+        <nav className="hidden min-w-0 flex-1 items-center md:flex">
+          <NavDrop label={t("nav.vehicles")} items={vehicles} />
+          <NavDrop label={t("nav.services")} items={services} />
+          <NavDrop
+            label={t("nav.airports")}
+            items={NAV.airports.map((a) => ({ href: a.href, label: t(a.labelKey) }))}
+          />
+          <Link
+            href="/kampanyalar"
+            className="rounded-lg px-3 py-1.5 text-sm text-ink-muted transition hover:bg-surface-soft hover:text-ink"
+          >
+            {t("nav.campaigns")}
+          </Link>
+          {main.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-ink-muted transition hover:bg-surface-soft hover:text-ink"
+              className="rounded-lg px-3 py-1.5 text-sm text-ink-muted transition hover:bg-surface-soft hover:text-ink"
             >
               {item.label}
             </Link>
           ))}
-          <Link href="/arac-modelleri" className="btn-primary ml-2 !py-2.5 !text-sm">
+          <Link href="/arac-modelleri" className="btn-primary ms-2 !py-2 !text-sm">
             {t("nav.findCar")}
           </Link>
         </nav>
 
-        <div className="flex items-center gap-2 lg:hidden">
+        <div className="ms-auto flex items-center md:hidden">
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-border"
@@ -128,7 +140,7 @@ export function Header() {
       </div>
 
       {open && (
-        <div className="border-t border-surface-border bg-white px-4 py-4 lg:hidden">
+        <div className="border-t border-surface-border bg-white px-4 py-4 md:hidden">
           <div className="flex flex-col gap-1">
             <Link
               href="/rezervasyon-sorgulama"
@@ -157,7 +169,7 @@ export function Header() {
                 {t("nav.loginOrJoin")}
               </Link>
             )}
-            {[...top, ...main].map((item) => (
+            {[...top, { href: "/kampanyalar", label: t("nav.campaigns") }, ...main].map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -173,30 +185,6 @@ export function Header() {
           </div>
         </div>
       )}
-
-      <div className="hidden border-t border-surface-border md:block">
-        <div className="container-page flex flex-wrap items-center gap-x-1 gap-y-1 py-2">
-          <NavDrop label={t("nav.vehicles")} items={vehicles} />
-          <NavDrop label={t("nav.services")} items={services} />
-          <NavDrop
-            label={t("nav.airports")}
-            items={NAV.airports.map((a) => ({ href: a.href, label: t(a.labelKey) }))}
-          />
-          <NavDrop
-            label={t("nav.cities")}
-            items={NAV.cities.map((c) => ({ href: c.href, label: t(c.labelKey) }))}
-          />
-          {main.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-lg px-3 py-1.5 text-sm text-ink-muted transition hover:bg-surface-soft hover:text-ink"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      </div>
     </header>
   );
 }
