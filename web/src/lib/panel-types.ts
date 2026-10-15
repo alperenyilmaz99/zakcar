@@ -2,6 +2,7 @@ export type FleetStatus = "musait" | "kirada" | "rezerveli" | "bakimda";
 
 export type FleetVehicle = {
   id: string;
+  recordId: string;
   plate: string;
   vehicleSlug: string;
   name: string;

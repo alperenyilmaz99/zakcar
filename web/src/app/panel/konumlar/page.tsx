@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { fetchFleet } from "@/lib/panel-api";
+import { fetchFleet, saveFleetLocation } from "@/lib/panel-api";
 import { STATUS_LABEL } from "@/lib/panel-data";
 import type { FleetStatus, FleetVehicle } from "@/lib/panel-types";
 import { FleetStatusBadge, formatRelative } from "@/components/panel/Badges";
@@ -34,6 +34,11 @@ export default function PanelLocationsPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [filter, setFilter] = useState<FleetStatus | "hepsi">("hepsi");
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [label, setLabel] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,6 +63,34 @@ export default function PanelLocationsPage() {
     [fleet, filter],
   );
   const active = visible.find((v) => v.id === selected) ?? null;
+
+  useEffect(() => {
+    if (!active) return;
+    setLat(String(active.lat));
+    setLng(String(active.lng));
+    setLabel(active.locationLabel);
+  }, [active]);
+
+  async function saveLocation(e: React.FormEvent) {
+    e.preventDefault();
+    if (!active || saving) return;
+    const nextLat = Number(lat);
+    const nextLng = Number(lng);
+    if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) {
+      setActionError("Koordinat geçersiz.");
+      return;
+    }
+    setSaving(true);
+    setActionError("");
+    try {
+      await saveFleetLocation(active.recordId, nextLat, nextLng, label.trim() || active.office);
+      setFleet(await fetchFleet());
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Konum kaydedilemedi");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (loading) return <p className="text-sm text-ink-muted">Yükleniyor…</p>;
   if (error) {
@@ -171,6 +204,36 @@ export default function PanelLocationsPage() {
                   <dd className="font-medium text-ink">{formatRelative(active.lastUpdated)}</dd>
                 </div>
               </dl>
+              <form onSubmit={(e) => void saveLocation(e)} className="space-y-2">
+                <label className="block text-xs text-ink-muted">
+                  Enlem
+                  <input
+                    value={lat}
+                    onChange={(e) => setLat(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-sm text-ink"
+                  />
+                </label>
+                <label className="block text-xs text-ink-muted">
+                  Boylam
+                  <input
+                    value={lng}
+                    onChange={(e) => setLng(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-sm text-ink"
+                  />
+                </label>
+                <label className="block text-xs text-ink-muted">
+                  Konum notu
+                  <input
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-sm text-ink"
+                  />
+                </label>
+                <button type="submit" className="btn-primary w-full text-sm" disabled={saving}>
+                  {saving ? "Kaydediliyor…" : "Konumu kaydet"}
+                </button>
+                {actionError && <p className="text-sm text-rose-600">{actionError}</p>}
+              </form>
               <a
                 href={`https://www.google.com/maps?q=${active.lat},${active.lng}`}
                 target="_blank"

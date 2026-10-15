@@ -61,6 +61,7 @@ function money(n: number | null | undefined): string {
 function mapFleet(row: FleetRow): FleetVehicle {
   return {
     id: row.fleet_code || row.id,
+    recordId: row.id,
     plate: row.plate,
     vehicleSlug: row.model_slug,
     name: row.model_name,
@@ -296,6 +297,58 @@ export async function deletePromoCover(cover: PromoCover, source: "supabase" | "
   if (storagePath) {
     await supabase.storage.from(PROMO_BUCKET).remove([storagePath]);
   }
+}
+
+export async function updateRentalStatus(id: string, status: RentalStatus): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("rentals").update({ status }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateFleetUnit(
+  recordId: string,
+  patch: { status?: FleetStatus; fuelLevel?: number; km?: number },
+): Promise<void> {
+  const supabase = createClient();
+  const row: Record<string, string | number> = {};
+  if (patch.status) {
+    row.status = patch.status;
+    row.last_status_at = new Date().toISOString();
+  }
+  if (patch.fuelLevel != null) row.fuel_level = patch.fuelLevel;
+  if (patch.km != null) row.odometer_km = patch.km;
+  const { error } = await supabase.from("fleet_vehicles").update(row).eq("id", recordId);
+  if (error) throw error;
+}
+
+export async function releaseFleetVehicle(recordId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.rpc("staff_release_vehicle", { p_vehicle: recordId });
+  if (error && /could not find the function/i.test(error.message)) {
+    await updateFleetUnit(recordId, { status: "musait" });
+    return;
+  }
+  if (error) throw error;
+}
+
+export async function saveFleetLocation(
+  recordId: string,
+  lat: number,
+  lng: number,
+  label: string,
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("vehicle_locations").upsert(
+    {
+      fleet_vehicle_id: recordId,
+      lat,
+      lng,
+      location_label: label,
+      recorded_at: new Date().toISOString(),
+    },
+    { onConflict: "fleet_vehicle_id" },
+  );
+  if (error) throw error;
 }
 
 export async function reorderPromoCovers(items: PromoCover[], source: "supabase" | "file"): Promise<void> {

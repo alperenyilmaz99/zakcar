@@ -11,7 +11,7 @@ import { useCustomer } from "@/hooks/useCustomer";
 export function Header() {
   const [open, setOpen] = useState(false);
   const { t } = usePrefs();
-  const { user, logout } = useCustomer();
+  const { user, ready, logout } = useCustomer();
 
   const top = [
     { href: "/hakkimizda", label: t("nav.about") },
@@ -48,22 +48,22 @@ export function Header() {
             {t("nav.myBookings")}
           </Link>
           <span className="hidden h-3.5 w-px bg-surface-border sm:block" aria-hidden />
-          {user ? (
+          {ready && user ? (
             <span className="hidden items-center gap-2 sm:flex">
               <span className="max-w-[9rem] truncate font-medium text-ink">{user.name}</span>
               <button
                 type="button"
-                onClick={logout}
+                onClick={() => void logout()}
                 className="font-medium text-ink-muted transition hover:text-brand"
               >
                 {t("nav.logout")}
               </button>
             </span>
-          ) : (
+          ) : ready ? (
             <Link href="/giris" className="hidden font-medium text-ink-muted transition hover:text-ink sm:inline">
               {t("nav.loginOrJoin")}
             </Link>
-          )}
+          ) : null}
           <LocaleCurrencySwitch plain />
           <a
             href={`tel:${SITE.phoneTel}`}
@@ -149,18 +149,18 @@ export function Header() {
             >
               {t("nav.myBookings")}
             </Link>
-            {user ? (
+            {ready && user ? (
               <button
                 type="button"
                 className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-surface-soft"
                 onClick={() => {
-                  logout();
+                  void logout();
                   setOpen(false);
                 }}
               >
                 {t("nav.logout")}
               </button>
-            ) : (
+            ) : ready ? (
               <Link
                 href="/giris"
                 className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-surface-soft"
@@ -168,7 +168,7 @@ export function Header() {
               >
                 {t("nav.loginOrJoin")}
               </Link>
-            )}
+            ) : null}
             {[...top, { href: "/kampanyalar", label: t("nav.campaigns") }, ...main].map((item) => (
               <Link
                 key={item.href}

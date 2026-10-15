@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { fetchFleet } from "@/lib/panel-api";
+import { fetchFleet, releaseFleetVehicle, updateFleetUnit } from "@/lib/panel-api";
 import { STATUS_LABEL } from "@/lib/panel-data";
 import type { FleetStatus, FleetVehicle } from "@/lib/panel-types";
 import { FleetStatusBadge, formatRelative } from "@/components/panel/Badges";
@@ -19,6 +19,11 @@ function VehiclesInner() {
   const [q, setQ] = useState("");
   const [fleet, setFleet] = useState<FleetVehicle[]>([]);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [fuel, setFuel] = useState(100);
+  const [km, setKm] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +58,39 @@ function VehiclesInner() {
     }
     return items;
   }, [fleet, filter, q]);
+
+  const active = list.find((v) => v.id === selected) ?? null;
+
+  useEffect(() => {
+    if (!active) return;
+    setFuel(active.fuelLevel);
+    setKm(active.km);
+  }, [active]);
+
+  async function reload() {
+    setFleet(await fetchFleet());
+  }
+
+  async function saveUnit(patch: { status?: FleetVehicle["status"]; fuelLevel?: number; km?: number }) {
+    if (!active || saving) return;
+    setSaving(true);
+    setActionError("");
+    try {
+      if (patch.status === "musait" && active.status === "bakimda") {
+        await releaseFleetVehicle(active.recordId);
+        if (patch.fuelLevel != null || patch.km != null) {
+          await updateFleetUnit(active.recordId, { fuelLevel: patch.fuelLevel, km: patch.km });
+        }
+      } else {
+        await updateFleetUnit(active.recordId, patch);
+      }
+      await reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Kaydedilemedi");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (loading) return <p className="text-sm text-ink-muted">Yükleniyor…</p>;
   if (error) {
@@ -109,7 +147,11 @@ function VehiclesInner() {
           </thead>
           <tbody className="divide-y divide-surface-border">
             {list.map((v) => (
-              <tr key={v.id} className="hover:bg-surface-soft/60">
+              <tr
+                key={v.id}
+                onClick={() => setSelected(v.id)}
+                className={`cursor-pointer hover:bg-surface-soft/60 ${active?.id === v.id ? "bg-brand-light" : ""}`}
+              >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-surface-soft">
@@ -151,6 +193,77 @@ function VehiclesInner() {
           <p className="px-4 py-10 text-center text-sm text-ink-muted">Kayıt bulunamadı.</p>
         )}
       </div>
+
+      {active && (
+        <form
+          className="mt-6 rounded-2xl border border-surface-border bg-white p-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void saveUnit({ fuelLevel: fuel, km });
+          }}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="font-display text-lg font-bold text-ink">{active.name}</h2>
+              <p className="font-mono text-sm text-ink-muted">
+                {active.plate} · {active.id}
+              </p>
+            </div>
+            <FleetStatusBadge status={active.status} />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm text-ink-muted">
+              Yakıt %
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={fuel}
+                onChange={(e) => setFuel(Number(e.target.value))}
+                className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
+              />
+            </label>
+            <label className="text-sm text-ink-muted">
+              Kilometre
+              <input
+                type="number"
+                min={0}
+                value={km}
+                onChange={(e) => setKm(Number(e.target.value))}
+                className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
+              />
+            </label>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button type="submit" className="btn-primary text-sm" disabled={saving}>
+              {saving ? "Kaydediliyor…" : "Yakıt ve km kaydet"}
+            </button>
+            {active.status === "bakimda" ? (
+              <button
+                type="button"
+                className="btn-outline text-sm"
+                disabled={saving}
+                onClick={() => void saveUnit({ status: "musait", fuelLevel: fuel, km })}
+              >
+                Bakımdan çıkar
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-outline text-sm"
+                disabled={saving}
+                onClick={() => void saveUnit({ status: "bakimda" })}
+              >
+                Bakıma al
+              </button>
+            )}
+          </div>
+          <p className="mt-3 text-xs text-ink-muted">
+            Kirada ve rezerveli durum kiralama kaydından gelir. Bakım elle kapatılır.
+          </p>
+          {actionError && <p className="mt-2 text-sm text-rose-600">{actionError}</p>}
+        </form>
+      )}
     </div>
   );
 }

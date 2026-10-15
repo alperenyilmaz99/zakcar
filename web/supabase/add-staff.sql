@@ -4,9 +4,9 @@
 
 insert into public.staff_profiles (id, full_name, email, role, is_active)
 values (
-  'BURAYA-USER-UUID',  -- örn: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+  'ee67f055-de10-476a-93b2-c1c2bb5c8831',
   'Panel Admin',
-  'personel@zakcar.com',
+  'alperenylmz1071@gmail.com',
   'admin',
   true
 )

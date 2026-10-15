@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchRentals } from "@/lib/panel-api";
+import { fetchRentals, updateRentalStatus } from "@/lib/panel-api";
 import { RENTAL_STATUS_LABEL } from "@/lib/panel-data";
 import type { Rental } from "@/lib/panel-types";
 import { RentalStatusBadge, formatDateTime } from "@/components/panel/Badges";
@@ -21,6 +21,8 @@ function RentalsInner() {
   const [selected, setSelected] = useState<string | null>(null);
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,6 +59,34 @@ function RentalsInner() {
   }, [rentals, filter, q]);
 
   const detail = list.find((r) => r.id === selected) ?? list[0] ?? null;
+
+  async function changeStatus(status: Rental["status"]) {
+    if (!detail || saving) return;
+    if (status === "iptal" && !window.confirm(`${detail.pnr} iptal edilsin mi?`)) return;
+    setSaving(true);
+    setActionError("");
+    try {
+      await updateRentalStatus(detail.id, status);
+      setRentals(await fetchRentals());
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Güncellenemedi");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const actions: Array<{ status: Rental["status"]; label: string }> =
+    detail?.status === "bekliyor"
+      ? [
+          { status: "aktif", label: "Teslim et" },
+          { status: "iptal", label: "İptal et" },
+        ]
+      : detail?.status === "aktif"
+        ? [
+            { status: "tamamlandi", label: "İade alındı" },
+            { status: "iptal", label: "İptal et" },
+          ]
+        : [];
 
   if (loading) return <p className="text-sm text-ink-muted">Yükleniyor…</p>;
   if (error) {
@@ -193,6 +223,22 @@ function RentalsInner() {
                   <div className="rounded-xl bg-surface-soft px-3 py-2 text-ink-muted">{detail.notes}</div>
                 )}
               </dl>
+              {actions.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {actions.map((action) => (
+                    <button
+                      key={action.status}
+                      type="button"
+                      disabled={saving}
+                      onClick={() => void changeStatus(action.status)}
+                      className={action.status === "iptal" ? "btn-outline text-sm" : "btn-primary text-sm"}
+                    >
+                      {saving ? "Kaydediliyor…" : action.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {actionError && <p className="text-sm text-rose-600">{actionError}</p>}
             </div>
           ) : (
             <p className="text-sm text-ink-muted">Detay için bir kiralama seçin.</p>

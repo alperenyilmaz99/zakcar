@@ -5,31 +5,12 @@ import { useEffect, useState } from "react";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { DateTimeField } from "@/components/search/DateTimeField";
-import { DICTS, LOCALES, type MessageKey } from "@/lib/i18n";
-
-const PICKUP_OPTIONS = [
-  { id: "saw", nameKey: "loc.saw.full", soon: false },
-  { id: "iga", nameKey: "loc.iga.full", soon: false },
-  { id: "merkez", nameKey: "loc.merkez.full", soon: false },
-  { id: "esenboga", nameKey: "loc.esenboga.full", soon: true },
-  { id: "antalya", nameKey: "loc.antalya.full", soon: true },
-  { id: "izmir", nameKey: "loc.izmir.full", soon: true },
-  { id: "bodrum", nameKey: "loc.bodrum.full", soon: true },
-] as const;
-
-function resolvePickupId(value: string): (typeof PICKUP_OPTIONS)[number]["id"] | undefined {
-  if (!value) return undefined;
-  const byId = PICKUP_OPTIONS.find((o) => o.id === value);
-  if (byId) return byId.id;
-  for (const o of PICKUP_OPTIONS) {
-    if (LOCALES.some((loc) => DICTS[loc.code][o.nameKey as MessageKey] === value)) return o.id;
-  }
-  return undefined;
-}
+import { OFFICES, resolveOfficeId } from "@/lib/offices";
+import type { MessageKey } from "@/lib/i18n";
 
 function locationLabel(value: string, t: (key: MessageKey) => string) {
-  const id = resolvePickupId(value);
-  if (id) return t(PICKUP_OPTIONS.find((o) => o.id === id)!.nameKey);
+  const id = resolveOfficeId(value);
+  if (id) return t(OFFICES.find((office) => office.id === id)!.nameKey);
   return value;
 }
 
@@ -53,7 +34,10 @@ export function SearchBar({
   const different = search.differentDrop;
 
   useEffect(() => {
-    if (defaultPickup && !search.pickup) update({ pickup: defaultPickup, drop: search.drop || defaultPickup });
+    if (defaultPickup && !search.pickup) {
+      const id = resolveOfficeId(defaultPickup) ?? defaultPickup;
+      update({ pickup: id, drop: search.drop || id });
+    }
     if (defaultGroup) update({ group: defaultGroup });
     if (defaultBrand) update({ brand: defaultBrand });
   }, [defaultPickup, defaultGroup, defaultBrand, search.pickup, search.drop, update]);
@@ -87,8 +71,8 @@ export function SearchBar({
             value={search.pickup}
             open={openMenu === "pickup"}
             onToggle={() => setOpenMenu((v) => (v === "pickup" ? null : "pickup"))}
-            onSelect={(name) => {
-              update(different ? { pickup: name } : { pickup: name, drop: name });
+            onSelect={(id) => {
+              update(different ? { pickup: id } : { pickup: id, drop: id });
               setOpenMenu(null);
             }}
             t={t}
@@ -101,8 +85,8 @@ export function SearchBar({
               value={search.drop}
               open={openMenu === "drop"}
               onToggle={() => setOpenMenu((v) => (v === "drop" ? null : "drop"))}
-              onSelect={(name) => {
-                update({ drop: name });
+              onSelect={(id) => {
+                update({ drop: id });
                 setOpenMenu(null);
               }}
               t={t}
@@ -181,7 +165,7 @@ function LocationSelect({
   value: string;
   open: boolean;
   onToggle: () => void;
-  onSelect: (name: string) => void;
+  onSelect: (id: string) => void;
   t: (key: MessageKey) => string;
 }) {
   const label = locationLabel(value, t);
@@ -200,9 +184,9 @@ function LocationSelect({
       </button>
       {open && (
         <ul className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 overflow-auto rounded-xl border border-surface-border bg-white py-1 text-[#111] shadow-search">
-          {PICKUP_OPTIONS.map((o) => (
+          {OFFICES.map((o) => (
             <li key={o.id}>
-              {o.soon ? (
+              {!o.bookable ? (
                 <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-[#5A5A5A]">
                   <span>{t(o.nameKey)}</span>
                   <span className="rounded-full bg-[#F7F7F7] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#5A5A5A]">
@@ -213,7 +197,7 @@ function LocationSelect({
                 <button
                   type="button"
                   className="w-full px-4 py-2.5 text-left text-sm text-[#111] hover:bg-[#FFF1F2]"
-                  onClick={() => onSelect(t(o.nameKey))}
+                  onClick={() => onSelect(o.id)}
                 >
                   {t(o.nameKey)}
                 </button>

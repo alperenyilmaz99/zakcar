@@ -10,16 +10,22 @@ import { specLabel } from "@/lib/i18n";
 interface VehicleCardProps {
   vehicle: Vehicle;
   onSelect?: (slug: string) => void;
+  available?: number | null;
 }
 
-export function VehicleCard({ vehicle, onSelect }: VehicleCardProps) {
+export function VehicleCard({ vehicle, onSelect, available }: VehicleCardProps) {
   const { t, formatPrice, locale } = usePrefs();
   const shortName = vehicle.name
     .replace(" Araç Kiralama", "")
     .replace(new RegExp(`^${vehicle.brand}\\s*`, "i"), "")
     .trim();
 
-  const selectBtn = onSelect ? (
+  const soldOut = available === 0;
+  const selectBtn = soldOut ? (
+    <span className="inline-flex items-center rounded-lg bg-surface-soft px-5 py-2.5 text-sm font-semibold text-ink-muted">
+      {t("catalog.soldOut")}
+    </span>
+  ) : onSelect ? (
     <button type="button" className="btn-primary !rounded-lg !px-5 !py-2.5" onClick={() => onSelect(vehicle.slug)}>
       {t("card.select")}
     </button>
@@ -81,7 +87,9 @@ export function VehicleCard({ vehicle, onSelect }: VehicleCardProps) {
             {formatPrice(vehicle.price)}{" "}
             <span className="text-sm font-medium text-ink-muted">{t("card.daily")}</span>
           </p>
-          <p className="text-xs text-ink-muted">{t("card.fromPrices")}</p>
+          <p className="text-xs text-ink-muted">
+            {available != null && available > 0 ? t("catalog.available", { n: available }) : t("card.fromPrices")}
+          </p>
         </div>
         {selectBtn}
       </div>

@@ -8,7 +8,7 @@ import { useCustomer } from "@/hooks/useCustomer";
 
 export function AuthForm() {
   const { t } = usePrefs();
-  const { user, login, register } = useCustomer();
+  const { user, ready, login, register } = useCustomer();
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
@@ -17,12 +17,12 @@ export function AuthForm() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (user) router.replace("/rezervasyon-sorgulama");
-  }, [user, router]);
+    if (ready && user) router.replace("/rezervasyon-sorgulama");
+  }, [ready, user, router]);
 
-  if (user) return null;
+  if (!ready || user) return null;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     try {
@@ -31,13 +31,17 @@ export function AuthForm() {
           setError(t("auth.error"));
           return;
         }
-        register(name.trim(), email.trim(), password);
+        await register(name.trim(), email.trim(), password);
       } else {
-        login(email.trim(), password);
+        await login(email.trim(), password);
       }
       router.push("/rezervasyon-sorgulama");
     } catch (err) {
-      setError(err instanceof Error && err.message === "exists" ? t("auth.exists") : t("auth.invalid"));
+      const code = err instanceof Error ? err.message : "";
+      if (code === "exists") setError(t("auth.exists"));
+      else if (code === "confirm") setError(t("auth.confirm"));
+      else if (code === "config") setError(t("auth.missing"));
+      else setError(t("auth.invalid"));
     }
   }
 

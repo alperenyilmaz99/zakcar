@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { VehicleCard } from "./VehicleCard";
 import type { Vehicle } from "@/lib/types";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { specLabel } from "@/lib/i18n";
+import { useSearch } from "@/hooks/useSearch";
+import { resolveOfficeId } from "@/lib/offices";
 
 const GROUPS = ["Ekonomik", "SUV", "Minibüs", "Lüks"] as const;
 const FUELS = ["Elektrik", "Dizel", "Benzin", "Hibrit"] as const;
@@ -24,9 +26,36 @@ function toggleValue(list: string[], value: string): string[] {
 export function VehicleCatalog({ vehicles, initialGroup }: VehicleCatalogProps) {
   const router = useRouter();
   const { t, locale } = usePrefs();
+  const { search } = useSearch();
+  const [availability, setAvailability] = useState<Record<string, number> | null>(null);
   const [groups, setGroups] = useState<string[]>(initialGroup ? [initialGroup] : []);
   const [fuels, setFuels] = useState<string[]>([]);
   const [transmissions, setTransmissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!search.from || !search.to) {
+      setAvailability(null);
+      return;
+    }
+    const query = new URLSearchParams({ from: search.from, to: search.to });
+    const office = resolveOfficeId(search.pickup);
+    if (office) query.set("pickup", office);
+    let cancelled = false;
+    fetch(`/api/availability?${query.toString()}`)
+      .then(async (res) => {
+        if (!res.ok) throw new Error("unavailable");
+        return (await res.json()) as Record<string, number>;
+      })
+      .then((data) => {
+        if (!cancelled) setAvailability(data);
+      })
+      .catch(() => {
+        if (!cancelled) setAvailability(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [search.from, search.to, search.pickup]);
 
   const filtered = useMemo(() => {
     let list = vehicles;
@@ -96,7 +125,12 @@ export function VehicleCatalog({ vehicles, initialGroup }: VehicleCatalogProps) 
                 <VehicleCard
                   key={v.slug}
                   vehicle={v}
-                  onSelect={(slug) => router.push(`/rezervasyon?vehicle=${slug}`)}
+                  available={availability ? availability[v.slug] : undefined}
+                  onSelect={
+                    availability && availability[v.slug] === 0
+                      ? undefined
+                      : (slug) => router.push(`/rezervasyon?vehicle=${slug}`)
+                  }
                 />
               ))}
             </div>

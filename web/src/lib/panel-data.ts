@@ -60,6 +60,7 @@ export function getFleet(): FleetVehicle[] {
 
     return {
       id: `FLT-${String(i + 1).padStart(3, "0")}`,
+      recordId: `FLT-${String(i + 1).padStart(3, "0")}`,
       plate: plateFor(i),
       vehicleSlug: v.slug,
       name: v.name.replace(/\s*Araç Kiralama\s*$/i, ""),
