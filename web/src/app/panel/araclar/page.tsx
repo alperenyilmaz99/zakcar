@@ -1,12 +1,13 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { fetchFleet, releaseFleetVehicle, updateFleetUnit } from "@/lib/panel-api";
+import { fetchFleet, fetchRentals, releaseFleetVehicle, updateFleetUnit } from "@/lib/panel-api";
 import { STATUS_LABEL } from "@/lib/panel-data";
-import type { FleetStatus, FleetVehicle } from "@/lib/panel-types";
-import { FleetStatusBadge, formatRelative } from "@/components/panel/Badges";
+import type { FleetStatus, FleetVehicle, Rental } from "@/lib/panel-types";
+import { FleetStatusBadge, RentalStatusBadge, formatDateTime, formatRelative } from "@/components/panel/Badges";
 
 const FILTERS: Array<FleetStatus | "hepsi"> = ["hepsi", "musait", "kirada", "rezerveli", "bakimda"];
 
@@ -18,6 +19,7 @@ function VehiclesInner() {
   );
   const [q, setQ] = useState("");
   const [fleet, setFleet] = useState<FleetVehicle[]>([]);
+  const [rentals, setRentals] = useState<Rental[]>([]);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -30,8 +32,11 @@ function VehiclesInner() {
     let cancelled = false;
     (async () => {
       try {
-        const data = await fetchFleet();
-        if (!cancelled) setFleet(data);
+        const [data, bookings] = await Promise.all([fetchFleet(), fetchRentals()]);
+        if (!cancelled) {
+          setFleet(data);
+          setRentals(bookings);
+        }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Yüklenemedi");
       } finally {
@@ -43,6 +48,20 @@ function VehiclesInner() {
     };
   }, []);
 
+  const openByVehicle = useMemo(() => {
+    const grouped = new Map<string, Rental[]>();
+    for (const rental of rentals) {
+      if (rental.status !== "aktif" && rental.status !== "bekliyor") continue;
+      const listForVehicle = grouped.get(rental.vehicleId) ?? [];
+      listForVehicle.push(rental);
+      grouped.set(rental.vehicleId, listForVehicle);
+    }
+    for (const items of grouped.values()) {
+      items.sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
+    }
+    return grouped;
+  }, [rentals]);
+
   const list = useMemo(() => {
     let items = fleet;
     if (filter !== "hepsi") items = items.filter((v) => v.status === filter);
@@ -53,11 +72,17 @@ function VehiclesInner() {
           v.name.toLowerCase().includes(s) ||
           v.plate.toLowerCase().includes(s) ||
           v.id.toLowerCase().includes(s) ||
-          v.office.toLowerCase().includes(s),
+          v.office.toLowerCase().includes(s) ||
+          (openByVehicle.get(v.id) ?? []).some(
+            (rental) =>
+              rental.customer.name.toLowerCase().includes(s) ||
+              rental.pnr.toLowerCase().includes(s) ||
+              rental.customer.phone.includes(s),
+          ),
       );
     }
     return items;
-  }, [fleet, filter, q]);
+  }, [fleet, filter, q, openByVehicle]);
 
   const active = list.find((v) => v.id === selected) ?? null;
 
@@ -68,7 +93,9 @@ function VehiclesInner() {
   }, [active]);
 
   async function reload() {
-    setFleet(await fetchFleet());
+    const [data, bookings] = await Promise.all([fetchFleet(), fetchRentals()]);
+    setFleet(data);
+    setRentals(bookings);
   }
 
   async function saveUnit(patch: { status?: FleetVehicle["status"]; fuelLevel?: number; km?: number }) {
@@ -102,7 +129,7 @@ function VehiclesInner() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Araçlar</h1>
-          <p className="mt-1 text-sm text-ink-muted">Filo durumu, plaka, yakıt ve son konum.</p>
+          <p className="mt-1 text-sm text-ink-muted">Filo durumu, kiracı, süre, yakıt ve son konum.</p>
         </div>
         <p className="text-sm text-ink-muted">{list.length} kayıt</p>
       </div>
@@ -139,6 +166,7 @@ function VehiclesInner() {
               <th className="px-4 py-3 font-medium">Araç</th>
               <th className="px-4 py-3 font-medium">Plaka</th>
               <th className="px-4 py-3 font-medium">Durum</th>
+              <th className="px-4 py-3 font-medium">Kiracı ve süre</th>
               <th className="px-4 py-3 font-medium">Konum</th>
               <th className="px-4 py-3 font-medium">Yakıt</th>
               <th className="px-4 py-3 font-medium">Km</th>
@@ -170,6 +198,9 @@ function VehiclesInner() {
                 <td className="px-4 py-3 font-mono text-ink">{v.plate}</td>
                 <td className="px-4 py-3">
                   <FleetStatusBadge status={v.status} />
+                </td>
+                <td className="max-w-[260px] px-4 py-3">
+                  <RentalSummary rentals={openByVehicle.get(v.id) ?? []} />
                 </td>
                 <td className="max-w-[220px] truncate px-4 py-3 text-ink-muted">{v.locationLabel}</td>
                 <td className="px-4 py-3">
@@ -258,12 +289,98 @@ function VehiclesInner() {
               </button>
             )}
           </div>
+          <RentalDetails rentals={openByVehicle.get(active.id) ?? []} />
           <p className="mt-3 text-xs text-ink-muted">
             Kirada ve rezerveli durum kiralama kaydından gelir. Bakım elle kapatılır.
           </p>
           {actionError && <p className="mt-2 text-sm text-rose-600">{actionError}</p>}
         </form>
       )}
+    </div>
+  );
+}
+
+function RentalSummary({ rentals }: { rentals: Rental[] }) {
+  const first = rentals[0];
+  if (!first) return <span className="text-ink-muted">—</span>;
+  return (
+    <div>
+      <p className="font-medium text-ink">{first.customer.name}</p>
+      <p className="text-xs text-ink-muted">
+        {formatDateTime(first.startAt)} → {formatDateTime(first.endAt)}
+      </p>
+      <p className="font-mono text-xs text-ink-muted">
+        {first.pnr}
+        {rentals.length > 1 ? ` · +${rentals.length - 1}` : ""}
+      </p>
+    </div>
+  );
+}
+
+function RentalDetails({ rentals }: { rentals: Rental[] }) {
+  if (rentals.length === 0) {
+    return <p className="mt-4 text-sm text-ink-muted">Bu araçta açık kiralama veya rezervasyon yok.</p>;
+  }
+  return (
+    <div className="mt-5 space-y-3">
+      <h3 className="text-sm font-semibold text-ink">Kim kullanıyor</h3>
+      {rentals.map((rental) => (
+        <div key={rental.id} className="rounded-xl border border-surface-border bg-surface-soft/50 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="font-semibold text-ink">{rental.customer.name}</p>
+              <p className="font-mono text-xs text-ink-muted">{rental.pnr}</p>
+            </div>
+            <RentalStatusBadge status={rental.status} />
+          </div>
+          <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-ink-muted">Süre</dt>
+              <dd className="font-medium text-ink">
+                {formatDateTime(rental.startAt)}
+                <br />
+                {formatDateTime(rental.endAt)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Alış / bırakış</dt>
+              <dd className="font-medium text-ink">
+                {rental.pickup}
+                <br />
+                {rental.dropoff}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Telefon</dt>
+              <dd className="font-medium text-ink">
+                <a href={`tel:${rental.customer.phone.replace(/\s/g, "")}`} className="hover:text-brand">
+                  {rental.customer.phone}
+                </a>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">E-posta</dt>
+              <dd className="break-all font-medium text-ink">{rental.customer.email || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Toplam / depozito</dt>
+              <dd className="font-medium text-ink">
+                {rental.totalPrice} · {rental.deposit}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ink-muted">Uçuş</dt>
+              <dd className="font-medium text-ink">{rental.flightNumber || "—"}</dd>
+            </div>
+          </dl>
+          <Link
+            href={`/panel/kiralamalar?pnr=${encodeURIComponent(rental.pnr)}`}
+            className="mt-3 inline-block text-sm font-medium text-brand hover:underline"
+          >
+            Kiralama kaydını aç
+          </Link>
+        </div>
+      ))}
     </div>
   );
 }

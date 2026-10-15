@@ -29,7 +29,9 @@ type RentalRow = {
   start_at: string;
   end_at: string;
   daily_price_try: number | null;
+  total_price_try: number | null;
   deposit_try: number | null;
+  flight_number: string | null;
   notes: string | null;
   customer_name: string;
   customer_phone: string;
@@ -98,7 +100,9 @@ function mapRental(row: RentalRow): Rental {
     endAt: row.end_at,
     status: row.status,
     dailyPrice: money(row.daily_price_try),
+    totalPrice: money(row.total_price_try),
     deposit: money(row.deposit_try),
+    flightNumber: row.flight_number || "",
     notes: row.notes || undefined,
   };
 }

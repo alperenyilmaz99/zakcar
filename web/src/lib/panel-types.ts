@@ -39,7 +39,9 @@ export type Rental = {
   endAt: string;
   status: RentalStatus;
   dailyPrice: string;
+  totalPrice: string;
   deposit: string;
+  flightNumber: string;
   notes?: string;
 };
 

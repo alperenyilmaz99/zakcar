@@ -12,6 +12,7 @@ const FILTERS = ["hepsi", "aktif", "bekliyor", "tamamlandi", "iptal"] as const;
 function RentalsInner() {
   const params = useSearchParams();
   const initial = params.get("durum") ?? "hepsi";
+  const pnrQuery = params.get("pnr") ?? "";
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>(
     FILTERS.includes(initial as (typeof FILTERS)[number])
       ? (initial as (typeof FILTERS)[number])
@@ -41,6 +42,12 @@ function RentalsInner() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!pnrQuery) return;
+    const match = rentals.find((rental) => rental.pnr.toLowerCase() === pnrQuery.toLowerCase());
+    if (match) setSelected(match.id);
+  }, [pnrQuery, rentals]);
 
   const list = useMemo(() => {
     let items = rentals;
@@ -196,6 +203,14 @@ function RentalsInner() {
                   <dd className="font-medium text-ink">{detail.customer.licenseNo || "—"}</dd>
                 </div>
                 <div className="border-t border-surface-border pt-3">
+                  <dt className="text-ink-muted">Süre</dt>
+                  <dd className="font-medium text-ink">
+                    {formatDateTime(detail.startAt)}
+                    <br />
+                    {formatDateTime(detail.endAt)}
+                  </dd>
+                </div>
+                <div>
                   <dt className="text-ink-muted">Araç</dt>
                   <dd className="font-medium text-ink">
                     {detail.vehicleName} · {detail.plate}
@@ -215,8 +230,16 @@ function RentalsInner() {
                     <dd className="font-semibold text-ink">{detail.dailyPrice}</dd>
                   </div>
                   <div>
+                    <dt className="text-ink-muted">Toplam</dt>
+                    <dd className="font-semibold text-ink">{detail.totalPrice}</dd>
+                  </div>
+                  <div>
                     <dt className="text-ink-muted">Depozito</dt>
                     <dd className="font-semibold text-ink">{detail.deposit}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-ink-muted">Uçuş</dt>
+                    <dd className="font-semibold text-ink">{detail.flightNumber || "—"}</dd>
                   </div>
                 </div>
                 {detail.notes && (

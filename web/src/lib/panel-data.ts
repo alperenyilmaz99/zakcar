@@ -104,7 +104,9 @@ export function getRentals(): Rental[] {
       endAt: isActive ? daysFromNow(2, 18) : daysFromNow(4, 18),
       status: isActive ? "aktif" : "bekliyor",
       dailyPrice: `${(1200 + (i % 5) * 350).toLocaleString("tr-TR")} TL`,
+      totalPrice: `${(3600 + (i % 5) * 350).toLocaleString("tr-TR")} TL`,
       deposit: i % 2 === 0 ? "15.540 TL" : "18.500 TL",
+      flightNumber: "",
       notes: i % 4 === 0 ? "Uçuş SAWxxx — terminal karşılama" : undefined,
     };
   });
@@ -124,7 +126,9 @@ export function getRentals(): Rental[] {
       endAt: daysFromNow(-5, 16),
       status: "tamamlandi",
       dailyPrice: "1.450 TL",
+      totalPrice: "4.350 TL",
       deposit: "15.540 TL",
+      flightNumber: "",
     },
     {
       id: "RNT-902",
@@ -139,7 +143,9 @@ export function getRentals(): Rental[] {
       endAt: daysFromNow(-3, 14),
       status: "iptal",
       dailyPrice: "1.200 TL",
+      totalPrice: "1.200 TL",
       deposit: "15.540 TL",
+      flightNumber: "",
       notes: "Müşteri iptali — 24 saat kala",
     },
   );
