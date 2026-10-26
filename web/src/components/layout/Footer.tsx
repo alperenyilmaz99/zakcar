@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
-import { PaymentBadges } from "@/components/layout/PaymentBadges";
 
 const AIRPORTS = [
   { href: "/sabiha-gokcen-havalimani-arac-kiralama", labelKey: "footer.airportSaw" as const },
@@ -124,14 +123,8 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10">
-        <div className="container-page flex flex-col gap-5 py-6 lg:flex-row lg:items-center lg:justify-between">
-          <p className="text-sm text-white/60">{t("footer.secure")}</p>
-          <PaymentBadges />
-        </div>
-        <div className="container-page border-t border-white/10 pb-20 pt-4 text-xs text-white/45">
-          © {new Date().getFullYear()} {SITE.name}. {t("footer.rights")}
-        </div>
+      <div className="container-page border-t border-white/10 pb-20 pt-4 text-xs text-white/45">
+        © {new Date().getFullYear()} {SITE.name}. {t("footer.rights")}
       </div>
     </footer>
   );

@@ -93,9 +93,9 @@ export function Header() {
           <Image
             src={SITE.logo}
             alt={SITE.name}
-            width={220}
-            height={80}
-            className="h-11 w-auto object-contain lg:h-[52px]"
+            width={920}
+            height={352}
+            className="h-12 w-auto object-contain lg:h-14"
             priority
           />
         </Link>
@@ -122,9 +122,6 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <Link href="/arac-modelleri" className="btn-primary ms-2 !py-2 !text-sm">
-            {t("nav.findCar")}
-          </Link>
         </nav>
 
         <div className="ms-auto flex items-center md:hidden">
@@ -179,9 +176,6 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-            <Link href="/arac-modelleri" className="btn-primary mt-2" onClick={() => setOpen(false)}>
-              {t("nav.findCar")}
-            </Link>
           </div>
         </div>
       )}

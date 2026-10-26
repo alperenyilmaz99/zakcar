@@ -107,6 +107,152 @@ function mapRental(row: RentalRow): Rental {
   };
 }
 
+export type FleetModelOption = { id: string; name: string; slug: string };
+export type FleetOfficeOption = { id: string; name: string };
+
+export async function fetchFleetFormOptions(): Promise<{
+  models: FleetModelOption[];
+  offices: FleetOfficeOption[];
+}> {
+  const supabase = createClient();
+  const [models, offices] = await Promise.all([
+    supabase.from("vehicle_models").select("id,name,slug").eq("is_active", true).order("name"),
+    supabase.from("offices").select("id,name").eq("is_active", true).order("name"),
+  ]);
+  if (models.error) throw models.error;
+  if (offices.error) throw offices.error;
+  return {
+    models: (models.data || []) as FleetModelOption[],
+    offices: (offices.data || []) as FleetOfficeOption[],
+  };
+}
+
+function nextFleetCode(codes: string[]): string {
+  let max = 0;
+  for (const code of codes) {
+    const match = /^FLT-(\d+)$/.exec(code);
+    if (match) max = Math.max(max, Number(match[1]));
+  }
+  return `FLT-${String(max + 1).padStart(3, "0")}`;
+}
+
+export async function uploadVehicleImage(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("Yalnızca görsel yükleyin.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Görsel 5 MB'dan küçük olmalı.");
+  const supabase = createClient();
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const path = `vehicles/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("promo-covers").upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type || "image/jpeg",
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from("promo-covers").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function createFleetVehicle(input: {
+  modelId: string;
+  officeId: string;
+  plate: string;
+  fuelLevel: number;
+  km: number;
+  imageUrl?: string;
+}): Promise<void> {
+  const plate = input.plate.trim().toUpperCase().replace(/\s+/g, " ");
+  if (plate.length < 5) throw new Error("Geçerli bir plaka girin.");
+  if (!input.modelId) throw new Error("Araç modeli seçin.");
+  if (!input.officeId) throw new Error("Ofis seçin.");
+  const fuel = Math.min(100, Math.max(0, Math.round(input.fuelLevel)));
+  const km = Math.max(0, Math.round(input.km));
+
+  const supabase = createClient();
+  const { data: existing, error: listError } = await supabase.from("fleet_vehicles").select("fleet_code");
+  if (listError) throw listError;
+  const fleetCode = nextFleetCode((existing || []).map((row) => row.fleet_code as string));
+
+  const { error } = await supabase.from("fleet_vehicles").insert({
+    fleet_code: fleetCode,
+    plate,
+    model_id: input.modelId,
+    home_office_id: input.officeId,
+    status: "musait",
+    fuel_level: fuel,
+    odometer_km: km,
+  });
+  if (error) {
+    if (/duplicate|unique|fleet_vehicles_plate/i.test(error.message)) {
+      throw new Error("Bu plaka zaten kayıtlı.");
+    }
+    throw error;
+  }
+  if (input.imageUrl) await updateModelImage(input.modelId, input.imageUrl);
+}
+
+function normalizePlate(plate: string): string {
+  return plate.trim().toUpperCase().replace(/\s+/g, " ");
+}
+
+async function updateModelImage(modelId: string, imageUrl: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from("vehicle_models").update({ image_url: imageUrl }).eq("id", modelId);
+  if (error) throw error;
+}
+
+export async function updateFleetVehicle(input: {
+  recordId: string;
+  modelId: string;
+  officeId: string;
+  plate: string;
+  fuelLevel: number;
+  km: number;
+  imageUrl?: string;
+}): Promise<void> {
+  const plate = normalizePlate(input.plate);
+  if (plate.length < 5) throw new Error("Geçerli bir plaka girin.");
+  if (!input.modelId) throw new Error("Araç modeli seçin.");
+  if (!input.officeId) throw new Error("Ofis seçin.");
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("fleet_vehicles")
+    .update({
+      plate,
+      model_id: input.modelId,
+      home_office_id: input.officeId,
+      fuel_level: Math.min(100, Math.max(0, Math.round(input.fuelLevel))),
+      odometer_km: Math.max(0, Math.round(input.km)),
+    })
+    .eq("id", input.recordId);
+  if (error) {
+    if (/duplicate|unique|fleet_vehicles_plate/i.test(error.message)) {
+      throw new Error("Bu plaka zaten kayıtlı.");
+    }
+    throw error;
+  }
+  if (input.imageUrl) await updateModelImage(input.modelId, input.imageUrl);
+}
+
+export async function deleteFleetVehicle(recordId: string): Promise<void> {
+  const supabase = createClient();
+  const { count, error: countError } = await supabase
+    .from("rentals")
+    .select("id", { count: "exact", head: true })
+    .eq("fleet_vehicle_id", recordId);
+  if (countError) throw countError;
+  if ((count ?? 0) > 0) {
+    throw new Error("Bu plakanın kiralama kaydı var. Geçmişi duran araç silinemez.");
+  }
+
+  const { error } = await supabase.from("fleet_vehicles").delete().eq("id", recordId);
+  if (error) {
+    if (/foreign key|rentals/i.test(error.message)) {
+      throw new Error("Bu plakanın kiralama kaydı var. Geçmişi duran araç silinemez.");
+    }
+    throw error;
+  }
+}
+
 export async function fetchFleet(): Promise<FleetVehicle[]> {
   const supabase = createClient();
   const { data, error } = await supabase.from("v_fleet_board").select("*").order("fleet_code");

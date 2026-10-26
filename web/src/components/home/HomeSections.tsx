@@ -5,7 +5,6 @@ import { PromoBanners } from "@/components/home/PromoBanners";
 import { PopularSlider } from "@/components/home/PopularSlider";
 import { SegmentSection } from "@/components/home/SegmentSection";
 import { HomeFaq } from "@/components/faq/HomeFaq";
-import { NAV } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { Vehicle } from "@/lib/types";
 
@@ -45,21 +44,6 @@ export function HomeSections({
       <PopularSlider vehicles={vehicles} />
 
       <SegmentSection />
-
-      <section className="container-page py-14">
-        <h2 className="section-title">{t("home.cities")}</h2>
-        <div className="mt-6 grid max-w-3xl gap-3 sm:grid-cols-3">
-          {NAV.cities.map((c) => (
-            <Link
-              key={c.href}
-              href={c.href}
-              className="rounded-2xl border border-surface-border bg-white px-4 py-5 text-center font-semibold transition hover:border-brand hover:text-brand"
-            >
-              {t(c.labelKey)}
-            </Link>
-          ))}
-        </div>
-      </section>
 
       <HomeFaq />
 

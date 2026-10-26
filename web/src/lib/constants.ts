@@ -7,7 +7,7 @@ export const SITE = {
   address: "İstanbul Sabiha Gökçen Havalimanı (SAW), Pendik / İstanbul",
   whatsapp: "908503077384",
   whatsappDisplay: "+90 850 307 7384",
-  logo: "/assets/zakcar/logo-wordmark.png",
+  logo: "/assets/zakcar/logo-header.png",
   logoMark: "/assets/zakcar/logo-mark.png",
 } as const;
 
@@ -31,9 +31,6 @@ export const NAV = {
   airports: [
     { href: "/sabiha-gokcen-havalimani-arac-kiralama", labelKey: "loc.saw" },
     { href: "/istanbul-3-havalimani-arac-kiralama", labelKey: "loc.iga" },
-    { href: "/esenboga-havalimani-arac-kiralama", labelKey: "loc.esenboga" },
-    { href: "/antalya-havalimani-arac-kiralama", labelKey: "loc.antalya" },
-    { href: "/adnan-menderes-havalimani-arac-kiralama", labelKey: "loc.izmir" },
   ],
   cities: [
     { href: "/istanbul-3-havalimani-arac-kiralama", labelKey: "loc.iga.city" },

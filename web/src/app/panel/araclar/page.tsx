@@ -3,8 +3,19 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import Image from "next/image";
-import { fetchFleet, fetchRentals, releaseFleetVehicle, updateFleetUnit } from "@/lib/panel-api";
+import {
+  createFleetVehicle,
+  deleteFleetVehicle,
+  fetchFleet,
+  fetchFleetFormOptions,
+  fetchRentals,
+  releaseFleetVehicle,
+  updateFleetUnit,
+  updateFleetVehicle,
+  uploadVehicleImage,
+  type FleetModelOption,
+  type FleetOfficeOption,
+} from "@/lib/panel-api";
 import { STATUS_LABEL } from "@/lib/panel-data";
 import type { FleetStatus, FleetVehicle, Rental } from "@/lib/panel-types";
 import { FleetStatusBadge, RentalStatusBadge, formatDateTime, formatRelative } from "@/components/panel/Badges";
@@ -27,15 +38,36 @@ function VehiclesInner() {
   const [fuel, setFuel] = useState(100);
   const [km, setKm] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [models, setModels] = useState<FleetModelOption[]>([]);
+  const [offices, setOffices] = useState<FleetOfficeOption[]>([]);
+  const [newModelId, setNewModelId] = useState("");
+  const [newOfficeId, setNewOfficeId] = useState("");
+  const [newPlate, setNewPlate] = useState("");
+  const [newFuel, setNewFuel] = useState(100);
+  const [newKm, setNewKm] = useState(0);
+  const [newImage, setNewImage] = useState<File | null>(null);
+  const [editPlate, setEditPlate] = useState("");
+  const [editModelId, setEditModelId] = useState("");
+  const [editOfficeId, setEditOfficeId] = useState("");
+  const [editImage, setEditImage] = useState<File | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [data, bookings] = await Promise.all([fetchFleet(), fetchRentals()]);
+        const [data, bookings, options] = await Promise.all([
+          fetchFleet(),
+          fetchRentals(),
+          fetchFleetFormOptions(),
+        ]);
         if (!cancelled) {
           setFleet(data);
           setRentals(bookings);
+          setModels(options.models);
+          setOffices(options.offices);
+          setNewModelId((current) => current || options.models[0]?.id || "");
+          setNewOfficeId((current) => current || options.offices[0]?.id || "");
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Yüklenemedi");
@@ -90,12 +122,86 @@ function VehiclesInner() {
     if (!active) return;
     setFuel(active.fuelLevel);
     setKm(active.km);
-  }, [active]);
+    setEditPlate(active.plate);
+    setEditModelId(models.find((model) => model.slug === active.vehicleSlug)?.id || models[0]?.id || "");
+    setEditOfficeId(offices.find((office) => office.name === active.office)?.id || offices[0]?.id || "");
+    setEditImage(null);
+  }, [active, models, offices]);
 
   async function reload() {
     const [data, bookings] = await Promise.all([fetchFleet(), fetchRentals()]);
     setFleet(data);
     setRentals(bookings);
+  }
+
+  async function addVehicle() {
+    if (saving) return;
+    setSaving(true);
+    setActionError("");
+    try {
+      const imageUrl = newImage ? await uploadVehicleImage(newImage) : undefined;
+      await createFleetVehicle({
+        modelId: newModelId,
+        officeId: newOfficeId,
+        plate: newPlate,
+        fuelLevel: newFuel,
+        km: newKm,
+        imageUrl,
+      });
+      setNewPlate("");
+      setNewImage(null);
+      setAdding(false);
+      await reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Araç eklenemedi");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeVehicle() {
+    if (!active || saving) return;
+    const open = openByVehicle.get(active.id) ?? [];
+    if (open.length > 0) {
+      setActionError("Açık kiralaması veya rezervasyonu olan araç silinemez.");
+      return;
+    }
+    if (!window.confirm(`${active.plate} plakalı araç silinsin mi?`)) return;
+    setSaving(true);
+    setActionError("");
+    try {
+      await deleteFleetVehicle(active.recordId);
+      setSelected(null);
+      await reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Araç silinemedi");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveVehicle() {
+    if (!active || saving) return;
+    setSaving(true);
+    setActionError("");
+    try {
+      const imageUrl = editImage ? await uploadVehicleImage(editImage) : undefined;
+      await updateFleetVehicle({
+        recordId: active.recordId,
+        modelId: editModelId,
+        officeId: editOfficeId,
+        plate: editPlate,
+        fuelLevel: fuel,
+        km,
+        imageUrl,
+      });
+      setEditImage(null);
+      await reload();
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Kaydedilemedi");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function saveUnit(patch: { status?: FleetVehicle["status"]; fuelLevel?: number; km?: number }) {
@@ -131,8 +237,98 @@ function VehiclesInner() {
           <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Araçlar</h1>
           <p className="mt-1 text-sm text-ink-muted">Filo durumu, kiracı, süre, yakıt ve son konum.</p>
         </div>
-        <p className="text-sm text-ink-muted">{list.length} kayıt</p>
-      </div>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-ink-muted">{list.length} kayıt</p>
+            <button type="button" className="btn-primary text-sm" onClick={() => setAdding((open) => !open)}>
+              {adding ? "Formu kapat" : "Araç ekle"}
+            </button>
+          </div>
+        </div>
+
+        {adding && (
+          <form
+            className="mt-6 rounded-2xl border border-surface-border bg-white p-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void addVehicle();
+            }}
+          >
+            <h2 className="font-display text-lg font-bold text-ink">Yeni araç</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="text-sm text-ink-muted">
+                Model
+                <select
+                  value={newModelId}
+                  onChange={(e) => setNewModelId(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
+                >
+                  {models.map((model) => (
+                    <option key={model.id} value={model.id}>
+                      {model.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm text-ink-muted">
+                Ofis
+                <select
+                  value={newOfficeId}
+                  onChange={(e) => setNewOfficeId(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
+                >
+                  {offices.map((office) => (
+                    <option key={office.id} value={office.id}>
+                      {office.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm text-ink-muted">
+                Plaka
+                <input
+                  value={newPlate}
+                  onChange={(e) => setNewPlate(e.target.value)}
+                  placeholder="34 ABC 123"
+                  className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
+                />
+              </label>
+              <label className="text-sm text-ink-muted">
+                Yakıt %
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={newFuel}
+                  onChange={(e) => setNewFuel(Number(e.target.value))}
+                  className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
+                />
+              </label>
+              <label className="text-sm text-ink-muted">
+                Kilometre
+                <input
+                  type="number"
+                  min={0}
+                  value={newKm}
+                  onChange={(e) => setNewKm(Number(e.target.value))}
+                  className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
+                />
+              </label>
+              <label className="text-sm text-ink-muted">
+                Görsel
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={(e) => setNewImage(e.target.files?.[0] || null)}
+                  className="mt-1 w-full text-sm text-ink"
+                />
+              </label>
+            </div>
+            <button type="submit" className="btn-primary mt-4 text-sm" disabled={saving}>
+              {saving ? "Kaydediliyor…" : "Filoya ekle"}
+            </button>
+            {actionError && <p className="mt-2 text-sm text-rose-600">{actionError}</p>}
+          </form>
+        )}
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
@@ -184,7 +380,7 @@ function VehiclesInner() {
                   <div className="flex items-center gap-3">
                     <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-lg bg-surface-soft">
                       {v.image && (
-                        <Image src={v.image} alt="" fill className="object-contain p-0.5" sizes="56px" />
+                        <img src={photoSrc(v.image)} alt="" className="h-full w-full object-contain p-0.5" />
                       )}
                     </div>
                     <div className="min-w-0">
@@ -230,7 +426,7 @@ function VehiclesInner() {
           className="mt-6 rounded-2xl border border-surface-border bg-white p-5"
           onSubmit={(e) => {
             e.preventDefault();
-            void saveUnit({ fuelLevel: fuel, km });
+            void saveVehicle();
           }}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -242,7 +438,43 @@ function VehiclesInner() {
             </div>
             <FleetStatusBadge status={active.status} />
           </div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <label className="text-sm text-ink-muted">
+              Model
+              <select
+                value={editModelId}
+                onChange={(e) => setEditModelId(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
+              >
+                {models.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm text-ink-muted">
+              Ofis
+              <select
+                value={editOfficeId}
+                onChange={(e) => setEditOfficeId(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
+              >
+                {offices.map((office) => (
+                  <option key={office.id} value={office.id}>
+                    {office.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm text-ink-muted">
+              Plaka
+              <input
+                value={editPlate}
+                onChange={(e) => setEditPlate(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
+              />
+            </label>
             <label className="text-sm text-ink-muted">
               Yakıt %
               <input
@@ -264,10 +496,22 @@ function VehiclesInner() {
                 className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
               />
             </label>
+            <label className="text-sm text-ink-muted">
+              Görsel
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={(e) => setEditImage(e.target.files?.[0] || null)}
+                className="mt-1 w-full text-sm text-ink"
+              />
+            </label>
           </div>
+          <p className="mt-2 text-xs text-ink-muted">
+            Görsel, seçili modele aittir. Aynı modeldeki diğer plakalar da bu fotoğrafı kullanır.
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="submit" className="btn-primary text-sm" disabled={saving}>
-              {saving ? "Kaydediliyor…" : "Yakıt ve km kaydet"}
+              {saving ? "Kaydediliyor…" : "Değişiklikleri kaydet"}
             </button>
             {active.status === "bakimda" ? (
               <button
@@ -288,6 +532,14 @@ function VehiclesInner() {
                 Bakıma al
               </button>
             )}
+            <button
+              type="button"
+              className="btn-outline text-sm text-rose-700"
+              disabled={saving}
+              onClick={() => void removeVehicle()}
+            >
+              Aracı sil
+            </button>
           </div>
           <RentalDetails rentals={openByVehicle.get(active.id) ?? []} />
           <p className="mt-3 text-xs text-ink-muted">
@@ -298,6 +550,11 @@ function VehiclesInner() {
       )}
     </div>
   );
+}
+
+function photoSrc(src: string): string {
+  if (src.startsWith("http") || src.startsWith("blob:") || src.startsWith("/")) return src;
+  return `/${src}`;
 }
 
 function RentalSummary({ rentals }: { rentals: Rental[] }) {

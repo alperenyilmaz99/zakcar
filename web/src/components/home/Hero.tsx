@@ -1,13 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { MessageKey } from "@/lib/i18n";
-
-const BACKGROUNDS = ["/assets/hero/saw.jpg", "/assets/hero/iga.jpg"] as const;
 
 const MOTTOS = [
   {
@@ -16,7 +13,6 @@ const MOTTOS = [
     c: "hero.m1.c",
     sub: "hero.m1.sub",
     tag: "hero.m1.tag",
-    bg: 0,
     accent: "#E30613",
     pill: true,
   },
@@ -26,7 +22,6 @@ const MOTTOS = [
     c: "hero.m2.c",
     sub: "hero.m2.sub",
     tag: "hero.m2.tag",
-    bg: 1,
     accent: "#FFFFFF",
     pill: true,
   },
@@ -36,7 +31,6 @@ const MOTTOS = [
     c: "hero.m3.c",
     sub: "hero.m3.sub",
     tag: "hero.m3.tag",
-    bg: 0,
     accent: "#FF6B7A",
     pill: false,
   },
@@ -46,7 +40,6 @@ const MOTTOS = [
     c: "hero.m4.c",
     sub: "hero.m4.sub",
     tag: "hero.m4.tag",
-    bg: 1,
     accent: "#FFE566",
     pill: false,
   },
@@ -56,7 +49,6 @@ const MOTTOS = [
     c: "hero.m5.c",
     sub: "hero.m5.sub",
     tag: "hero.m5.tag",
-    bg: 0,
     accent: "#FFFFFF",
     pill: true,
   },
@@ -66,7 +58,6 @@ const MOTTOS = [
   c: MessageKey;
   sub: MessageKey;
   tag: MessageKey;
-  bg: number;
   accent: string;
   pill: boolean;
 }[];
@@ -85,31 +76,8 @@ export function Hero() {
   }, [active]);
 
   return (
-    <section className="relative min-h-[min(88vh,820px)] bg-ink text-white">
-      <div className="absolute inset-0 overflow-hidden">
-        {BACKGROUNDS.map((src, i) => (
-          <div
-            key={src}
-            className={`absolute inset-0 transition-opacity duration-[1400ms] ease-out ${
-              i === motto.bg ? "opacity-100" : "opacity-0"
-            }`}
-            aria-hidden={i !== motto.bg}
-          >
-            <Image
-              src={src}
-              alt=""
-              fill
-              priority={i === 0}
-              sizes="100vw"
-              className={`object-cover ${i === motto.bg ? "animate-hero-zoom" : "scale-105"}`}
-            />
-          </div>
-        ))}
-        <div className="absolute inset-0 bg-gradient-to-b from-ink/85 via-ink/55 to-ink/75" />
-        <div className="absolute inset-0 bg-gradient-to-r from-ink/40 via-transparent to-ink/35" />
-      </div>
-
-      <div className="container-page relative flex min-h-[min(88vh,820px)] flex-col justify-center pb-20 pt-16 lg:pb-28 lg:pt-20">
+    <section className="relative bg-ink text-white">
+      <div className="container-page relative flex flex-col justify-center pb-16 pt-14 lg:pb-20 lg:pt-16">
         <div key={active} className="animate-hero-copy mx-auto max-w-3xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70 sm:text-sm">
             {SITE.shortName} Rent A Car

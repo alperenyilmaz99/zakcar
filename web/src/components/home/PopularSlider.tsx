@@ -62,32 +62,42 @@ export function PopularSlider({ vehicles }: { vehicles: Vehicle[] }) {
           <h2 className="section-title">{t("home.popular")}</h2>
           <p className="section-sub">{t("home.popularSub")}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <NavButton label={t("home.prev")} disabled={!canPrev} onClick={() => scrollByPage(-1)}>
-            <Arrow className="rtl:rotate-180" />
-          </NavButton>
-          <NavButton label={t("home.next")} disabled={!canNext} onClick={() => scrollByPage(1)}>
-            <Arrow className="rotate-180 rtl:rotate-0" />
-          </NavButton>
-          <Link href="/arac-modelleri" className="btn-outline ms-1">
-            {t("home.allCars")}
-          </Link>
-        </div>
+        <Link href="/arac-modelleri" className="btn-outline">
+          {t("home.allCars")}
+        </Link>
       </div>
 
-      <div
-        ref={trackRef}
-        className="mt-8 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {vehicles.map((v) => (
-          <div
-            key={v.slug}
-            data-slide
-            className="w-[min(100%,20.5rem)] shrink-0 snap-start sm:w-[calc(50%-0.625rem)] xl:w-[calc(33.333%-0.875rem)]"
-          >
-            <VehicleCard vehicle={v} />
-          </div>
-        ))}
+      <div className="relative mt-8">
+        <NavButton
+          label={t("home.prev")}
+          disabled={!canPrev}
+          onClick={() => scrollByPage(-1)}
+          className="absolute start-0 top-1/2 z-10 -translate-y-1/2"
+        >
+          <Arrow className="rtl:rotate-180" />
+        </NavButton>
+        <div
+          ref={trackRef}
+          className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {vehicles.map((v) => (
+            <div
+              key={v.slug}
+              data-slide
+              className="w-[min(100%,20.5rem)] shrink-0 snap-start sm:w-[calc(50%-0.625rem)] xl:w-[calc(33.333%-0.875rem)]"
+            >
+              <VehicleCard vehicle={v} />
+            </div>
+          ))}
+        </div>
+        <NavButton
+          label={t("home.next")}
+          disabled={!canNext}
+          onClick={() => scrollByPage(1)}
+          className="absolute end-0 top-1/2 z-10 -translate-y-1/2"
+        >
+          <Arrow className="rotate-180 rtl:rotate-0" />
+        </NavButton>
       </div>
     </section>
   );
@@ -97,11 +107,13 @@ function NavButton({
   label,
   disabled,
   onClick,
+  className,
   children,
 }: {
   label: string;
   disabled: boolean;
   onClick: () => void;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -110,7 +122,7 @@ function NavButton({
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-surface-border bg-white text-ink shadow-sm transition hover:border-brand hover:text-brand disabled:pointer-events-none disabled:opacity-30"
+      className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-surface-border bg-white text-ink shadow-sm transition hover:border-brand hover:text-brand disabled:pointer-events-none disabled:opacity-30 ${className ?? ""}`}
     >
       {children}
     </button>

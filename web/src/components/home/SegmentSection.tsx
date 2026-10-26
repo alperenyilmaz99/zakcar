@@ -27,6 +27,13 @@ const SEGMENTS: {
     alt: "Sedan araç",
   },
   {
+    href: "/luks-arac-kiralama",
+    title: "seg.lux.title",
+    desc: "seg.lux.desc",
+    image: "/assets/images/vehicles/png/bmw-520.png",
+    alt: "Lüks araç",
+  },
+  {
     href: "/4x4-suv-arac-kiralama",
     title: "seg.suv.title",
     desc: "seg.suv.desc",
@@ -62,7 +69,7 @@ export function SegmentSection() {
           <p className="mx-auto mt-3 max-w-2xl text-sm text-ink-muted sm:text-base">{t("seg.sub")}</p>
         </div>
 
-        <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-5 lg:gap-6">
+        <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 xl:gap-6">
           {SEGMENTS.map((seg) => (
             <div key={seg.title} className="flex flex-col items-center text-center">
               <div className="relative mb-5 h-[120px] w-full max-w-[220px]">
