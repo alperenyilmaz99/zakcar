@@ -22,7 +22,7 @@ const MOTTOS = [
     c: "hero.m2.c",
     sub: "hero.m2.sub",
     tag: "hero.m2.tag",
-    accent: "#FFFFFF",
+    accent: "#E30613",
     pill: true,
   },
   {
@@ -31,7 +31,7 @@ const MOTTOS = [
     c: "hero.m3.c",
     sub: "hero.m3.sub",
     tag: "hero.m3.tag",
-    accent: "#FF6B7A",
+    accent: "#E30613",
     pill: false,
   },
   {
@@ -40,7 +40,7 @@ const MOTTOS = [
     c: "hero.m4.c",
     sub: "hero.m4.sub",
     tag: "hero.m4.tag",
-    accent: "#FFE566",
+    accent: "#E30613",
     pill: false,
   },
   {
@@ -49,7 +49,7 @@ const MOTTOS = [
     c: "hero.m5.c",
     sub: "hero.m5.sub",
     tag: "hero.m5.tag",
-    accent: "#FFFFFF",
+    accent: "#111111",
     pill: true,
   },
 ] as const satisfies readonly {
@@ -76,10 +76,10 @@ export function Hero() {
   }, [active]);
 
   return (
-    <section className="relative bg-ink text-white">
+    <section className="relative text-ink">
       <div className="container-page relative flex flex-col justify-center pb-16 pt-14 lg:pb-20 lg:pt-16">
         <div key={active} className="animate-hero-copy mx-auto max-w-3xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/70 sm:text-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ink-muted sm:text-sm">
             {SITE.shortName} Rent A Car
           </p>
           <h1 className="mt-4 font-display text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-5xl lg:text-[3.25rem]">
@@ -87,7 +87,7 @@ export function Hero() {
             <span style={{ color: motto.accent }}>{t(motto.b)}</span>
             {after ? ` ${after}` : ""}
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base lg:text-lg">
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-ink-muted sm:text-base lg:text-lg">
             {t(motto.sub)}
           </p>
         </div>
@@ -104,7 +104,7 @@ export function Hero() {
                 type="button"
                 onClick={() => setActive(i)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition sm:text-sm ${
-                  i === active ? "shadow-md" : "bg-white/10 text-white/80 hover:bg-white/20"
+                  i === active ? "shadow-md" : "border border-surface-border bg-white text-ink-muted hover:border-brand hover:text-brand"
                 }`}
                 style={
                   i === active
