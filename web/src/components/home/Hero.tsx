@@ -108,7 +108,7 @@ export function Hero() {
                 }`}
                 style={
                   i === active
-                    ? { backgroundColor: item.accent, color: item.accent === "#FFFFFF" ? "#111" : "#fff" }
+                    ? { backgroundColor: item.accent, color: "#fff" }
                     : undefined
                 }
                 aria-pressed={i === active}
