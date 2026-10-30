@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { rpcFailure, validateReservationInput, type Reservation, type ReservationInput } from "@/lib/booking";
+import { sanitizeExtraCodes } from "@/lib/extras";
 import { bearerToken, createServerSupabase, hasServerSupabase } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
   if (invalid) return NextResponse.json({ error: invalid }, { status: 400 });
 
   const supabase = createServerSupabase(bearerToken(req));
-  const { data, error } = await supabase.rpc("create_public_reservation", {
+  const base = {
     p_model_slug: body.modelSlug,
     p_pickup_code: body.pickupCode,
     p_dropoff_code: body.dropoffCode,
@@ -29,7 +30,16 @@ export async function POST(req: Request) {
     p_email: body.email.trim(),
     p_phone: body.phone.trim(),
     p_flight_number: body.flightNumber?.trim() || null,
+  };
+  const extras = sanitizeExtraCodes(body.extraCodes);
+  let { data, error } = await supabase.rpc("create_public_reservation", {
+    ...base,
+    p_birth_date: body.birthDate || null,
+    p_extra_codes: extras.length ? extras.join(",") : null,
   });
+  if (error && isOldReservationFunction(error)) {
+    ({ data, error } = await supabase.rpc("create_public_reservation", base));
+  }
 
   if (error) {
     const failure = rpcFailure(error);
@@ -37,6 +47,15 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(data as Reservation);
+}
+
+function isOldReservationFunction(error: { message?: string; code?: string }) {
+  const message = error.message || "";
+  return (
+    error.code === "PGRST202" ||
+    /could not find the function/i.test(message) ||
+    /schema cache/i.test(message)
+  );
 }
 
 export async function GET(req: Request) {

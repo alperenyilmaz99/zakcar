@@ -216,7 +216,9 @@ create or replace function public.create_public_reservation(
   p_last_name text,
   p_email text,
   p_phone text,
-  p_flight_number text default null
+  p_flight_number text default null,
+  p_birth_date date default null,
+  p_extra_codes text default null
 )
 returns jsonb
 language plpgsql
@@ -240,6 +242,10 @@ declare
   v_customer uuid;
   v_days integer;
   v_total numeric(12, 2);
+  v_extra numeric(12, 2);
+  v_extra_codes text;
+  v_notes text;
+  v_note_parts text[];
   v_pnr text;
   v_uid uuid := auth.uid();
   v_jwt_email text := lower(coalesce(auth.jwt() ->> 'email', ''));
@@ -319,13 +325,14 @@ begin
   for update;
 
   if v_customer is null then
-    insert into public.customers (full_name, phone, email, phone_key, auth_user_id)
+    insert into public.customers (full_name, phone, email, phone_key, auth_user_id, birth_date)
     values (
       v_first || ' ' || v_last,
       v_phone,
       v_email,
       v_phone_key,
-      case when v_uid is not null and v_jwt_email = v_email then v_uid else null end
+      case when v_uid is not null and v_jwt_email = v_email then v_uid else null end,
+      p_birth_date
     )
     returning id into v_customer;
   else
@@ -335,6 +342,7 @@ begin
       phone = v_phone,
       email = v_email,
       phone_key = v_phone_key,
+      birth_date = coalesce(p_birth_date, birth_date),
       auth_user_id = case
         when v_uid is not null and v_jwt_email = v_email then v_uid
         else auth_user_id
@@ -342,12 +350,41 @@ begin
     where id = v_customer;
   end if;
 
+  if p_birth_date is not null and (p_birth_date > current_date or p_birth_date < date '1920-01-01') then
+    raise exception 'Doğum tarihi geçersiz.';
+  end if;
+
   v_days := greatest(1, ceil(extract(epoch from (v_end - v_start)) / 86400.0)::int);
-  v_total := round(v_model.daily_price_try * v_days, 2);
+  -- Ek ücretler web/src/lib/extras.ts ile aynı günlük tutarlardır.
+  v_extra := 0;
+  v_note_parts := array[]::text[];
+  v_extra_codes := lower(regexp_replace(coalesce(p_extra_codes, ''), '\s', '', 'g'));
+  if v_extra_codes ~ '(^|,)driver(,|$)' then
+    v_extra := v_extra + (56 * v_days);
+    v_note_parts := array_append(v_note_parts, 'Ek sürücü');
+  end if;
+  if v_extra_codes ~ '(^|,)young(,|$)' then
+    v_extra := v_extra + (335 * v_days);
+    v_note_parts := array_append(v_note_parts, 'Genç sürücü paketi');
+  end if;
+  if v_extra_codes ~ '(^|,)hgs(,|$)' then
+    v_extra := v_extra + (140 * v_days);
+    v_note_parts := array_append(v_note_parts, 'HGS');
+  end if;
+  if v_extra_codes ~ '(^|,)child(,|$)' then
+    v_extra := v_extra + (167 * v_days);
+    v_note_parts := array_append(v_note_parts, 'Çocuk koltuğu');
+  end if;
+  if v_extra_codes ~ '(^|,)winter(,|$)' then
+    v_extra := v_extra + (279 * v_days);
+    v_note_parts := array_append(v_note_parts, 'Kış lastiği');
+  end if;
+  v_total := round(v_model.daily_price_try * v_days + v_extra, 2);
+  v_notes := nullif(array_to_string(v_note_parts, ', '), '');
 
   insert into public.rentals (
     pnr, fleet_vehicle_id, customer_id, pickup_office_id, dropoff_office_id,
-    start_at, end_at, status, daily_price_try, deposit_try, total_price_try, flight_number
+    start_at, end_at, status, daily_price_try, deposit_try, total_price_try, flight_number, notes
   ) values (
     public.generate_pnr(),
     v_fleet,
@@ -360,7 +397,8 @@ begin
     v_model.daily_price_try,
     v_model.deposit_try,
     v_total,
-    v_flight
+    v_flight,
+    v_notes
   )
   returning pnr into v_pnr;
 
@@ -378,7 +416,8 @@ begin
       'deposit', r.deposit_try,
       'totalPrice', r.total_price_try,
       'days', v_days,
-      'flightNumber', r.flight_number
+      'flightNumber', r.flight_number,
+      'notes', r.notes
     )
     from public.rentals r
     join public.fleet_vehicles fv on fv.id = r.fleet_vehicle_id
@@ -524,13 +563,14 @@ revoke all on function public.resolve_office_id(text) from public, anon, authent
 revoke all on function public.sync_fleet_status_from_rental() from public, anon, authenticated;
 
 revoke all on function public.availability_by_model(timestamptz, timestamptz) from public;
-revoke all on function public.create_public_reservation(text, text, text, timestamptz, timestamptz, text, text, text, text, text) from public;
+drop function if exists public.create_public_reservation(text, text, text, timestamptz, timestamptz, text, text, text, text, text);
+revoke all on function public.create_public_reservation(text, text, text, timestamptz, timestamptz, text, text, text, text, text, date, text) from public;
 revoke all on function public.lookup_reservation(text, text) from public;
 revoke all on function public.list_my_reservations() from public;
 revoke all on function public.staff_release_vehicle(uuid) from public;
 
 grant execute on function public.availability_by_model(timestamptz, timestamptz) to anon, authenticated;
-grant execute on function public.create_public_reservation(text, text, text, timestamptz, timestamptz, text, text, text, text, text) to anon, authenticated;
+grant execute on function public.create_public_reservation(text, text, text, timestamptz, timestamptz, text, text, text, text, text, date, text) to anon, authenticated;
 grant execute on function public.lookup_reservation(text, text) to anon, authenticated;
 grant execute on function public.list_my_reservations() to authenticated;
 grant execute on function public.staff_release_vehicle(uuid) to authenticated;

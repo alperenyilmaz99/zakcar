@@ -12,6 +12,7 @@ export type Reservation = {
   totalPrice: number | null;
   days: number;
   flightNumber: string | null;
+  notes?: string | null;
 };
 
 export type ReservationInput = {
@@ -25,6 +26,8 @@ export type ReservationInput = {
   email: string;
   phone: string;
   flightNumber?: string;
+  birthDate?: string;
+  extraCodes?: string[];
 };
 
 const BOOKABLE = new Set(["saw", "iga", "merkez"]);
@@ -65,6 +68,9 @@ export function validateReservationInput(body: ReservationInput): string | null 
   }
   if (body.flightNumber && !/^[A-Za-z0-9 -]{2,12}$/.test(body.flightNumber.trim())) {
     return "Uçuş numarası geçersiz.";
+  }
+  if (body.birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(body.birthDate)) {
+    return "Doğum tarihi geçersiz.";
   }
   return null;
 }
