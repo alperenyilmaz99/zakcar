@@ -55,7 +55,7 @@ export function SearchBar({
 
   return (
     <div
-      className={`rounded-2xl border border-white/60 bg-white/95 text-ink shadow-search backdrop-blur-sm ${
+      className={`relative z-30 rounded-2xl border border-white/60 bg-white/95 text-ink shadow-search backdrop-blur-sm ${
         compact ? "p-4" : "p-4 sm:p-5 lg:p-6"
       }`}
     >

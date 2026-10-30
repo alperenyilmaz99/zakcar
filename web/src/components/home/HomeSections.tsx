@@ -5,6 +5,7 @@ import { PromoBanners } from "@/components/home/PromoBanners";
 import { PopularSlider } from "@/components/home/PopularSlider";
 import { SegmentSection } from "@/components/home/SegmentSection";
 import { HomeFaq } from "@/components/faq/HomeFaq";
+import { HomeTail, type HomePost } from "@/components/home/HomeTail";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { Vehicle } from "@/lib/types";
 
@@ -12,10 +13,12 @@ export function HomeSections({
   vehicles,
   brands,
   groupCount,
+  posts,
 }: {
   vehicles: Vehicle[];
   brands: string[];
   groupCount: number;
+  posts: HomePost[];
 }) {
   const { t } = usePrefs();
 
@@ -67,6 +70,8 @@ export function HomeSections({
           </Link>
         </div>
       </section>
+
+      <HomeTail posts={posts} />
     </>
   );
 }
