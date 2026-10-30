@@ -13,7 +13,15 @@ export type HomePost = {
   image: string;
 };
 
-export function HomeTail({ posts }: { posts: HomePost[] }) {
+export type HomeReview = {
+  id: string;
+  author: string;
+  location: string;
+  rating: number;
+  body: string;
+};
+
+export function HomeTail({ posts, reviews }: { posts: HomePost[]; reviews: HomeReview[] }) {
   const { t } = usePrefs();
   const [promos, setPromos] = useState<PromoCover[]>(DEFAULT_PROMOS);
 
@@ -38,6 +46,30 @@ export function HomeTail({ posts }: { posts: HomePost[] }) {
 
   return (
     <>
+      {reviews.length > 0 ? (
+        <section className="border-t border-surface-border bg-surface-soft py-14">
+          <div className="container-page">
+            <h2 className="section-title">{t("home.reviews")}</h2>
+            <p className="section-sub">{t("home.reviewsSub")}</p>
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {reviews.map((review) => (
+                <article key={review.id} className="card flex h-full flex-col p-5">
+                  <p className="text-sm tracking-wide text-brand" aria-label={`${review.rating} / 5`}>
+                    {"★".repeat(Math.min(5, Math.max(1, review.rating)))}
+                    <span className="text-surface-border">{"★".repeat(5 - Math.min(5, Math.max(1, review.rating)))}</span>
+                  </p>
+                  <p className="mt-3 flex-1 text-sm leading-relaxed text-ink">{review.body}</p>
+                  <p className="mt-4 text-sm font-semibold text-ink">
+                    {review.author}
+                    <span className="font-normal text-ink-muted"> · {review.location}</span>
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="border-t border-surface-border bg-white py-14">
         <div className="container-page">
           <div className="flex flex-wrap items-end justify-between gap-4">

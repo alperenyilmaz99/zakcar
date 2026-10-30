@@ -1,0 +1,95 @@
+{
+  "posts": [
+    {
+      "slug": "istanbul-da-gece-gec-saatte-iniyorsaniz-arac-teslimi-nasil-isler",
+      "title": "İstanbul'da Gece Geç Saatte İniyorsanız Araç Teslimi Nasıl İşler?",
+      "excerpt": "Gece geç saatte ya da sabaha karşı İstanbul'a inenler için ofis saatleri, teslim noktası ve ödeme düzeni hakkında sade bir rehber.",
+      "image": "/assets/blog/kredi-kartsiz-arac-kiralama.png",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Uçuşlar her zaman gün ışığında inmez. Gece yarısından sonra ya da sabaha karşı İstanbul'a varan biri için asıl soru, aracın o saatte teslim alınıp alınamayacağıdır. ZakCar bu durumu iki havalimanı ofisini 7/24 açık tutarak çözer. Bu yazıda geç saat varışlarında sürecin nasıl ilerlediğini anlatıyoruz."
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Hangi ofis hangi saatte açık?"
+        },
+        {
+          "type": "paragraph",
+          "text": "ZakCar'ın üç ofisi vardır. İki havalimanı ofisi gece gündüz hizmet verir. Merkez ofis ise Sabiha Gökçen Havalimanı'nın karşısındadır ve yalnızca belirli saatlerde çalışır. Geç varışta hangi noktayı seçeceğiniz bu ayrıma bağlıdır."
+        },
+        {
+          "type": "listItem",
+          "text": "İstanbul Sabiha Gökçen Havalimanı (SAW): 7/24"
+        },
+        {
+          "type": "listItem",
+          "text": "İstanbul Havalimanı (IGA): 7/24"
+        },
+        {
+          "type": "listItem",
+          "text": "ZakCar Merkez Ofis (Sabiha Gökçen karşısı): 08:00-22:00"
+        },
+        {
+          "type": "paragraph",
+          "text": "22:00'den sonra ineceğinizi biliyorsanız teslim noktası olarak SAW ya da IGA havalimanı ofisini seçmeniz yeterlidir. Merkez ofis bu saatlerde kapalı olduğu için geç varışlarda doğru seçenek değildir."
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Rezervasyonda neleri belirtmelisiniz?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Geç saat tesliminde en önemli ayrıntı uçuş bilgisidir. Rezervasyon sırasında uçuş numaranızı ve tahmini iniş saatinizi paylaşırsanız ekip sizi buna göre bekler. Uçuş ertelenirse telefon ya da WhatsApp üzerinden haber vermeniz yeterlidir."
+        },
+        {
+          "type": "listItem",
+          "text": "Uçuş numarası ve iniş saati"
+        },
+        {
+          "type": "listItem",
+          "text": "Teslim havalimanı: SAW veya IGA"
+        },
+        {
+          "type": "listItem",
+          "text": "Ek sürücü, çocuk koltuğu, HGS gibi ekler"
+        },
+        {
+          "type": "listItem",
+          "text": "Kış döneminde kış lastiği ihtiyacı"
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Çocuk koltuğu ve HGS önceden planlanmalı"
+        },
+        {
+          "type": "paragraph",
+          "text": "Yorgun bir yolculuğun ardından gece ek ayarlarla uğraşmak istemezsiniz. Çocuk koltuğu ve HGS gibi ekleri rezervasyon aşamasında belirtirseniz araç teslimde hazır olur. Genç sürücü paketi ve ek sürücü için de aynı şey geçerlidir."
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Teslimde ödeme ve depozito"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ön ödeme yoktur. Kiralama bedelini aracı teslim alırken ödersiniz. Depozito araç grubuna göre alınır ve iade koşulları sağlandığında geri verilir. Standart kasko ile 7/24 yol yardım fiyata dahildir; havalimanı teslimi için ayrı bir ücret çıkmaz."
+        }
+      ],
+      "createdAt": "2026-10-30T22:35:48.430Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "4f98e71a-4b43-48cc-9c11-a3200e1c851b",
+      "author": "Murat D.",
+      "location": "Sabiha Gökçen",
+      "rating": 5,
+      "body": "Gece geç saatte indim, SAW'daki ofiste görevli beni bekliyordu ve teslim işlemi birkaç dakikada bitti. Kredi kartım yanımda değildi ama sorun olmadı, ödemeyi araç tesliminde yaptım. Havalimanı teslimi için ayrıca ücret istenmemesi de hoşuma gitti.",
+      "createdAt": "2026-10-30T22:35:34.091Z"
+    }
+  ]
+}

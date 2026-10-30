@@ -1,14 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getAllBlogPosts } from "@/lib/blog";
+import { getPublishedBlogPosts } from "@/lib/blog";
 
 export const metadata = {
   title: "Blog",
   description: "Araç kiralama rehberi, seyahat ipuçları ve Zakcar blog yazıları.",
 };
 
-export default function BlogPage() {
-  const posts = getAllBlogPosts();
+export const dynamic = "force-dynamic";
+
+export default async function BlogPage() {
+  const posts = await getPublishedBlogPosts();
 
   return (
     <div className="container-page py-10 lg:py-14">

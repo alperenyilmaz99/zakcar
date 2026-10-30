@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next";
-import { getAllBlogSlugs } from "@/lib/blog";
+import { getPublishedBlogPosts } from "@/lib/blog";
 import { getAllSeoSlugs, getAllVehicleSlugs } from "@/lib/data";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zakcar.com";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const dynamic = "force-dynamic";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages = [
     "",
     "arac-modelleri",
@@ -40,7 +42,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     });
   }
 
-  for (const slug of getAllBlogSlugs()) {
+  for (const post of await getPublishedBlogPosts()) {
+    const slug = post.slug;
     entries.push({
       url: `${BASE}/blog/${slug}`,
       lastModified: new Date(),

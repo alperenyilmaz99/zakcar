@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { getAllBlogSlugs, getBlogPost } from "@/lib/blog";
+import { getAllBlogSlugs, getPublishedBlogPost } from "@/lib/blog";
 import type { BlogBlock } from "@/lib/blog-types";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -10,9 +10,11 @@ export async function generateStaticParams() {
   return getAllBlogSlugs().map((slug) => ({ slug }));
 }
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getPublishedBlogPost(slug);
   if (!post) return { title: "Blog" };
   return {
     title: post.title,
@@ -69,7 +71,7 @@ function Blocks({ blocks }: { blocks: BlogBlock[] }) {
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getPublishedBlogPost(slug);
   if (!post) notFound();
 
   return (

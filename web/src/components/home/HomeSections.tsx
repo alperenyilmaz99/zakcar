@@ -5,7 +5,7 @@ import { PromoBanners } from "@/components/home/PromoBanners";
 import { PopularSlider } from "@/components/home/PopularSlider";
 import { SegmentSection } from "@/components/home/SegmentSection";
 import { HomeFaq } from "@/components/faq/HomeFaq";
-import { HomeTail, type HomePost } from "@/components/home/HomeTail";
+import { HomeTail, type HomePost, type HomeReview } from "@/components/home/HomeTail";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { Vehicle } from "@/lib/types";
 
@@ -14,11 +14,13 @@ export function HomeSections({
   brands,
   groupCount,
   posts,
+  reviews,
 }: {
   vehicles: Vehicle[];
   brands: string[];
   groupCount: number;
   posts: HomePost[];
+  reviews: HomeReview[];
 }) {
   const { t } = usePrefs();
 
@@ -71,7 +73,7 @@ export function HomeSections({
         </div>
       </section>
 
-      <HomeTail posts={posts} />
+      <HomeTail posts={posts} reviews={reviews} />
     </>
   );
 }

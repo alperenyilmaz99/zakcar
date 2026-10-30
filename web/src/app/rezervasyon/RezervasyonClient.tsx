@@ -9,7 +9,7 @@ import { useCustomer } from "@/hooks/useCustomer";
 import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
 import { EXTRA_OPTIONS, extraAmount, rentalDays, type ExtraId } from "@/lib/extras";
 import { parseTryAmount } from "@/lib/i18n";
-import { isBookableOffice, resolveOfficeId } from "@/lib/offices";
+import { OFFICES, isBookableOffice, resolveOfficeId } from "@/lib/offices";
 import type { Reservation } from "@/lib/booking";
 import { reservationStatusLabel } from "@/lib/reservation-label";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
@@ -19,7 +19,7 @@ export default function RezervasyonClient() {
   const params = useSearchParams();
   const slug = params.get("vehicle") ?? "";
   const vehicle = useMemo(() => (slug ? getVehicleBySlug(slug) : undefined), [slug]);
-  const { search } = useSearch();
+  const { search, update } = useSearch();
   const { user, accessToken } = useCustomer();
   const { t, formatPrice } = usePrefs();
   const [done, setDone] = useState<Reservation | null>(null);
@@ -195,14 +195,30 @@ export default function RezervasyonClient() {
                   <p className="mt-1 text-sm font-semibold text-ink">
                     {formatDate(search.from)} {formatTime(search.from)}
                   </p>
-                  <p className="text-sm text-ink-muted">{pickupLabel}</p>
+                  <OfficeSelect
+                    value={pickupId || ""}
+                    placeholder={t("search.placeholder")}
+                    onChange={(id) => update(search.differentDrop ? { pickup: id } : { pickup: id, drop: id })}
+                    labelFor={t}
+                  />
                 </div>
                 <div>
                   <p className="text-xs text-ink-muted">{t("search.to")}</p>
                   <p className="mt-1 text-sm font-semibold text-ink">
                     {formatDate(search.to)} {formatTime(search.to)}
                   </p>
-                  <p className="text-sm text-ink-muted">{dropLabel}</p>
+                  <OfficeSelect
+                    value={dropId || ""}
+                    placeholder={t("search.placeholder")}
+                    onChange={(id) =>
+                      update(
+                        id === pickupId
+                          ? { differentDrop: false, drop: id }
+                          : { differentDrop: true, drop: id },
+                      )
+                    }
+                    labelFor={t}
+                  />
                 </div>
                 <button
                   type="button"
@@ -346,6 +362,33 @@ export default function RezervasyonClient() {
         </div>
       </form>
     </div>
+  );
+}
+
+function OfficeSelect({
+  value,
+  placeholder,
+  onChange,
+  labelFor,
+}: {
+  value: string;
+  placeholder: string;
+  onChange: (id: string) => void;
+  labelFor: (key: MessageKey) => string;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="mt-2 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink"
+    >
+      <option value="">{placeholder}</option>
+      {OFFICES.filter((office) => office.bookable).map((office) => (
+        <option key={office.id} value={office.id}>
+          {labelFor(office.nameKey)}
+        </option>
+      ))}
+    </select>
   );
 }
 

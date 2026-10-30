@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { NAV } from "@/lib/constants";
-import { getAllBlogPosts } from "@/lib/blog";
+import { getPublishedBlogPosts } from "@/lib/blog";
 
 export const metadata = { title: "Site Haritası" };
 
-export default function Page() {
+export const dynamic = "force-dynamic";
+
+export default async function Page() {
   const links = [
     { href: "/", label: "Ana Sayfa" },
     { href: "/arac-modelleri", label: "Araç Modelleri" },
@@ -17,7 +19,7 @@ export default function Page() {
     { href: "/gizlilik-politikasi", label: "Gizlilik Politikası" },
     { href: "/kisisel-verilerin-korunmasi", label: "Kişisel Verilerin Korunması" },
   ];
-  const posts = getAllBlogPosts();
+  const posts = await getPublishedBlogPosts();
 
   return (
     <div className="container-page max-w-3xl py-10 lg:py-14">
