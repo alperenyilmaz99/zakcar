@@ -3,6 +3,13 @@ import { SITE } from "./constants";
 import { buildReservationPdf, type ReservationPdfInput } from "./reservation-pdf";
 
 const OFFICE = "info@zakcar.com";
+const VERIFIED_FROM = "ZakCar <info@zakrentacar.com>";
+
+function senderFrom() {
+  const configured = process.env.SMTP_FROM?.trim();
+  if (configured?.toLowerCase().includes("@zakrentacar.com")) return configured;
+  return VERIFIED_FROM;
+}
 
 export async function sendReservationConfirmation(input: ReservationPdfInput & { email: string }): Promise<boolean> {
   const host = process.env.SMTP_HOST?.trim();
@@ -14,7 +21,7 @@ export async function sendReservationConfirmation(input: ReservationPdfInput & {
     const pdf = await buildReservationPdf(input);
     const port = Number(process.env.SMTP_PORT || 587);
     const secure = process.env.SMTP_SECURE === "true" || port === 465;
-    const from = process.env.SMTP_FROM?.trim() || `ZakCar <${OFFICE}>`;
+    const from = senderFrom();
     const to = input.email.trim();
     const transporter = nodemailer.createTransport({
       host,
