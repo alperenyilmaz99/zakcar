@@ -19,7 +19,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "iletisim",
     "ofisler",
     "blog",
-    "site-haritasi",
     "sik-sorulan-sorular",
     "kiralama-kosullari",
     "gizlilik-politikasi",

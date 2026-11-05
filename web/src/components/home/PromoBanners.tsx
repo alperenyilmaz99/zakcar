@@ -2,13 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import type { PromoCover } from "@/lib/promo";
+import { useEffect, useRef, useState } from "react";
+import { usePrefs } from "@/components/prefs/PrefsProvider";
+import { SITE } from "@/lib/constants";
+import { DEFAULT_PROMOS, type PromoCover } from "@/lib/promo";
 
 export function PromoBanners() {
-  const [promos, setPromos] = useState<PromoCover[]>([]);
+  const { t } = usePrefs();
+  const [promos, setPromos] = useState<PromoCover[]>(DEFAULT_PROMOS);
   const [active, setActive] = useState(0);
   const [tick, setTick] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const touchX = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -17,11 +22,14 @@ export function PromoBanners() {
         const res = await fetch("/api/promos", { cache: "no-store" });
         const data = (await res.json()) as PromoCover[];
         if (!cancelled && Array.isArray(data)) {
-          setPromos(data.filter((p) => p.isActive !== false && p.imageUrl));
-          setActive(0);
+          const next = data.filter((p) => p.isActive !== false && p.imageUrl);
+          if (next.length > 0) {
+            setPromos(next);
+            setActive(0);
+          }
         }
       } catch {
-        if (!cancelled) setPromos([]);
+        if (!cancelled) setPromos(DEFAULT_PROMOS);
       }
     })();
     return () => {
@@ -30,83 +38,127 @@ export function PromoBanners() {
   }, []);
 
   useEffect(() => {
-    if (promos.length < 2) return;
+    if (promos.length < 2 || paused) return;
     const id = window.setInterval(() => {
       setActive((i) => (i + 1) % promos.length);
-    }, 6500);
+    }, 5500);
     return () => window.clearInterval(id);
-  }, [tick, promos.length]);
+  }, [tick, paused, promos.length]);
 
-  if (promos.length === 0) return null;
+  function go(index: number) {
+    setActive((index + promos.length) % promos.length);
+    setTick((n) => n + 1);
+  }
 
   return (
-    <section className="container-page py-10 lg:py-12">
-      <div className="relative overflow-hidden rounded-3xl bg-ink shadow-card">
-        <div className="relative aspect-[16/9] sm:aspect-[2.2/1] lg:aspect-[2.6/1]">
-          {promos.map((promo, i) => (
-            <Link
+    <section
+      className="relative mt-8 w-full overflow-hidden bg-[#070b16]"
+      aria-roledescription="carousel"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={(event) => {
+        touchX.current = event.changedTouches[0]?.clientX ?? null;
+      }}
+      onTouchEnd={(event) => {
+        if (touchX.current == null) return;
+        const dx = (event.changedTouches[0]?.clientX ?? touchX.current) - touchX.current;
+        touchX.current = null;
+        if (dx > 48) go(active - 1);
+        else if (dx < -48) go(active + 1);
+      }}
+    >
+      <div className="relative h-[300px] sm:h-[360px] lg:h-[420px]">
+        {promos.map((promo, i) => {
+          const offset = i - active;
+          return (
+            <article
               key={promo.id}
-              href={promo.href || "/arac-modelleri"}
-              className={`absolute inset-0 transition-opacity duration-700 ${
-                i === active ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
+              className="absolute inset-0 transition-transform duration-700 ease-out"
+              style={{ transform: `translateX(${offset * 100}%)` }}
               aria-hidden={i !== active}
-              tabIndex={i === active ? 0 : -1}
             >
               <Image
                 src={promo.imageUrl}
-                alt={promo.title || "Kampanya"}
+                alt=""
                 fill
                 priority={i === 0}
-                sizes="(max-width: 1280px) 100vw, 1280px"
+                sizes="100vw"
                 className="object-cover object-right"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent sm:from-black/85 sm:via-black/45" />
-              <div className="relative flex h-full flex-col justify-center px-6 py-8 sm:px-10 lg:px-14">
-                <Image
-                  src="/assets/zakcar/logo-wordmark-light.png"
-                  alt="ZakCar"
-                  width={200}
-                  height={73}
-                  className="h-8 w-[140px] object-contain object-left sm:h-10 sm:w-[176px]"
-                />
-                {(promo.title || promo.highlight) && (
-                  <h2 className="mt-5 max-w-xl font-display text-2xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#070b16] from-[18%] via-[#070b16]/75 via-[48%] to-transparent" />
+              <div className="relative flex h-full flex-col justify-center px-5 py-8 sm:px-12 lg:px-16">
+                <div className="max-w-xl">
+                  <h2 className="font-display text-[1.65rem] font-bold leading-[1.12] tracking-tight text-white sm:text-4xl lg:text-[2.75rem]">
                     {promo.title}
                     {promo.highlight ? <span className="mt-1 block text-brand">{promo.highlight}</span> : null}
                   </h2>
-                )}
-                {promo.sub ? <p className="mt-3 max-w-md text-sm text-white/80 sm:text-base">{promo.sub}</p> : null}
-                {promo.badge ? (
-                  <span className="mt-5 inline-flex w-fit items-center rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white sm:text-sm">
-                    {promo.badge}
-                  </span>
-                ) : null}
+                  {promo.sub ? <p className="mt-3 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">{promo.sub}</p> : null}
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    {promo.badge ? (
+                      <Link
+                        href={promo.href || "/arac-modelleri"}
+                        tabIndex={i === active ? 0 : -1}
+                        className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-brand-dark"
+                      >
+                        {promo.badge}
+                      </Link>
+                    ) : null}
+                    <Link
+                      href={promo.href || "/arac-modelleri"}
+                      tabIndex={i === active ? 0 : -1}
+                      className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-brand-dark"
+                    >
+                      {t("banner.see")}
+                    </Link>
+                  </div>
+                </div>
+                <p className="mt-6 text-sm text-white/90">
+                  <span className="font-semibold">{t("banner.info")}</span>
+                  <a href={`tel:${SITE.phoneTel}`} className="mt-1 block text-lg font-bold tracking-tight text-white hover:text-brand">
+                    {SITE.phone}
+                  </a>
+                  <a href={`mailto:${SITE.email}`} className="text-sm text-white/80 hover:text-brand">
+                    {SITE.email}
+                  </a>
+                </p>
               </div>
-            </Link>
-          ))}
-        </div>
+            </article>
+          );
+        })}
+      </div>
 
-        {promos.length > 1 && (
+      {promos.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={() => go(active - 1)}
+            className="absolute left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-2xl leading-none text-white transition hover:bg-black/70 sm:flex sm:left-5"
+            aria-label={t("banner.prev")}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={() => go(active + 1)}
+            className="absolute right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-2xl leading-none text-white transition hover:bg-black/70 sm:flex sm:right-5"
+            aria-label={t("banner.next")}
+          >
+            ›
+          </button>
           <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-2">
             {promos.map((promo, i) => (
               <button
                 key={promo.id}
                 type="button"
-                onClick={() => {
-                  setActive(i);
-                  setTick((n) => n + 1);
-                }}
-                className={`h-2 rounded-full transition ${
-                  i === active ? "w-7 bg-white" : "w-2 bg-white/40 hover:bg-white/70"
-                }`}
-                aria-label={promo.badge || promo.title || `Kapak ${i + 1}`}
+                onClick={() => go(i)}
+                className={`h-1 rounded-full transition ${i === active ? "w-8 bg-white" : "w-5 bg-white/40 hover:bg-white/70"}`}
+                aria-label={promo.badge || promo.title || `${i + 1}`}
                 aria-pressed={i === active}
               />
             ))}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </section>
   );
 }

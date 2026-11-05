@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { rpcFailure, validateReservationInput, type Reservation, type ReservationInput } from "@/lib/booking";
+import { normalizeCouponCode } from "@/lib/coupon-math";
+import { resolveCouponPercent } from "@/lib/coupons";
 import { sanitizeExtraCodes } from "@/lib/extras";
+import { sendReservationConfirmation } from "@/lib/reservation-mail";
 import { bearerToken, createServerSupabase, hasServerSupabase } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
@@ -17,6 +20,25 @@ export async function POST(req: Request) {
 
   const invalid = validateReservationInput(body);
   if (invalid) return NextResponse.json({ error: invalid }, { status: 400 });
+
+  const couponCode = body.couponCode ? normalizeCouponCode(body.couponCode) : "";
+  let couponPercent = 0;
+  if (couponCode) {
+    const coupon = await resolveCouponPercent(couponCode);
+    if (coupon.percent < 1) {
+      return NextResponse.json({ error: "Kupon kodu geçersiz." }, { status: 400 });
+    }
+    if (!coupon.persisted) {
+      return NextResponse.json(
+        {
+          error:
+            "Kupon henüz rezervasyon kaydına yazılamıyor. Supabase SQL Editor’da web/supabase/coupons.sql dosyasını bir kez çalıştırın.",
+        },
+        { status: 503 },
+      );
+    }
+    couponPercent = coupon.percent;
+  }
 
   const supabase = createServerSupabase(bearerToken(req));
   const base = {
@@ -46,7 +68,47 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: failure.error }, { status: failure.status });
   }
 
-  return NextResponse.json(data as Reservation);
+  let reservation = data as Reservation;
+  if (couponPercent > 0 && reservation?.pnr) {
+    const applied = await supabase.rpc("apply_reservation_coupon", {
+      p_pnr: reservation.pnr,
+      p_phone: body.phone.trim(),
+      p_code: couponCode,
+    });
+    if (applied.error) {
+      const failure = rpcFailure(applied.error);
+      return NextResponse.json(
+        {
+          error: `${failure.error} Rezervasyon ${reservation.pnr} oluştu; kupon fiyata yazılamadı.`,
+        },
+        { status: failure.status },
+      );
+    }
+    const patch = applied.data as { totalPrice?: number; notes?: string | null } | null;
+    if (patch) {
+      reservation = {
+        ...reservation,
+        totalPrice: patch.totalPrice ?? reservation.totalPrice,
+        notes: patch.notes ?? reservation.notes,
+      };
+    }
+  }
+
+  const mailSent = await sendReservationConfirmation({
+    reservation,
+    email: body.email.trim(),
+    customer: {
+      firstName: body.firstName.trim(),
+      lastName: body.lastName.trim(),
+      phone: body.phone.trim(),
+      birthDate: body.birthDate,
+    },
+    modelSlug: body.modelSlug,
+    extraCodes: extras,
+    coupon: couponPercent > 0 ? { code: couponCode, percent: couponPercent } : undefined,
+  });
+
+  return NextResponse.json({ ...reservation, mailSent });
 }
 
 function isOldReservationFunction(error: { message?: string; code?: string }) {

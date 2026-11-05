@@ -11,6 +11,11 @@ export function euroToTry(price: string): string {
   return `${tl.toLocaleString("tr-TR")} TL`;
 }
 
+export function formatTryAmount(amount: number): string {
+  const safe = Number.isFinite(amount) ? amount : 0;
+  return `${safe.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} TL`;
+}
+
 /** Araç fiyatını gösterim için formatla (zaten TL ise olduğu gibi) */
 export function formatPrice(price: string): string {
   if (/€/.test(price) || /EUR/i.test(price)) return euroToTry(price);

@@ -1,13 +1,7 @@
 import type { VehicleCatalog, Vehicle, Office, SeoPage } from "./types";
 import vehiclesData from "@/data/vehicles.json";
 import officesData from "@/data/offices.json";
-import {
-  ELITCAR_ORDER,
-  ELITCAR_PRICES,
-  GROUP_OVERRIDES,
-  GROUP_RANK,
-  META_OVERRIDES,
-} from "./sort-order";
+import { ELITCAR_ORDER, GROUP_OVERRIDES, GROUP_RANK, META_OVERRIDES } from "./sort-order";
 
 const catalog = vehiclesData as VehicleCatalog;
 
@@ -17,11 +11,11 @@ function enrich(v: Vehicle): Vehicle {
   return {
     ...v,
     group,
-    price: ELITCAR_PRICES[v.slug] ?? v.price,
+    price: "0 TL",
     fuel: meta?.fuel ?? v.fuel,
     transmission: meta?.transmission ?? v.transmission,
     capacity: meta?.capacity ?? v.capacity,
-    deposit: meta?.deposit ?? (group === "SUV" || group === "Lüks" ? "18.500 TL" : "15.540 TL"),
+    deposit: "0 TL",
   };
 }
 

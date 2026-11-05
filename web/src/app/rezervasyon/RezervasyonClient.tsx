@@ -3,12 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { useCustomer } from "@/hooks/useCustomer";
 import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
+import { applyPercent, normalizeCouponCode } from "@/lib/coupon-math";
 import { EXTRA_OPTIONS, extraAmount, rentalDays, type ExtraId } from "@/lib/extras";
 import { parseTryAmount } from "@/lib/i18n";
+import { formatTryAmount } from "@/lib/format";
+import type { ModelPrice } from "@/lib/model-prices";
 import { OFFICES, isBookableOffice, resolveOfficeId } from "@/lib/offices";
 import type { Reservation } from "@/lib/booking";
 import { reservationStatusLabel } from "@/lib/reservation-label";
@@ -18,17 +21,43 @@ import type { MessageKey } from "@/lib/i18n";
 export default function RezervasyonClient() {
   const params = useSearchParams();
   const slug = params.get("vehicle") ?? "";
-  const vehicle = useMemo(() => (slug ? getVehicleBySlug(slug) : undefined), [slug]);
+  const baseVehicle = useMemo(() => (slug ? getVehicleBySlug(slug) : undefined), [slug]);
+  const [vehicle, setVehicle] = useState(baseVehicle);
+
+  useEffect(() => {
+    setVehicle(baseVehicle);
+    if (!baseVehicle) return;
+    let cancelled = false;
+    fetch("/api/prices", { cache: "no-store" })
+      .then(async (res) => (res.ok ? ((await res.json()) as Record<string, ModelPrice>) : {}))
+      .then((prices) => {
+        const price = prices[baseVehicle.slug];
+        if (cancelled || !price) return;
+        setVehicle({
+          ...baseVehicle,
+          price: formatTryAmount(price.daily),
+          deposit: formatTryAmount(price.deposit),
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [baseVehicle]);
   const { search, update } = useSearch();
   const { user, accessToken } = useCustomer();
   const { t, formatPrice } = usePrefs();
-  const [done, setDone] = useState<Reservation | null>(null);
+  const money = (amount: number) => formatPrice(formatTryAmount(amount));
+  const [done, setDone] = useState<(Reservation & { mailSent?: boolean }) | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [extras, setExtras] = useState<ExtraId[]>([]);
   const [flight, setFlight] = useState("");
   const [showCode, setShowCode] = useState(false);
   const [code, setCode] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; percent: number } | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [checkingCode, setCheckingCode] = useState(false);
 
   const pickupId = resolveOfficeId(search.pickup);
   const dropId = search.differentDrop ? resolveOfficeId(search.drop) : pickupId;
@@ -36,11 +65,44 @@ export default function RezervasyonClient() {
   const daily = vehicle ? parseTryAmount(vehicle.price) : 0;
   const deposit = vehicle?.deposit ? parseTryAmount(vehicle.deposit) : 0;
   const extrasTotal = extraAmount(extras, days);
-  const total = daily * days + extrasTotal;
+  const subtotal = daily * days + extrasTotal;
+  const priced = coupon ? applyPercent(subtotal, coupon.percent) : { discount: 0, total: subtotal };
+  const total = priced.total;
   const km = days * 300;
 
   function toggleExtra(id: ExtraId) {
     setExtras((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  }
+
+  async function applyCoupon() {
+    const entered = normalizeCouponCode(code);
+    if (!entered) {
+      setCoupon(null);
+      setCouponError("");
+      return;
+    }
+    if (coupon?.code === entered) return;
+    setCheckingCode(true);
+    setCouponError("");
+    try {
+      const res = await fetch("/api/coupons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: entered }),
+      });
+      const json = (await res.json()) as { code?: string; percent?: number; error?: string };
+      if (!res.ok || !json.code || !json.percent) {
+        setCoupon(null);
+        setCouponError(json.error || t("book.discountInvalid"));
+        return;
+      }
+      setCoupon({ code: json.code, percent: json.percent });
+    } catch {
+      setCoupon(null);
+      setCouponError(t("book.discountInvalid"));
+    } finally {
+      setCheckingCode(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -63,6 +125,23 @@ export default function RezervasyonClient() {
     const token = await accessToken();
     setSaving(true);
     try {
+      let couponCode: string | undefined;
+      const entered = normalizeCouponCode(code);
+      if (entered) {
+        const checked = await fetch("/api/coupons", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: entered }),
+        });
+        const couponJson = (await checked.json()) as { code?: string; percent?: number; error?: string };
+        if (!checked.ok || !couponJson.code || !couponJson.percent) {
+          throw new Error(couponJson.error || t("book.discountInvalid"));
+        }
+        couponCode = couponJson.code;
+        setCoupon({ code: couponJson.code, percent: couponJson.percent });
+        setCouponError("");
+      }
+
       const res = await fetch("/api/reservations", {
         method: "POST",
         headers: {
@@ -82,9 +161,10 @@ export default function RezervasyonClient() {
           birthDate: birth,
           flightNumber: flight,
           extraCodes: extras,
+          couponCode,
         }),
       });
-      const json = (await res.json()) as Reservation & { error?: string };
+      const json = (await res.json()) as Reservation & { error?: string; mailSent?: boolean };
       if (!res.ok) throw new Error(json.error || t("book.notFound"));
       setDone(json);
     } catch (err) {
@@ -124,10 +204,11 @@ export default function RezervasyonClient() {
           </p>
           {done.notes ? <p className="mt-3 text-sm text-ink">{done.notes}</p> : null}
           <p className="mt-4 font-display text-xl font-bold text-ink">
-            {t("book.total")}: {formatPrice(`${Number(done.totalPrice || 0)} TL`)}
+            {t("book.total")}: {money(Number(done.totalPrice || 0))}
           </p>
           <p className="mt-2 text-sm font-medium text-ink">{reservationStatusLabel(done.status, t)}</p>
           <p className="mt-4 text-sm text-ink-muted">{t("book.payLater")}</p>
+          <p className="mt-2 text-sm text-ink">{done.mailSent ? t("book.mailSent") : t("book.mailMissed")}</p>
           <div className="mt-6 flex flex-col gap-3">
             <Link href={`/rezervasyon-sorgulama?pnr=${encodeURIComponent(done.pnr)}`} className="btn-outline w-full">
               {t("nav.lookup")}
@@ -180,11 +261,11 @@ export default function RezervasyonClient() {
                 </div>
                 <div className="text-end">
                   <p className="text-sm text-ink-muted">
-                    {formatPrice(`${daily} TL`)} {t("book.daily")}
+                    {money(daily)} {t("book.daily")}
                   </p>
-                  <p className="font-display text-2xl font-bold text-ink">{formatPrice(`${daily * days} TL`)}</p>
+                  <p className="font-display text-2xl font-bold text-ink">{money(daily * days)}</p>
                   <p className="mt-1 text-xs text-ink-muted">
-                    {t("card.deposit")}: {formatPrice(`${deposit} TL`)}
+                    {t("card.deposit")}: {money(deposit)}
                   </p>
                 </div>
               </div>
@@ -230,13 +311,45 @@ export default function RezervasyonClient() {
               </div>
               {showCode && (
                 <div className="mt-3">
-                  <input
-                    value={code}
-                    onChange={(event) => setCode(event.target.value)}
-                    placeholder={t("book.discount")}
-                    className="w-full rounded-xl border border-surface-border px-4 py-2.5 text-sm sm:max-w-xs"
-                  />
-                  {code.trim() ? <p className="mt-2 text-xs text-ink-muted">{t("book.discountHint")}</p> : null}
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      value={code}
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        setCode(next);
+                        setCouponError("");
+                        setCoupon((current) =>
+                          current && normalizeCouponCode(next) === current.code ? current : null,
+                        );
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void applyCoupon();
+                        }
+                      }}
+                      placeholder={t("book.discount")}
+                      autoComplete="off"
+                      className="w-full rounded-xl border border-surface-border px-4 py-2.5 text-sm uppercase sm:max-w-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void applyCoupon()}
+                      disabled={checkingCode}
+                      className="inline-flex h-11 items-center justify-center rounded-xl bg-ink px-4 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      {checkingCode ? "..." : t("book.discountApply")}
+                    </button>
+                  </div>
+                  {coupon ? (
+                    <p className="mt-2 text-xs font-semibold text-ink">
+                      %{coupon.percent} {t("book.discountApplied")}
+                    </p>
+                  ) : couponError ? (
+                    <p className="mt-2 text-xs text-brand">{couponError}</p>
+                  ) : (
+                    <p className="mt-2 text-xs text-ink-muted">{t("book.discountHint")}</p>
+                  )}
                 </div>
               )}
             </section>
@@ -257,7 +370,7 @@ export default function RezervasyonClient() {
                       <span className="min-w-0 flex-1">
                         <span className="block font-semibold text-ink">{t(item.title)}</span>
                         <span className="mt-1 block font-display text-lg font-bold text-brand">
-                          + {formatPrice(`${amount} TL`)}
+                          + {money(amount)}
                         </span>
                         <span className="mt-2 block text-xs leading-relaxed text-ink-muted">{t(item.desc)}</span>
                       </span>
@@ -280,7 +393,13 @@ export default function RezervasyonClient() {
                 <Field name="lastName" label={t("book.lastName")} required defaultValue={rest.join(" ")} placeholder="Örn: Yılmaz" />
                 <Field name="email" label={t("book.email")} type="email" required defaultValue={user?.email || ""} />
                 <Field name="birth" label={t("book.birth")} type="date" required />
-                <Field name="phone" label={t("book.phone")} required autoComplete="tel" className="sm:col-span-2" />
+                <Field name="phone" label={t("book.phone")} required autoComplete="tel" />
+                <Field
+                  label={t("book.flightNo")}
+                  value={flight}
+                  onChange={(event) => setFlight(event.target.value)}
+                  autoComplete="off"
+                />
               </div>
             </section>
           </div>
@@ -292,16 +411,6 @@ export default function RezervasyonClient() {
               <p>
                 {formatDate(search.from)} {formatTime(search.from)}
               </p>
-              <label className="mt-2 block text-xs font-medium text-ink-muted">
-                {t("book.flightNo")}
-                <input
-                  value={flight}
-                  onChange={(event) => setFlight(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink"
-                  autoComplete="off"
-                />
-              </label>
-              {!flight.trim() ? <p className="text-ink-muted">{t("book.notSet")}</p> : null}
             </SummaryBlock>
             <SummaryBlock title={t("book.dropInfo")}>
               <p>{dropLabel}</p>
@@ -317,7 +426,7 @@ export default function RezervasyonClient() {
                     {vehicle.group} · {vehicle.fuel} · {vehicle.transmission}
                   </span>
                 </p>
-                <p className="shrink-0 font-semibold">{formatPrice(`${daily * days} TL`)}</p>
+                <p className="shrink-0 font-semibold">{money(daily * days)}</p>
               </div>
               {extras.map((id) => {
                 const item = EXTRA_OPTIONS.find((option) => option.id === id);
@@ -325,13 +434,13 @@ export default function RezervasyonClient() {
                 return (
                   <div key={id} className="mt-2 flex items-start justify-between gap-3">
                     <p>{t(item.title)}</p>
-                    <p className="shrink-0 font-semibold">{formatPrice(`${item.dailyTry * days} TL`)}</p>
+                    <p className="shrink-0 font-semibold">{money(item.dailyTry * days)}</p>
                   </div>
                 );
               })}
               <div className="mt-2 flex items-start justify-between gap-3">
                 <p>{t("card.deposit")}</p>
-                <p className="shrink-0 font-semibold">{formatPrice(`${deposit} TL`)}</p>
+                <p className="shrink-0 font-semibold">{money(deposit)}</p>
               </div>
             </SummaryBlock>
             <SummaryBlock title={t("book.payType")}>
@@ -349,9 +458,17 @@ export default function RezervasyonClient() {
               <p className="mt-2 font-semibold text-ink">{t("book.includedAirport")}</p>
             </SummaryBlock>
 
+            {coupon ? (
+              <div className="mt-4 flex items-end justify-between text-sm text-brand">
+                <p className="font-semibold">
+                  {t("book.discountOff")} (%{coupon.percent})
+                </p>
+                <p className="font-semibold">− {money(priced.discount)}</p>
+              </div>
+            ) : null}
             <div className="mt-4 flex items-end justify-between border-t border-dashed border-surface-border pt-4">
               <p className="text-sm font-semibold text-ink">{t("book.totalPrice")}</p>
-              <p className="font-display text-2xl font-bold text-ink">{formatPrice(`${total} TL`)}</p>
+              <p className="font-display text-2xl font-bold text-ink">{money(total)}</p>
             </div>
             {error && <p className="mt-3 text-sm text-brand">{error}</p>}
             <button type="submit" className="btn-primary mt-4 w-full" disabled={saving}>

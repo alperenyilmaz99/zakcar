@@ -38,7 +38,6 @@ export function Footer() {
     { href: "/kiralama-kosullari", label: t("nav.terms") },
     { href: "/gizlilik-politikasi", label: t("nav.privacy") },
     { href: "/kisisel-verilerin-korunmasi", label: t("nav.kvkk") },
-    { href: "/site-haritasi", label: t("nav.sitemap") },
   ];
   const support = [
     { href: "/sik-sorulan-sorular", label: t("nav.faq") },

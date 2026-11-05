@@ -1,11 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import Image from "next/image";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { DateTimeField } from "@/components/search/DateTimeField";
 import { OFFICES, resolveOfficeId } from "@/lib/offices";
+import { SITE } from "@/lib/constants";
 import type { MessageKey } from "@/lib/i18n";
 
 function locationLabel(value: string, t: (key: MessageKey) => string) {
@@ -31,6 +34,8 @@ export function SearchBar({
   const { search, update } = useSearch();
   const { t } = usePrefs();
   const [openMenu, setOpenMenu] = useState<"pickup" | "drop" | "from" | "to" | null>(null);
+  const [seeking, setSeeking] = useState(false);
+  const seekTimer = useRef<number | null>(null);
   const different = search.differentDrop;
 
   useEffect(() => {
@@ -42,7 +47,14 @@ export function SearchBar({
     if (defaultBrand) update({ brand: defaultBrand });
   }, [defaultPickup, defaultGroup, defaultBrand, search.pickup, search.drop, update]);
 
+  useEffect(() => {
+    return () => {
+      if (seekTimer.current) window.clearTimeout(seekTimer.current);
+    };
+  }, []);
+
   function handleSearch() {
+    if (seeking) return;
     const params = new URLSearchParams();
     if (search.pickup) params.set("pickup", search.pickup);
     if (different && search.drop) params.set("drop", search.drop);
@@ -50,7 +62,11 @@ export function SearchBar({
     if (search.brand || defaultBrand) params.set("brand", search.brand || defaultBrand || "");
     if (search.from) params.set("from", search.from);
     if (search.to) params.set("to", search.to);
-    router.push(`/arac-modelleri?${params.toString()}`);
+    const href = `/arac-modelleri?${params.toString()}`;
+    setSeeking(true);
+    seekTimer.current = window.setTimeout(() => {
+      router.push(href);
+    }, 1500);
   }
 
   return (
@@ -151,7 +167,126 @@ export function SearchBar({
           })}
         </p>
       )}
+      {seeking &&
+        createPortal(
+          <SearchSeeking
+            pickup={locationLabel(search.pickup, t) || t("search.placeholder")}
+            drop={locationLabel(different ? search.drop : search.pickup, t) || t("search.placeholder")}
+            from={search.from}
+            to={search.to}
+            loading={t("search.loading")}
+            pickupLabel={t("search.pickupOnly")}
+            dropLabel={t("search.dropoff")}
+            fromLabel={t("search.from")}
+            toLabel={t("search.to")}
+            fromTimeLabel={t("search.fromTime")}
+            toTimeLabel={t("search.toTime")}
+          />,
+          document.body,
+        )}
     </div>
+  );
+}
+
+function SearchSeeking({
+  pickup,
+  drop,
+  from,
+  to,
+  loading,
+  pickupLabel,
+  dropLabel,
+  fromLabel,
+  toLabel,
+  fromTimeLabel,
+  toTimeLabel,
+}: {
+  pickup: string;
+  drop: string;
+  from: string;
+  to: string;
+  loading: string;
+  pickupLabel: string;
+  dropLabel: string;
+  fromLabel: string;
+  toLabel: string;
+  fromTimeLabel: string;
+  toTimeLabel: string;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/45 p-4">
+      <div className="w-full max-w-md space-y-3">
+        <div className="card px-6 py-8 text-center">
+          <Image
+            src={SITE.logo}
+            alt={SITE.name}
+            width={920}
+            height={352}
+            className="mx-auto h-14 w-auto object-contain"
+            priority
+          />
+          <p className="mt-5 text-sm font-medium text-brand">{loading}</p>
+        </div>
+        <div className="card divide-y divide-surface-border px-4 py-1 text-sm">
+          <SeekRow icon="pin" label={pickupLabel} value={pickup} />
+          <SeekRow icon="pin" label={dropLabel} value={drop} />
+          <div className="grid grid-cols-2">
+            <SeekRow icon="calendar" label={fromLabel} value={formatDate(from)} />
+            <SeekRow icon="clock" label={fromTimeLabel} value={formatTime(from)} />
+          </div>
+          <div className="grid grid-cols-2">
+            <SeekRow icon="calendar" label={toLabel} value={formatDate(to)} />
+            <SeekRow icon="clock" label={toTimeLabel} value={formatTime(to)} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SeekRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: "pin" | "calendar" | "clock";
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 py-3">
+      <SeekIcon name={icon} />
+      <div className="min-w-0">
+        <p className="text-xs text-ink-muted">{label}</p>
+        <p className="truncate font-semibold text-ink">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function SeekIcon({ name }: { name: "pin" | "calendar" | "clock" }) {
+  const common = "mt-0.5 h-5 w-5 shrink-0 text-brand";
+  if (name === "pin") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" strokeLinejoin="round" />
+        <circle cx="12" cy="10" r="2.2" />
+      </svg>
+    );
+  }
+  if (name === "calendar") {
+    return (
+      <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <rect x="3.5" y="5" width="17" height="15" rx="2" />
+        <path d="M8 3.5v3M16 3.5v3M3.5 10h17" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={common} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4.5l3 2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 

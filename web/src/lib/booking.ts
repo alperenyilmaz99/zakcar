@@ -1,3 +1,5 @@
+import { isCouponCode, normalizeCouponCode } from "@/lib/coupon-math";
+
 export type Reservation = {
   pnr: string;
   status: "aktif" | "bekliyor" | "tamamlandi" | "iptal";
@@ -28,6 +30,7 @@ export type ReservationInput = {
   flightNumber?: string;
   birthDate?: string;
   extraCodes?: string[];
+  couponCode?: string;
 };
 
 const BOOKABLE = new Set(["saw", "iga", "merkez"]);
@@ -71,6 +74,9 @@ export function validateReservationInput(body: ReservationInput): string | null 
   }
   if (body.birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(body.birthDate)) {
     return "Doğum tarihi geçersiz.";
+  }
+  if (body.couponCode && !isCouponCode(normalizeCouponCode(body.couponCode))) {
+    return "Kupon kodu geçersiz.";
   }
   return null;
 }

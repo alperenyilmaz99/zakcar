@@ -17,6 +17,10 @@ export function AuthForm() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("kayit")) setMode("register");
+  }, []);
+
+  useEffect(() => {
     if (ready && user) router.replace("/rezervasyon-sorgulama");
   }, [ready, user, router]);
 

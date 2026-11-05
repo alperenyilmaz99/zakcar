@@ -29,8 +29,8 @@ export const NAV = {
     { href: "/kurumsal-arac-kiralama", label: "Kurumsal" },
   ],
   airports: [
-    { href: "/sabiha-gokcen-havalimani-arac-kiralama", labelKey: "loc.saw" },
-    { href: "/istanbul-3-havalimani-arac-kiralama", labelKey: "loc.iga" },
+    { href: "/sabiha-gokcen-havalimani-arac-kiralama", labelKey: "loc.saw.menu" },
+    { href: "/istanbul-3-havalimani-arac-kiralama", labelKey: "loc.iga.menu" },
   ],
   cities: [
     { href: "/istanbul-3-havalimani-arac-kiralama", labelKey: "loc.iga.city" },

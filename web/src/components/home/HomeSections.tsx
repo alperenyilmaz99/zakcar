@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { PromoBanners } from "@/components/home/PromoBanners";
 import { PopularSlider } from "@/components/home/PopularSlider";
 import { SegmentSection } from "@/components/home/SegmentSection";
 import { HomeFaq } from "@/components/faq/HomeFaq";
@@ -43,8 +42,6 @@ export function HomeSections({
           ))}
         </div>
       </section>
-
-      <PromoBanners />
 
       <PopularSlider vehicles={vehicles} />
 

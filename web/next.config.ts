@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  serverExternalPackages: ["nodemailer"],
+  outputFileTracingIncludes: {
+    "/api/reservations": ["./src/fonts/**/*"],
+  },
   async redirects() {
     return [
       { source: "/:path*.html", destination: "/:path*", permanent: true },

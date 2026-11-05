@@ -2,12 +2,15 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { SearchBar } from "@/components/search/SearchBar";
 import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
+import { withLivePrices } from "@/lib/model-prices";
 import { VehicleDetailInfo } from "@/components/vehicles/VehicleDetailInfo";
 
 export async function generateStaticParams() {
   const { getAllVehicleSlugs } = await import("@/lib/data");
   return getAllVehicleSlugs().map((slug) => ({ slug }));
 }
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -18,7 +21,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const vehicle = getVehicleBySlug(slug);
+  const found = getVehicleBySlug(slug);
+  const vehicle = found ? (await withLivePrices([found]))[0] : undefined;
   if (!vehicle) notFound();
 
   return (

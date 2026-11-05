@@ -30,7 +30,7 @@ function LangMenu({ compact, plain }: { compact?: boolean; plain?: boolean }) {
       label={
         <span className="flex items-center gap-1.5">
           <Image src={current.flag} alt="" width={18} height={18} className="h-[14px] w-[18px] rounded-[2px] object-cover" />
-          {!compact && <span className={plain ? "hidden sm:inline" : undefined}>{plain ? current.name : current.label}</span>}
+          {!compact && <span>{current.label}</span>}
         </span>
       }
       ariaLabel={t("prefs.language")}

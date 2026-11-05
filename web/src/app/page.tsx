@@ -3,11 +3,12 @@ import { HomeSections } from "@/components/home/HomeSections";
 import { getPublishedBlogPosts } from "@/lib/blog";
 import { listReviews } from "@/lib/generated-content";
 import { getBrands, getGroups, getVehicles } from "@/lib/data";
+import { withLivePrices } from "@/lib/model-prices";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const vehicles = getVehicles().slice(0, 12);
+  const vehicles = (await withLivePrices(getVehicles())).slice(0, 12);
   const groups = getGroups();
   const brands = getBrands();
   const [published, reviews] = await Promise.all([getPublishedBlogPosts(), listReviews()]);

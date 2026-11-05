@@ -8,6 +8,9 @@ import {
   getVehicleBySlug,
   resolveSeoPage,
 } from "@/lib/data";
+import { withLivePrices } from "@/lib/model-prices";
+
+export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   return getAllSeoSlugs().map((slug) => ({ slug }));
@@ -33,7 +36,7 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
 
   const showCatalog = seo.type === "group" || seo.type === "brand";
   const vehicles = showCatalog
-    ? filterVehicles({ group: seo.filterGroup, brand: seo.filterBrand })
+    ? await withLivePrices(filterVehicles({ group: seo.filterGroup, brand: seo.filterBrand }))
     : [];
 
   return (

@@ -106,28 +106,6 @@ export const GROUP_RANK: Record<string, number> = {
   Lüks: 3,
 };
 
-/** Elitcar listesindeki TL fiyatları (€ × 37) */
-export const ELITCAR_PRICES: Record<string, string> = {
-  "renault-clio-hb": "1.288 TL",
-  "fiat-yeni-egea-sedan": "1.288 TL",
-  "fiat-yeni-egea-hatchback": "1.328 TL",
-  "citroen-c-elysee": "1.328 TL",
-  "fiat-fiorino": "1.336 TL",
-  "fiat-yeni-egea-station-wagon": "1.369 TL",
-  "hyundai-i20": "1.406 TL",
-  "citroen-berlingo": "1.447 TL",
-  "ford-tourneo-courier": "1.447 TL",
-  "nissan-juke": "1.487 TL",
-  "opel-crossland": "1.487 TL",
-  "renault-symbol": "1.487 TL",
-  "peugeot-2008": "1.628 TL",
-  "citroen-c4x": "1.628 TL",
-  "citroen-c3-aircross": "1.628 TL",
-  "fiat-yeni-egea-cross": "1.691 TL",
-  "renault-megane": "1.765 TL",
-  "peugeot-3008": "1.939 TL",
-};
-
 /** Grup düzeltmeleri (Elitcar kart etiketleri) */
 export const GROUP_OVERRIDES: Record<string, string> = {
   "nissan-juke": "SUV",

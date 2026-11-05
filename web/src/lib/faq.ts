@@ -213,11 +213,11 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
           ar: "ما الحد الأدنى للعمر ورخصة القيادة؟",
         },
         a: {
-          tr: "Genelde 21 yaş ve en az 3 yıllık B sınıfı ehliyet gerekir. Bazı gruplarda yaş / ehliyet yılı daha yüksek olabilir; şartlar araç sayfasında yazılır. Teslimde ehliyet ibrazı ve sözleşme imzası zorunludur.",
-          en: "Usually 21 years old and a category B licence held for at least 3 years. Some groups require more; check the vehicle page. You must show your licence and sign the contract at pickup.",
-          de: "In der Regel 21 Jahre und seit mindestens 3 Jahren Klasse B. Manche Gruppen verlangen mehr — siehe Fahrzeugseite. Führerschein und Unterschrift bei der Abholung sind Pflicht.",
-          ru: "Обычно 21 год и права категории B не менее 3 лет. Для части классов требования выше — смотрите карточку авто. При выдаче нужны права и подпись договора.",
-          ar: "عادة 21 عاماً ورخصة فئة B لمدة 3 سنوات على الأقل. بعض الفئات تتطلب أكثر؛ راجع صفحة السيارة. يجب إبراز الرخصة وتوقيع العقد عند الاستلام.",
+          tr: "Genelde 20 yaş ve en az 2 yıllık B sınıfı ehliyet gerekir. Bazı gruplarda yaş / ehliyet yılı daha yüksek olabilir; şartlar araç sayfasında yazılır. Bu sınırların altındaki daha küçük yaşta olan sürücülerin kiralama yapabilmesi için ek olarak 'Genç Sürücü Paketi' satın alınması gerekmektedir. Teslimde ehliyet ibrazı ve sözleşme imzası zorunludur.",
+          en: "Usually 20 years old and a category B licence held for at least 2 years. Some groups require more; the vehicle page lists the conditions. Drivers younger than these limits need the Young Driver Package. You must show your licence and sign the contract at pickup.",
+          de: "In der Regel 20 Jahre und seit mindestens 2 Jahren Klasse B. Manche Gruppen verlangen mehr — siehe Fahrzeugseite. Jüngere Fahrer benötigen zusätzlich das Young-Driver-Paket. Führerschein und Unterschrift bei der Abholung sind Pflicht.",
+          ru: "Обычно 20 лет и права категории B не менее 2 лет. Для части классов требования выше — они указаны в карточке авто. Водителям моложе этих границ нужен пакет «Молодой водитель». При выдаче нужны права и подпись договора.",
+          ar: "عادة 20 عاماً ورخصة فئة B لمدة سنتين على الأقل. بعض الفئات تتطلب أكثر؛ الشروط في صفحة السيارة. السائقون الأصغر من هذه الحدود يحتاجون باقة السائق الشاب. يجب إبراز الرخصة وتوقيع العقد عند الاستلام.",
         },
       },
       {

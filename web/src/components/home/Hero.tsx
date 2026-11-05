@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PromoBanners } from "@/components/home/PromoBanners";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
@@ -77,7 +78,7 @@ export function Hero() {
 
   return (
     <section className="relative text-ink">
-      <div className="container-page relative flex flex-col justify-center pb-16 pt-14 lg:pb-20 lg:pt-16">
+      <div className="container-page relative flex flex-col justify-center pb-2 pt-14 lg:pt-16">
         <div key={active} className="animate-hero-copy mx-auto max-w-3xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ink-muted sm:text-sm">
             {SITE.shortName} Rent A Car
@@ -92,11 +93,7 @@ export function Hero() {
           </p>
         </div>
 
-        <div className="relative mx-auto mt-10 w-full max-w-5xl lg:mt-12">
-          <SearchBar />
-        </div>
-
-        <div className="mx-auto mt-8 flex flex-wrap items-center justify-center gap-2">
+        <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-2">
           {MOTTOS.map((item, i) =>
             item.pill ? (
               <button
@@ -118,7 +115,12 @@ export function Hero() {
             ) : null
           )}
         </div>
+
+        <div className="relative mx-auto mt-8 w-full max-w-5xl lg:mt-10">
+          <SearchBar />
+        </div>
       </div>
+      <PromoBanners />
     </section>
   );
 }
