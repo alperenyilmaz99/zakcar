@@ -28,7 +28,18 @@ function googleEmbed(selectedId: string | null) {
 
 export function OfficesList({ offices }: { offices: Office[] }) {
   const { t } = usePrefs();
-  const listed = offices.filter((office) => OFFICE_COPY[office.id]);
+  const listed = (["saw", "iga", "merkez"] as const).map((id) => {
+    return (
+      offices.find((office) => office.id === id) ?? {
+        id,
+        name: "",
+        address: "",
+        phone: "0532 388 29 96",
+        email: "info@zakcar.com",
+        hours: "7/24",
+      }
+    );
+  });
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
