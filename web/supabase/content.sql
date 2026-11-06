@@ -51,3 +51,27 @@ grant select on public.site_posts to anon, authenticated;
 grant insert, update, delete on public.site_posts to authenticated;
 grant select on public.site_reviews to anon, authenticated;
 grant insert, update, delete on public.site_reviews to authenticated;
+
+-- Panelden gizlenen sabit bloglar ve anasayfa yorumları
+create table if not exists public.site_hidden_content (
+  kind text not null check (kind in ('post', 'review')),
+  key text not null,
+  created_at timestamptz not null default now(),
+  primary key (kind, key)
+);
+
+alter table public.site_hidden_content enable row level security;
+
+drop policy if exists site_hidden_content_public_read on public.site_hidden_content;
+create policy site_hidden_content_public_read on public.site_hidden_content
+  for select
+  using (true);
+
+drop policy if exists site_hidden_content_staff_write on public.site_hidden_content;
+create policy site_hidden_content_staff_write on public.site_hidden_content
+  for all to authenticated
+  using (public.is_staff())
+  with check (public.is_staff());
+
+grant select on public.site_hidden_content to anon, authenticated;
+grant insert, update, delete on public.site_hidden_content to authenticated;

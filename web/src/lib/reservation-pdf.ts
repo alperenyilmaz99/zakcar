@@ -132,6 +132,27 @@ function drawGreeting(page: PDFPage, font: PDFFont, bold: PDFFont, name: string,
   return top + h;
 }
 
+function flightFields(value: string | null | undefined): Field[] {
+  const raw = (value || "").trim();
+  if (!raw) return [];
+  const parts = raw.split(" | ").map((part) => part.trim()).filter(Boolean);
+  if (parts.length === 1 && !parts[0].includes(":")) return [{ label: "Uçuş No:", value: raw }];
+  return parts.map((part) => {
+    const split = part.indexOf(":");
+    if (split < 0) return { label: "Uçuş No:", value: part };
+    const key = part.slice(0, split).trim().toLocaleLowerCase("tr");
+    const text = part.slice(split + 1).trim() || "—";
+    const pretty = key.startsWith("geli")
+      ? "Geliş Uçuş No"
+      : key.startsWith("dön") || key.startsWith("don")
+        ? "Dönüş Uçuş No"
+        : key === "not"
+          ? "Not"
+          : part.slice(0, split).trim();
+    return { label: `${pretty}:`, value: text };
+  });
+}
+
 function drawInfoCards(
   page: PDFPage,
   font: PDFFont,
@@ -149,9 +170,7 @@ function drawInfoCards(
   ];
   const birth = birthLabel(input.customer.birthDate);
   if (birth) left.push({ label: "Doğum Tarihi:", value: birth });
-  if (input.reservation.flightNumber) {
-    left.push({ label: "Uçuş No:", value: input.reservation.flightNumber });
-  }
+  for (const field of flightFields(input.reservation.flightNumber)) left.push(field);
   const right: Field[] = [
     { label: "Kiralanan Araç:", value: shortName, color: RED, bold: true },
     { label: "Plaka:", value: input.reservation.plate || "—" },

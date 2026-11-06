@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { AirportCards } from "@/components/home/AirportCards";
 import { PopularSlider } from "@/components/home/PopularSlider";
+import { PromoBanners } from "@/components/home/PromoBanners";
 import { SegmentSection } from "@/components/home/SegmentSection";
 import { HomeFaq } from "@/components/faq/HomeFaq";
-import { HomeTail, type HomePost, type HomeReview } from "@/components/home/HomeTail";
+import { HomeTail, type HomePost } from "@/components/home/HomeTail";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { Vehicle } from "@/lib/types";
 
@@ -13,13 +15,15 @@ export function HomeSections({
   brands,
   groupCount,
   posts,
-  reviews,
+  savedReviews,
+  hiddenReviewIds,
 }: {
   vehicles: Vehicle[];
   brands: string[];
   groupCount: number;
   posts: HomePost[];
-  reviews: HomeReview[];
+  savedReviews: { id: string; author: string; location: string; body: string }[];
+  hiddenReviewIds: string[];
 }) {
   const { t } = usePrefs();
 
@@ -43,7 +47,11 @@ export function HomeSections({
         </div>
       </section>
 
+      <PromoBanners />
+
       <PopularSlider vehicles={vehicles} />
+
+      <AirportCards />
 
       <SegmentSection />
 
@@ -70,7 +78,7 @@ export function HomeSections({
         </div>
       </section>
 
-      <HomeTail posts={posts} reviews={reviews} />
+      <HomeTail posts={posts} savedReviews={savedReviews} hiddenReviewIds={hiddenReviewIds} />
     </>
   );
 }

@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
+import { HOME_REVIEW_CARDS } from "@/lib/home-reviews";
 import { DEFAULT_PROMOS, type PromoCover } from "@/lib/promo";
 
 export type HomePost = {
@@ -13,16 +14,16 @@ export type HomePost = {
   image: string;
 };
 
-export type HomeReview = {
-  id: string;
-  author: string;
-  location: string;
-  rating: number;
-  body: string;
-};
-
-export function HomeTail({ posts, reviews }: { posts: HomePost[]; reviews: HomeReview[] }) {
-  const { t } = usePrefs();
+export function HomeTail({
+  posts,
+  savedReviews,
+  hiddenReviewIds,
+}: {
+  posts: HomePost[];
+  savedReviews: { id: string; author: string; location: string; body: string }[];
+  hiddenReviewIds: string[];
+}) {
+  const { t, locale } = usePrefs();
   const [promos, setPromos] = useState<PromoCover[]>(DEFAULT_PROMOS);
 
   useEffect(() => {
@@ -46,30 +47,6 @@ export function HomeTail({ posts, reviews }: { posts: HomePost[]; reviews: HomeR
 
   return (
     <>
-      {reviews.length > 0 ? (
-        <section className="border-t border-surface-border bg-surface-soft py-14">
-          <div className="container-page">
-            <h2 className="section-title">{t("home.reviews")}</h2>
-            <p className="section-sub">{t("home.reviewsSub")}</p>
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {reviews.map((review) => (
-                <article key={review.id} className="card flex h-full flex-col p-5">
-                  <p className="text-sm tracking-wide text-brand" aria-label={`${review.rating} / 5`}>
-                    {"★".repeat(Math.min(5, Math.max(1, review.rating)))}
-                    <span className="text-surface-border">{"★".repeat(5 - Math.min(5, Math.max(1, review.rating)))}</span>
-                  </p>
-                  <p className="mt-3 flex-1 text-sm leading-relaxed text-ink">{review.body}</p>
-                  <p className="mt-4 text-sm font-semibold text-ink">
-                    {review.author}
-                    <span className="font-normal text-ink-muted"> · {review.location}</span>
-                  </p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
       <section className="border-t border-surface-border bg-white py-14">
         <div className="container-page">
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -153,6 +130,73 @@ export function HomeTail({ posts, reviews }: { posts: HomePost[]; reviews: HomeR
           </div>
         </div>
       </section>
+
+      <section className="bg-[#121926] py-16 sm:py-20">
+        <div className="container-page">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-sm uppercase tracking-wide text-brand">{t("home.reviewsKicker")}</p>
+            <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-white sm:text-4xl lg:text-5xl">
+              {t("home.reviews")}
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base text-[#9aa4b2]">{t("home.reviewsSub")}</p>
+          </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {savedReviews.map((review) => (
+              <ReviewCard
+                key={review.id}
+                title={t("home.reviewCard")}
+                body={review.body}
+                author={review.author}
+                place={review.location}
+              />
+            ))}
+            {HOME_REVIEW_CARDS.filter((review) => !hiddenReviewIds.includes(review.id)).map((review) => {
+              const copy = review.copy[locale];
+              return (
+                <ReviewCard key={review.id} title={copy.title} body={copy.body} author={review.author} place={copy.place} masked />
+              );
+            })}
+          </div>
+        </div>
+      </section>
     </>
+  );
+}
+
+function ReviewCard({
+  title,
+  body,
+  author,
+  place,
+  masked,
+}: {
+  title: string;
+  body: string;
+  author: string;
+  place: string;
+  masked?: boolean;
+}) {
+  const initials = author
+    .split(" ")
+    .map((part) => part.charAt(0))
+    .join("")
+    .slice(0, 2);
+  return (
+    <article className="flex h-full flex-col rounded-xl bg-white/[0.04] p-8">
+      <h3 className="mb-3 text-sm font-normal uppercase tracking-[1px] text-[#697586]">{title}</h3>
+      <p className="flex-1 text-base leading-6 tracking-tight text-[#e3e8ef]">{body}</p>
+      <div className="mt-12 flex items-center gap-3">
+        <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-medium text-white">
+          {initials}
+        </span>
+        <div>
+          <p className="text-lg font-medium leading-none text-white">
+            {author}
+            {masked ? <span className="ms-0.5 tracking-tight text-[#9aa4b2]">●●●●</span> : null}
+          </p>
+          <p className="mt-1 text-sm text-[#697586]">{place}</p>
+        </div>
+      </div>
+    </article>
   );
 }

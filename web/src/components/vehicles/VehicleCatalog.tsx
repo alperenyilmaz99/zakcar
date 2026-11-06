@@ -8,6 +8,7 @@ import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { specLabel } from "@/lib/i18n";
 import { useSearch } from "@/hooks/useSearch";
 import { resolveOfficeId } from "@/lib/offices";
+import { rentalDays } from "@/lib/extras";
 
 const GROUPS = ["Ekonomik", "SUV", "Minibüs", "Lüks"] as const;
 const FUELS = ["Elektrik", "Dizel", "Benzin", "Hibrit"] as const;
@@ -56,6 +57,8 @@ export function VehicleCatalog({ vehicles, initialGroup }: VehicleCatalogProps) 
       cancelled = true;
     };
   }, [search.from, search.to, search.pickup]);
+
+  const days = search.from && search.to ? rentalDays(search.from, search.to) : undefined;
 
   const filtered = useMemo(() => {
     let list = vehicles;
@@ -125,6 +128,7 @@ export function VehicleCatalog({ vehicles, initialGroup }: VehicleCatalogProps) 
                 <VehicleCard
                   key={v.slug}
                   vehicle={v}
+                  days={days}
                   available={availability ? availability[v.slug] : undefined}
                   onSelect={
                     availability && availability[v.slug] === 0

@@ -1,6 +1,92 @@
 {
   "posts": [
     {
+      "slug": "istanbul-da-ilk-kez-arac-kiralayacaklar-icin-adim-adim-teslim-plani",
+      "title": "İstanbul'da İlk Kez Araç Kiralayacaklar İçin Adım Adım Teslim Planı",
+      "excerpt": "İlk kez araç kiralayacaksanız rezervasyondan teslime, ödemeden iadeye kadar süreci SAW, IGA ve ZakCar Merkez Ofis özelinde sade biçimde anlatıyoruz.",
+      "image": "/assets/blog/arac-kiralamada-depozito-ucreti.png",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "İlk kez araç kiralarken en çok merak edilen şey, sürecin hangi adımlardan geçtiği ve nerede ne ödeneceğidir. ZakCar Rent A Car, İstanbul'da kısa dönem kiralama yapar ve süreci olabildiğince sade tutmaya çalışır. Bu yazıda rezervasyondan araç iadesine kadar izlenecek sırayı özetliyoruz."
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Önce teslim noktanızı belirleyin"
+        },
+        {
+          "type": "paragraph",
+          "text": "ZakCar'ın üç teslim noktası vardır: İstanbul Sabiha Gökçen Havalimanı (SAW) ve İstanbul Havalimanı (IGA) ofisleri 7/24 açıktır. ZakCar Merkez Ofis ise Sabiha Gökçen'in karşısındadır ve 08:00-22:00 arasında hizmet verir. Uçuş saatiniz belli ise ona en yakın ve size uygun noktayı seçmek işinizi kolaylaştırır. Havalimanı teslimi ücretsizdir."
+        },
+        {
+          "type": "heading",
+          "level": 3,
+          "text": "Seçim yaparken göz önünde bulundurun"
+        },
+        {
+          "type": "listItem",
+          "text": "Geç veya erken saatte ineceksiniz: SAW ya da IGA ofisi"
+        },
+        {
+          "type": "listItem",
+          "text": "Gün içinde, 08:00-22:00 arasında geliyorsunuz: Merkez Ofis de uygundur"
+        },
+        {
+          "type": "listItem",
+          "text": "Uçuş numaranızı ve tahmini varış saatinizi rezervasyonda belirtin"
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Araç grubunu ihtiyaca göre seçin"
+        },
+        {
+          "type": "paragraph",
+          "text": "Kaç kişi olacağınız, bagaj miktarınız ve İstanbul içinde mi yoksa şehir dışına mı çıkacağınız grup seçimini belirler. Kentsel kullanım için kompakt bir araç yeterli olabilir; daha geniş bagaj veya yüksek oturuş istiyorsanız SUV grubuna bakabilirsiniz. İlk kiralamada standart ve SUV gruplarında %10 indirim uygulanır."
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Ödeme ve depozito nasıl işler?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Ön ödeme yoktur; ödeme araç tesliminde yapılır. Kredi kartı zorunlu değildir ve Findeks sorgusu yapılmaz. Depozito araç grubuna göre alınır ve koşullara uygun şekilde iade edilir. Tutarı rezervasyon sırasında ekibimizden netleştirmenizi öneririz."
+        },
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Fiyata neler dahil, neler ek?"
+        },
+        {
+          "type": "paragraph",
+          "text": "Standart kasko ve 7/24 yol yardım fiyata dahildir. İhtiyacınıza göre aşağıdaki ekleri talep edebilirsiniz:"
+        },
+        {
+          "type": "listItem",
+          "text": "Ek sürücü"
+        },
+        {
+          "type": "listItem",
+          "text": "Genç sürücü paketi"
+        },
+        {
+          "type": "listItem",
+          "text": "HGS"
+        },
+        {
+          "type": "listItem",
+          "text": "Çocuk koltuğu"
+        },
+        {
+          "type": "listItem",
+          "text": "Kış lastiği"
+        }
+      ],
+      "createdAt": "2026-11-06T00:41:00.505Z"
+    },
+    {
       "slug": "istanbul-da-gece-gec-saatte-iniyorsaniz-arac-teslimi-nasil-isler",
       "title": "İstanbul'da Gece Geç Saatte İniyorsanız Araç Teslimi Nasıl İşler?",
       "excerpt": "Gece geç saatte ya da sabaha karşı İstanbul'a inenler için ofis saatleri, teslim noktası ve ödeme düzeni hakkında sade bir rehber.",
@@ -83,6 +169,14 @@
     }
   ],
   "reviews": [
+    {
+      "id": "a7e31bd2-97b2-4d12-8474-8f9bdccf22c8",
+      "author": "Elif T.",
+      "location": "İstanbul Havalimanı",
+      "rating": 5,
+      "body": "IGA'ya sabaha karşı indim, çıkışta beni karşılayan görevli aracı birlikte gezip hasar kontrolünü yaptı, ben de her şeyi rahatça görebildim. Çocuk koltuğunu önceden istemiştim, araçta hazırdı ve takılmasına da yardım etti. İlk kiralamam olduğu için indirim uygulandı, ödemeyi de teslimde yaptım.",
+      "createdAt": "2026-11-06T00:38:50.521Z"
+    },
     {
       "id": "4f98e71a-4b43-48cc-9c11-a3200e1c851b",
       "author": "Murat D.",

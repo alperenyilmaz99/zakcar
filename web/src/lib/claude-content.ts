@@ -10,7 +10,8 @@ Depozito araç grubuna göre alınır ve iade koşullu olarak geri verilir. Stan
 İlk kiralamada standart ve SUV grubunda %10 indirim vardır.
 Ekler: ek sürücü, genç sürücü paketi, HGS, çocuk koltuğu, kış lastiği.
 Telefon +90 532 388 2996. WhatsApp +90 850 307 7384.
-Başka şehir ofisi, online ödeme, zorunlu kredi kartı veya uydurma fiyat yazma.`;
+Başka şehir ofisi, online ödeme, zorunlu kredi kartı veya uydurma fiyat yazma.
+Yazılar yalnızca İstanbul araç kiralaması ile SAW ve IGA teslimi hakkındadır. İzmir, Antalya, Bodrum ve diğer şehir gezi rehberleri yazılmaz.`;
 
 const BLOCK_SAMPLE = `[
   {"type":"paragraph","text":"Giriş: okurun sorununu ve ZakCar’ın buna nasıl baktığını iki üç cümleyle anlat."},
@@ -23,8 +24,8 @@ const BLOCK_SAMPLE = `[
   {"type":"paragraph","text":"Okuru rezervasyona çağır, abartısız."}
 ]`;
 
-type ClaudeResponse = {
-  content?: Array<{ type: string; text?: string }>;
+type OpenAiResponse = {
+  choices?: Array<{ message?: { content?: string | null } }>;
   error?: { message?: string };
 };
 
@@ -57,50 +58,41 @@ function extractJson(text: string): unknown {
   return JSON.parse(raw.slice(start, end + 1)) as unknown;
 }
 
-async function askClaude(prompt: string, maxTokens: number): Promise<unknown> {
-  const key = process.env.CLAUDE_API_KEY?.trim();
-  if (!key) throw new Error("CLAUDE_API_KEY tanımlı değil.");
+async function askModel(prompt: string, maxTokens: number): Promise<unknown> {
+  const key = process.env.OPENAI_API_KEY?.trim();
+  if (!key) throw new Error("OPENAI_API_KEY tanımlı değil.");
+  const model = process.env.OPENAI_MODEL?.trim() || "gpt-4.1";
 
-  const body = {
-    model: "claude-sonnet-5-5",
-    max_tokens: maxTokens,
-    output_config: { effort: "low" },
-    messages: [{ role: "user", content: prompt }],
-  };
-
-  let response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (response.status === 400) {
-    const retry = { ...body } as { output_config?: unknown };
-    delete retry.output_config;
-    response = await fetch("https://api.anthropic.com/v1/messages", {
+  const call = (tokenField: "max_completion_tokens" | "max_tokens") =>
+    fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
+        authorization: `Bearer ${key}`,
       },
-      body: JSON.stringify(retry),
+      body: JSON.stringify({
+        model,
+        [tokenField]: maxTokens,
+        response_format: { type: "json_object" },
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
+
+  let response = await call("max_completion_tokens");
+  if (response.status === 400) {
+    const peek = (await response.clone().json().catch(() => null)) as OpenAiResponse | null;
+    const message = peek?.error?.message || "";
+    if (/max_completion_tokens|max_tokens|unsupported_parameter/i.test(message)) {
+      response = await call("max_tokens");
+    }
   }
 
-  const payload = (await response.json()) as ClaudeResponse;
+  const payload = (await response.json()) as OpenAiResponse;
   if (!response.ok) {
-    throw new Error(payload.error?.message || "Claude yanıt vermedi.");
+    throw new Error(payload.error?.message || "OpenAI yanıt vermedi.");
   }
-  const text = (payload.content || [])
-    .filter((block) => block.type === "text" && block.text)
-    .map((block) => block.text)
-    .join("\n");
-  if (!text.trim()) throw new Error("Claude metin döndürmedi.");
+  const text = payload.choices?.[0]?.message?.content || "";
+  if (!text.trim()) throw new Error("OpenAI metin döndürmedi.");
   return extractJson(text);
 }
 
@@ -149,7 +141,7 @@ ${titles}
 Yalnızca şu JSON’u döndür:
 {"title":"...","excerpt":"...","blocks":[...]}`;
 
-  const data = (await askClaude(prompt, 4000)) as { title?: string; excerpt?: string; blocks?: unknown };
+  const data = (await askModel(prompt, 4000)) as { title?: string; excerpt?: string; blocks?: unknown };
   const title = clean(data.title, 120);
   const excerpt = clean(data.excerpt, 220);
   if (title.length < 16 || excerpt.length < 40) throw new Error("Blog başlığı veya özeti yetersiz.");
@@ -188,7 +180,7 @@ ${earlier ? `Şu yorumların konusunu tekrarlama:\n${earlier}` : "Bu ilk yorum. 
 Yalnızca şu JSON’u döndür:
 {"author":"Ayşe K.","location":"Sabiha Gökçen","rating":5,"body":"..."}`;
 
-  const data = (await askClaude(prompt, 800)) as {
+  const data = (await askModel(prompt, 800)) as {
     author?: string;
     location?: string;
     rating?: number;

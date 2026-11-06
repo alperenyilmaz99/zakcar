@@ -104,47 +104,51 @@ export function Header() {
           </nav>
         </div>
 
-        <button
-          type="button"
-          className="ms-auto inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-border lg:hidden"
-          aria-label={t("nav.menu")}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <span className="text-xl leading-none">{open ? "✕" : "☰"}</span>
-        </button>
+        <div className="ms-auto flex shrink-0 items-center gap-1 lg:hidden">
+          <LocaleCurrencySwitch plain />
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-surface-border"
+            aria-label={t("nav.menu")}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span className="text-xl leading-none">{open ? "✕" : "☰"}</span>
+          </button>
+        </div>
       </div>
 
       {open && (
-        <div className="border-t border-surface-border bg-white px-4 py-4 lg:hidden">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <LocaleCurrencySwitch plain />
-            {ready && user ? (
-              <button
-                type="button"
-                className="text-sm font-medium text-ink-muted"
-                onClick={() => {
-                  void logout();
-                  setOpen(false);
-                }}
-              >
-                {t("nav.logout")}
-              </button>
-            ) : ready ? (
-              <span className="flex items-center gap-2">
-                <Link href="/giris" className="text-sm font-semibold" onClick={() => setOpen(false)}>
-                  {t("nav.login")}
-                </Link>
-                <Link
-                  href="/giris?kayit=1"
-                  className="rounded-full bg-brand px-3 py-1.5 text-sm font-semibold text-white"
-                  onClick={() => setOpen(false)}
+        <div className="relative z-10 border-t border-surface-border bg-white px-4 py-4 lg:hidden">
+          {ready ? (
+            <div className="mb-3 flex items-center justify-end gap-3">
+              {user ? (
+                <button
+                  type="button"
+                  className="text-sm font-medium text-ink-muted"
+                  onClick={() => {
+                    void logout();
+                    setOpen(false);
+                  }}
                 >
-                  {t("nav.register")}
-                </Link>
-              </span>
-            ) : null}
-          </div>
+                  {t("nav.logout")}
+                </button>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Link href="/giris" className="text-sm font-semibold" onClick={() => setOpen(false)}>
+                    {t("nav.login")}
+                  </Link>
+                  <Link
+                    href="/giris?kayit=1"
+                    className="rounded-full bg-brand px-3 py-1.5 text-sm font-semibold text-white"
+                    onClick={() => setOpen(false)}
+                  >
+                    {t("nav.register")}
+                  </Link>
+                </span>
+              )}
+            </div>
+          ) : null}
           <div className="flex flex-col gap-1">
             {[...top, ...vehicles, ...services, ...NAV.airports.map((a) => ({ href: a.href, label: t(a.labelKey) })), ...main].map(
               (item) => (

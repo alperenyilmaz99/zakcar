@@ -7,7 +7,12 @@ import { createServerSupabase, hasServerSupabase } from "@/lib/supabase/server";
 
 export type { SiteReview, StoredPost };
 
-type Store = { posts: StoredPost[]; reviews: SiteReview[] };
+type Store = {
+  posts: StoredPost[];
+  reviews: SiteReview[];
+  hiddenPostSlugs: string[];
+  hiddenReviewIds: string[];
+};
 
 const COVER_IMAGES = [
   "/assets/blog/kredi-kartsiz-arac-kiralama.png",
@@ -27,7 +32,7 @@ function storePath(): string {
 }
 
 function emptyStore(): Store {
-  return { posts: [], reviews: [] };
+  return { posts: [], reviews: [], hiddenPostSlugs: [], hiddenReviewIds: [] };
 }
 
 export function readContentFile(): Store {
@@ -36,6 +41,8 @@ export function readContentFile(): Store {
     return {
       posts: Array.isArray(parsed.posts) ? parsed.posts : [],
       reviews: Array.isArray(parsed.reviews) ? parsed.reviews : [],
+      hiddenPostSlugs: Array.isArray(parsed.hiddenPostSlugs) ? parsed.hiddenPostSlugs.filter((item) => typeof item === "string") : [],
+      hiddenReviewIds: Array.isArray(parsed.hiddenReviewIds) ? parsed.hiddenReviewIds.filter((item) => typeof item === "string") : [],
     };
   } catch {
     return emptyStore();
@@ -155,6 +162,7 @@ export async function saveGeneratedPost(
 ): Promise<"both" | "file" | "supabase"> {
   const store = readContentFile();
   store.posts = [post, ...store.posts.filter((item) => item.slug !== post.slug)];
+  store.hiddenPostSlugs = store.hiddenPostSlugs.filter((item) => item !== post.slug);
   const wroteFile = writeContentFile(store);
 
   let wroteRemote = false;
@@ -169,6 +177,8 @@ export async function saveGeneratedPost(
     });
     if (error && !missingTable(error)) throw new Error(error.message);
     wroteRemote = !error;
+    const unhide = await staff.from("site_hidden_content").delete().eq("kind", "post").eq("key", post.slug);
+    if (unhide.error && !missingTable(unhide.error)) throw new Error(unhide.error.message);
   }
 
   if (!wroteFile && !wroteRemote) {
@@ -205,4 +215,85 @@ export async function saveGeneratedReview(
   }
   if (wroteFile && wroteRemote) return "both";
   return wroteRemote ? "supabase" : "file";
+}
+
+async function remoteHidden(kind: "post" | "review"): Promise<string[]> {
+  if (!hasServerSupabase()) return [];
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.from("site_hidden_content").select("key").eq("kind", kind);
+  if (error) {
+    if (missingTable(error)) return [];
+    throw new Error(error.message);
+  }
+  return ((data || []) as { key: string }[]).map((row) => row.key).filter(Boolean);
+}
+
+export async function listHiddenKeys(kind: "post" | "review"): Promise<string[]> {
+  const file = readContentFile();
+  const local = kind === "post" ? file.hiddenPostSlugs : file.hiddenReviewIds;
+  const remote = await remoteHidden(kind);
+  return [...new Set([...local, ...remote])];
+}
+
+async function hideKey(kind: "post" | "review", key: string, staff?: SupabaseClient | null): Promise<void> {
+  const store = readContentFile();
+  const list = kind === "post" ? store.hiddenPostSlugs : store.hiddenReviewIds;
+  if (!list.includes(key)) list.push(key);
+  const wroteFile = writeContentFile(store);
+  let wroteRemote = false;
+  if (staff) {
+    const { error } = await staff.from("site_hidden_content").upsert({ kind, key });
+    if (error && !missingTable(error)) throw new Error(error.message);
+    wroteRemote = !error;
+  }
+  if (!wroteFile && !wroteRemote) {
+    throw new Error("Silinemedi. Supabase SQL Editor’da web/supabase/content.sql dosyasını bir kez çalıştırın.");
+  }
+}
+
+export async function deleteManagedPost(slug: string, staff: SupabaseClient | null, mustHide: boolean): Promise<void> {
+  const store = readContentFile();
+  store.posts = store.posts.filter((item) => item.slug !== slug);
+  if (mustHide && !store.hiddenPostSlugs.includes(slug)) store.hiddenPostSlugs.push(slug);
+  const wroteFile = writeContentFile(store);
+
+  let removedRemote = false;
+  let hidRemote = false;
+  if (staff) {
+    const removed = await staff.from("site_posts").delete().eq("slug", slug);
+    if (removed.error && !missingTable(removed.error)) throw new Error(removed.error.message);
+    removedRemote = !removed.error;
+    if (mustHide) {
+      const hidden = await staff.from("site_hidden_content").upsert({ kind: "post", key: slug });
+      if (hidden.error && !missingTable(hidden.error)) throw new Error(hidden.error.message);
+      hidRemote = !hidden.error;
+    }
+  }
+
+  if (mustHide && !wroteFile && !hidRemote) {
+    throw new Error("Yazı siteden kaldırılamadı. Supabase SQL Editor’da web/supabase/content.sql dosyasını bir kez çalıştırın.");
+  }
+  if (!mustHide && !wroteFile && !removedRemote) {
+    throw new Error("Yazı silinemedi. Supabase SQL Editor’da web/supabase/content.sql dosyasını bir kez çalıştırın.");
+  }
+}
+
+export async function deleteManagedReview(id: string, staff: SupabaseClient | null, builtin: boolean): Promise<void> {
+  if (builtin) {
+    await hideKey("review", id, staff);
+    return;
+  }
+
+  const store = readContentFile();
+  store.reviews = store.reviews.filter((item) => item.id !== id);
+  const wroteFile = writeContentFile(store);
+  let wroteRemote = false;
+  if (staff) {
+    const { error } = await staff.from("site_reviews").delete().eq("id", id);
+    if (error && !missingTable(error)) throw new Error(error.message);
+    wroteRemote = !error;
+  }
+  if (!wroteFile && !wroteRemote) {
+    throw new Error("Yorum silinemedi. Supabase SQL Editor’da web/supabase/content.sql dosyasını bir kez çalıştırın.");
+  }
 }

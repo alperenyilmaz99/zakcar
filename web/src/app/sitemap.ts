@@ -21,6 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "blog",
     "sik-sorulan-sorular",
     "kiralama-kosullari",
+    "kiralama-sozlesmesi",
     "gizlilik-politikasi",
     "kisisel-verilerin-korunmasi",
   ];

@@ -204,22 +204,18 @@ function VehiclesInner() {
     }
   }
 
-  async function saveUnit(patch: { status?: FleetVehicle["status"]; fuelLevel?: number; km?: number }) {
-    if (!active || saving) return;
+  async function toggleBooking(vehicle: FleetVehicle) {
+    if (saving) return;
+    const closing = vehicle.status !== "bakimda";
+    if (closing && !window.confirm(`${vehicle.plate} rezervasyona kapatılsın mı? Sitede müsait görünmez.`)) return;
     setSaving(true);
     setActionError("");
     try {
-      if (patch.status === "musait" && active.status === "bakimda") {
-        await releaseFleetVehicle(active.recordId);
-        if (patch.fuelLevel != null || patch.km != null) {
-          await updateFleetUnit(active.recordId, { fuelLevel: patch.fuelLevel, km: patch.km });
-        }
-      } else {
-        await updateFleetUnit(active.recordId, patch);
-      }
+      if (closing) await updateFleetUnit(vehicle.recordId, { status: "bakimda" });
+      else await releaseFleetVehicle(vehicle.recordId);
       await reload();
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : "Kaydedilemedi");
+      setActionError(e instanceof Error ? e.message : "Müsaitlik güncellenemedi");
     } finally {
       setSaving(false);
     }
@@ -235,7 +231,9 @@ function VehiclesInner() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Araçlar</h1>
-          <p className="mt-1 text-sm text-ink-muted">Filo durumu, kiracı, süre, yakıt ve son konum.</p>
+          <p className="mt-1 text-sm text-ink-muted">
+            Filo durumu, kiracı ve müsaitlik. Kapatılan plaka sitede seçilemez.
+          </p>
         </div>
           <div className="flex items-center gap-3">
             <p className="text-sm text-ink-muted">{list.length} kayıt</p>
@@ -354,6 +352,7 @@ function VehiclesInner() {
           ))}
         </div>
       </div>
+      {actionError ? <p className="mt-3 text-sm text-rose-600">{actionError}</p> : null}
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-surface-border bg-white">
         <table className="min-w-full text-left text-sm">
@@ -362,6 +361,7 @@ function VehiclesInner() {
               <th className="px-4 py-3 font-medium">Araç</th>
               <th className="px-4 py-3 font-medium">Plaka</th>
               <th className="px-4 py-3 font-medium">Durum</th>
+              <th className="px-4 py-3 font-medium">Müsaitlik</th>
               <th className="px-4 py-3 font-medium">Kiracı ve süre</th>
               <th className="px-4 py-3 font-medium">Konum</th>
               <th className="px-4 py-3 font-medium">Yakıt</th>
@@ -394,6 +394,23 @@ function VehiclesInner() {
                 <td className="px-4 py-3 font-mono text-ink">{v.plate}</td>
                 <td className="px-4 py-3">
                   <FleetStatusBadge status={v.status} />
+                </td>
+                <td className="px-4 py-3">
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void toggleBooking(v);
+                    }}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                      v.status === "bakimda"
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                        : "border border-surface-border bg-white text-ink hover:border-brand hover:text-brand"
+                    }`}
+                  >
+                    {v.status === "bakimda" ? "Aç" : "Kapat"}
+                  </button>
                 </td>
                 <td className="max-w-[260px] px-4 py-3">
                   <RentalSummary rentals={openByVehicle.get(v.id) ?? []} />
@@ -513,25 +530,14 @@ function VehiclesInner() {
             <button type="submit" className="btn-primary text-sm" disabled={saving}>
               {saving ? "Kaydediliyor…" : "Değişiklikleri kaydet"}
             </button>
-            {active.status === "bakimda" ? (
-              <button
-                type="button"
-                className="btn-outline text-sm"
-                disabled={saving}
-                onClick={() => void saveUnit({ status: "musait", fuelLevel: fuel, km })}
-              >
-                Bakımdan çıkar
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="btn-outline text-sm"
-                disabled={saving}
-                onClick={() => void saveUnit({ status: "bakimda" })}
-              >
-                Bakıma al
-              </button>
-            )}
+            <button
+              type="button"
+              className="btn-outline text-sm"
+              disabled={saving}
+              onClick={() => void toggleBooking(active)}
+            >
+              {active.status === "bakimda" ? "Rezervasyona aç" : "Rezervasyona kapat"}
+            </button>
             <button
               type="button"
               className="btn-outline text-sm text-rose-700"
@@ -543,7 +549,7 @@ function VehiclesInner() {
           </div>
           <RentalDetails rentals={openByVehicle.get(active.id) ?? []} />
           <p className="mt-3 text-xs text-ink-muted">
-            Kirada ve rezerveli durum kiralama kaydından gelir. Bakım elle kapatılır.
+            Kirada ve rezerveli durum kiralama kaydından gelir. Kapatılan araç yeni rezervasyon almaz; açılınca durum kayda göre yeniden hesaplanır.
           </p>
           {actionError && <p className="mt-2 text-sm text-rose-600">{actionError}</p>}
         </form>

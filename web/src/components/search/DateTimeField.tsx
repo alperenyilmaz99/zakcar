@@ -76,10 +76,17 @@ export function DateTimeField({
 
   useEffect(() => {
     if (!open) return;
-    const place = () => {
+    const place = (event?: Event) => {
+      const target = event?.target;
+      if (target instanceof Node && popRef.current && (target === popRef.current || popRef.current.contains(target))) return;
       const rect = rootRef.current?.getBoundingClientRect();
       if (!rect) return;
-      setBox({ top: rect.bottom + 4, left: rect.left, right: window.innerWidth - rect.right, width: rect.width });
+      const next = { top: rect.bottom + 4, left: rect.left, right: window.innerWidth - rect.right, width: rect.width };
+      setBox((prev) =>
+        prev && prev.top === next.top && prev.left === next.left && prev.right === next.right && prev.width === next.width
+          ? prev
+          : next,
+      );
     };
     place();
     window.addEventListener("resize", place);
@@ -101,9 +108,15 @@ export function DateTimeField({
     return () => document.removeEventListener("mousedown", close);
   }, [open, onOpenChange]);
 
+  const alignedTime = useRef(false);
   useEffect(() => {
-    if (!open || panel !== "time") return;
-    timeListRef.current?.querySelector<HTMLElement>("[data-selected='true']")?.scrollIntoView({ block: "center" });
+    if (!open || panel !== "time") {
+      alignedTime.current = false;
+      return;
+    }
+    if (alignedTime.current || !timeListRef.current) return;
+    alignedTime.current = true;
+    timeListRef.current.querySelector<HTMLElement>("[data-selected='true']")?.scrollIntoView({ block: "center" });
   }, [open, panel, box]);
 
   const minDate = min ? startOfDay(new Date(min)) : startOfDay(new Date());
@@ -234,7 +247,7 @@ export function DateTimeField({
             popRef.current = node;
             timeListRef.current = node;
           }}
-          className="fixed z-40 max-h-64 w-36 overflow-auto rounded-2xl border border-surface-border bg-white p-1.5 text-[#111] shadow-search"
+          className="fixed z-40 max-h-64 w-36 overflow-y-auto overscroll-contain rounded-2xl border border-surface-border bg-white p-1.5 text-[#111] shadow-search"
           style={{ top: box.top, right: box.right }}
         >
           {HOURS.map((hour) => {

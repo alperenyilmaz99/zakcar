@@ -123,7 +123,7 @@ function Drop({
         </span>
       </button>
       {open && (
-        <div className="absolute end-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-surface-border bg-white py-1 shadow-search">
+        <div className="absolute end-0 top-full z-30 mt-1 min-w-[180px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-xl border border-surface-border bg-white py-1 shadow-search">
           <div onClick={() => setOpen(false)}>{children}</div>
         </div>
       )}

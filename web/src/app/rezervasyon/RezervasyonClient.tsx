@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { useCustomer } from "@/hooks/useCustomer";
 import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
@@ -52,12 +52,16 @@ export default function RezervasyonClient() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [extras, setExtras] = useState<ExtraId[]>([]);
-  const [flight, setFlight] = useState("");
+  const [arrivalFlight, setArrivalFlight] = useState("");
+  const [returnFlight, setReturnFlight] = useState("");
+  const [customerNote, setCustomerNote] = useState("");
   const [showCode, setShowCode] = useState(false);
   const [code, setCode] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; percent: number } | null>(null);
   const [couponError, setCouponError] = useState("");
   const [checkingCode, setCheckingCode] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const consentRef = useRef<HTMLInputElement>(null);
 
   const pickupId = resolveOfficeId(search.pickup);
   const dropId = search.differentDrop ? resolveOfficeId(search.drop) : pickupId;
@@ -110,6 +114,13 @@ export default function RezervasyonClient() {
     if (!vehicle || saving) return;
     setError("");
 
+    if (!accepted) {
+      setError(t("book.kvkkRequired"));
+      consentRef.current?.focus();
+      consentRef.current?.scrollIntoView({ block: "center" });
+      return;
+    }
+
     if (!pickupId || !dropId || !isBookableOffice(pickupId) || !isBookableOffice(dropId)) {
       setError(t("book.needOffice"));
       return;
@@ -159,7 +170,9 @@ export default function RezervasyonClient() {
           email: String(fd.get("email") || ""),
           phone: String(fd.get("phone") || ""),
           birthDate: birth,
-          flightNumber: flight,
+          arrivalFlight,
+          returnFlight,
+          customerNote,
           extraCodes: extras,
           couponCode,
         }),
@@ -393,14 +406,40 @@ export default function RezervasyonClient() {
                 <Field name="lastName" label={t("book.lastName")} required defaultValue={rest.join(" ")} placeholder="Örn: Yılmaz" />
                 <Field name="email" label={t("book.email")} type="email" required defaultValue={user?.email || ""} />
                 <Field name="birth" label={t("book.birth")} type="date" required />
-                <Field name="phone" label={t("book.phone")} required autoComplete="tel" />
-                <Field
-                  label={t("book.flightNo")}
-                  value={flight}
-                  onChange={(event) => setFlight(event.target.value)}
-                  autoComplete="off"
-                />
+                <Field name="phone" label={t("book.phone")} required autoComplete="tel" className="sm:col-span-2" />
               </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Field
+                    label={t("book.flightArrival")}
+                    value={arrivalFlight}
+                    onChange={(event) => setArrivalFlight(event.target.value)}
+                    autoComplete="off"
+                    placeholder="Örn: TK1234"
+                  />
+                  <p className="mt-1.5 text-xs text-ink-muted">{t("book.flightMissing")}</p>
+                </div>
+                <div>
+                  <Field
+                    label={t("book.flightReturn")}
+                    value={returnFlight}
+                    onChange={(event) => setReturnFlight(event.target.value)}
+                    autoComplete="off"
+                    placeholder="Örn: TK5678"
+                  />
+                  <p className="mt-1.5 text-xs text-ink-muted">{t("book.flightMissing")}</p>
+                </div>
+              </div>
+              <label className="mt-4 block">
+                <span className="mb-1.5 block text-sm font-medium text-ink">{t("book.note")}</span>
+                <textarea
+                  value={customerNote}
+                  onChange={(event) => setCustomerNote(event.target.value)}
+                  maxLength={400}
+                  rows={3}
+                  className="w-full resize-y rounded-xl border border-surface-border px-4 py-3 text-sm"
+                />
+              </label>
             </section>
           </div>
 
@@ -470,13 +509,44 @@ export default function RezervasyonClient() {
               <p className="text-sm font-semibold text-ink">{t("book.totalPrice")}</p>
               <p className="font-display text-2xl font-bold text-ink">{money(total)}</p>
             </div>
-            {error && <p className="mt-3 text-sm text-brand">{error}</p>}
-            <button type="submit" className="btn-primary mt-4 w-full" disabled={saving}>
-              {saving ? t("book.saving") : t("book.submit")}
-            </button>
-            <p className="mt-3 text-xs text-ink-muted">{t("book.payLater")}</p>
           </aside>
         </div>
+
+        <section className="mt-5 rounded-2xl border border-surface-border bg-white p-4 shadow-card sm:p-5">
+          <label className="flex items-start gap-3 text-sm leading-relaxed text-ink">
+            <input
+              ref={consentRef}
+              type="checkbox"
+              checked={accepted}
+              onChange={(event) => setAccepted(event.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-brand"
+            />
+            <span>
+              {t("book.kvkkLead")}{" "}
+              <Link href="/kiralama-kosullari" target="_blank" className="font-semibold text-brand hover:underline">
+                {t("book.kvkkTerms")}
+              </Link>
+              {", "}
+              <Link href="/kiralama-sozlesmesi" target="_blank" className="font-semibold text-brand hover:underline">
+                {t("book.kvkkContract")}
+              </Link>{" "}
+              {t("book.kvkkAnd")}{" "}
+              <Link
+                href="/kisisel-verilerin-korunmasi"
+                target="_blank"
+                className="font-semibold text-brand hover:underline"
+              >
+                {t("book.kvkkNotice")}
+              </Link>{" "}
+              {t("book.kvkkTail")}
+            </span>
+          </label>
+          {error && <p className="mt-3 text-sm text-brand">{error}</p>}
+          <button type="submit" className="btn-primary mt-4 w-full sm:w-auto" disabled={saving}>
+            {saving ? t("book.saving") : t("book.submit")}
+          </button>
+          <p className="mt-3 text-xs text-ink-muted">{t("book.payLater")}</p>
+        </section>
       </form>
     </div>
   );

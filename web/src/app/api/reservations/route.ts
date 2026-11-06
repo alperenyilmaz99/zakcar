@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { rpcFailure, validateReservationInput, type Reservation, type ReservationInput } from "@/lib/booking";
+import { composeFlightNumber, rpcFailure, validateReservationInput, type Reservation, type ReservationInput } from "@/lib/booking";
 import { normalizeCouponCode } from "@/lib/coupon-math";
 import { resolveCouponPercent } from "@/lib/coupons";
 import { sanitizeExtraCodes } from "@/lib/extras";
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     p_last_name: body.lastName.trim(),
     p_email: body.email.trim(),
     p_phone: body.phone.trim(),
-    p_flight_number: body.flightNumber?.trim() || null,
+    p_flight_number: composeFlightNumber(body) || null,
   };
   const extras = sanitizeExtraCodes(body.extraCodes);
   let { data, error } = await supabase.rpc("create_public_reservation", {

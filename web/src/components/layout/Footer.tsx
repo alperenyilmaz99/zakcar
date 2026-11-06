@@ -36,6 +36,7 @@ export function Footer() {
   ];
   const info = [
     { href: "/kiralama-kosullari", label: t("nav.terms") },
+    { href: "/kiralama-sozlesmesi", label: t("nav.contract") },
     { href: "/gizlilik-politikasi", label: t("nav.privacy") },
     { href: "/kisisel-verilerin-korunmasi", label: t("nav.kvkk") },
   ];

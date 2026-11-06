@@ -5,16 +5,17 @@ import Link from "next/link";
 import type { Vehicle } from "@/lib/types";
 import { vehicleImagePath } from "@/lib/data";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
-import { specLabel } from "@/lib/i18n";
+import { formatMoney, parseTryAmount, specLabel } from "@/lib/i18n";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
   onSelect?: (slug: string) => void;
   available?: number | null;
+  days?: number;
 }
 
-export function VehicleCard({ vehicle, onSelect, available }: VehicleCardProps) {
-  const { t, formatPrice, locale } = usePrefs();
+export function VehicleCard({ vehicle, onSelect, available, days }: VehicleCardProps) {
+  const { t, formatPrice, locale, currency } = usePrefs();
   const shortName = vehicle.name
     .replace(" Araç Kiralama", "")
     .replace(new RegExp(`^${vehicle.brand}\\s*`, "i"), "")
@@ -82,16 +83,25 @@ export function VehicleCard({ vehicle, onSelect, available }: VehicleCardProps) 
       </div>
 
       <div className="mt-auto flex items-end justify-between gap-3 border-t border-surface-border px-4 py-3.5">
-        <div>
-          <p className="font-display text-lg font-bold text-ink">
+        <div className="min-w-0">
+          <p className="font-display text-lg font-bold leading-tight text-ink">
             {formatPrice(vehicle.price)}{" "}
             <span className="text-sm font-medium text-ink-muted">{t("card.daily")}</span>
           </p>
-          <p className="text-xs text-ink-muted">
-            {available != null && available > 0 ? t("catalog.available", { n: available }) : t("card.fromPrices")}
-          </p>
+          {days && days > 0 ? (
+            <>
+              <p className="mt-1 text-sm font-semibold leading-tight text-ink">
+                {t("card.total")} {formatMoney(parseTryAmount(vehicle.price) * days, currency, locale)}
+              </p>
+              <p className="text-xs font-medium text-ink-muted">{t("card.days", { n: days })}</p>
+            </>
+          ) : (
+            <p className="text-xs text-ink-muted">
+              {available != null && available > 0 ? t("catalog.available", { n: available }) : t("card.fromPrices")}
+            </p>
+          )}
         </div>
-        {selectBtn}
+        <div className="shrink-0">{selectBtn}</div>
       </div>
     </article>
   );
