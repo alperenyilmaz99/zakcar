@@ -241,6 +241,7 @@ declare
   v_fleet uuid;
   v_customer uuid;
   v_days integer;
+  v_deposit numeric(12, 2);
   v_total numeric(12, 2);
   v_extra numeric(12, 2);
   v_extra_codes text;
@@ -262,7 +263,7 @@ begin
   if v_phone_key is null then
     raise exception 'Geçerli bir telefon girin.';
   end if;
-  if v_flight is not null and v_flight !~ '^[A-Z0-9 -]{2,12}$' then
+  if v_flight is not null and length(v_flight) > 500 then
     raise exception 'Uçuş numarası geçersiz.';
   end if;
   if v_start is null or v_end is null or v_end <= v_start then
@@ -355,6 +356,12 @@ begin
   end if;
 
   v_days := greatest(1, ceil(extract(epoch from (v_end - v_start)) / 86400.0)::int);
+  -- web/src/lib/extras.ts depositForDays ile aynı: 1–3 gün 5000, 4–10 gün 10000, sonrası 20000.
+  v_deposit := case
+    when v_days <= 3 then 5000
+    when v_days <= 10 then 10000
+    else 20000
+  end;
   -- Ek ücretler web/src/lib/extras.ts ile aynı günlük tutarlardır.
   v_extra := 0;
   v_note_parts := array[]::text[];
@@ -395,7 +402,7 @@ begin
     v_end,
     'bekliyor',
     v_model.daily_price_try,
-    v_model.deposit_try,
+    v_deposit,
     v_total,
     v_flight,
     v_notes

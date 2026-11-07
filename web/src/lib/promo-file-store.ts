@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
-import { DEFAULT_PROMOS, type PromoCover } from "@/lib/promo";
+import { DEFAULT_PROMOS, normalizePromoSlot, type PromoCover } from "@/lib/promo";
 
 function firstExisting(paths: string[], fallback: string): string {
   return paths.find((p) => fs.existsSync(p)) || fallback;
@@ -28,7 +28,7 @@ export function readPromoFile(): PromoCover[] {
     const raw = fs.readFileSync(dataPath, "utf8");
     const parsed = JSON.parse(raw) as PromoCover[];
     if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_PROMOS;
-    return parsed;
+    return parsed.map((item) => ({ ...item, slot: normalizePromoSlot(item.slot) }));
   } catch {
     return DEFAULT_PROMOS;
   }

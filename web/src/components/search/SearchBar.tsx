@@ -32,7 +32,7 @@ export function SearchBar({
 }: SearchBarProps) {
   const router = useRouter();
   const { search, update } = useSearch();
-  const { t } = usePrefs();
+  const { t, locale } = usePrefs();
   const [openMenu, setOpenMenu] = useState<"pickup" | "drop" | "from" | "to" | null>(null);
   const [seeking, setSeeking] = useState(false);
   const seekTimer = useRef<number | null>(null);
@@ -63,9 +63,12 @@ export function SearchBar({
     if (search.from) params.set("from", search.from);
     if (search.to) params.set("to", search.to);
     const href = `/arac-modelleri?${params.toString()}`;
+    if (`${window.location.pathname}${window.location.search}` === href) return;
     setSeeking(true);
     seekTimer.current = window.setTimeout(() => {
+      const stayed = window.location.pathname === "/arac-modelleri";
       router.push(href);
+      if (stayed) setSeeking(false);
     }, 1500);
   }
 
@@ -162,8 +165,8 @@ export function SearchBar({
       {!compact && (
         <p className="mt-3 text-xs text-ink-muted">
           {t("search.summary", {
-            from: `${formatDate(search.from)} ${formatTime(search.from)}`,
-            to: `${formatDate(search.to)} ${formatTime(search.to)}`,
+            from: `${formatDate(search.from, locale)} ${formatTime(search.from, locale)}`,
+            to: `${formatDate(search.to, locale)} ${formatTime(search.to, locale)}`,
           })}
         </p>
       )}
@@ -174,6 +177,7 @@ export function SearchBar({
             drop={locationLabel(different ? search.drop : search.pickup, t) || t("search.placeholder")}
             from={search.from}
             to={search.to}
+            locale={locale}
             loading={t("search.loading")}
             pickupLabel={t("search.pickupOnly")}
             dropLabel={t("search.dropoff")}
@@ -200,6 +204,7 @@ function SearchSeeking({
   toLabel,
   fromTimeLabel,
   toTimeLabel,
+  locale,
 }: {
   pickup: string;
   drop: string;
@@ -212,6 +217,7 @@ function SearchSeeking({
   toLabel: string;
   fromTimeLabel: string;
   toTimeLabel: string;
+  locale: string;
 }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/45 p-4">
@@ -231,12 +237,12 @@ function SearchSeeking({
           <SeekRow icon="pin" label={pickupLabel} value={pickup} />
           <SeekRow icon="pin" label={dropLabel} value={drop} />
           <div className="grid grid-cols-2">
-            <SeekRow icon="calendar" label={fromLabel} value={formatDate(from)} />
-            <SeekRow icon="clock" label={fromTimeLabel} value={formatTime(from)} />
+            <SeekRow icon="calendar" label={fromLabel} value={formatDate(from, locale)} />
+            <SeekRow icon="clock" label={fromTimeLabel} value={formatTime(from, locale)} />
           </div>
           <div className="grid grid-cols-2">
-            <SeekRow icon="calendar" label={toLabel} value={formatDate(to)} />
-            <SeekRow icon="clock" label={toTimeLabel} value={formatTime(to)} />
+            <SeekRow icon="calendar" label={toLabel} value={formatDate(to, locale)} />
+            <SeekRow icon="clock" label={toTimeLabel} value={formatTime(to, locale)} />
           </div>
         </div>
       </div>
@@ -309,11 +315,11 @@ function LocationSelect({
     <div className="relative">
       <button
         type="button"
-        className="flex h-[52px] w-full items-center gap-2 overflow-hidden rounded-xl border border-surface-border bg-white px-4 text-left text-sm"
+        className="flex h-[52px] w-full items-center gap-2 overflow-hidden rounded-xl border border-surface-border bg-white px-4 text-start text-sm"
         onClick={onToggle}
       >
         <span className="shrink-0 text-brand">📍</span>
-        <span className={`min-w-0 flex-1 truncate ${label ? "text-ink" : "text-ink-muted"}`}>
+        <span dir="auto" className={`min-w-0 flex-1 truncate ${label ? "text-ink" : "text-ink-muted"}`}>
           {label || t("search.placeholder")}
         </span>
       </button>
@@ -331,7 +337,7 @@ function LocationSelect({
               ) : (
                 <button
                   type="button"
-                  className="w-full px-4 py-2.5 text-left text-sm text-[#111] hover:bg-[#FFF1F2]"
+                  className="w-full px-4 py-2.5 text-start text-sm text-[#111] hover:bg-[#FFF1F2]"
                   onClick={() => onSelect(o.id)}
                 >
                   {t(o.nameKey)}

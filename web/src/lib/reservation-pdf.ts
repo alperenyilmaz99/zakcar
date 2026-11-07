@@ -4,7 +4,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFPage, type RGB } from "pdf-lib";
 import type { Reservation } from "./booking";
 import { getVehicleBySlug } from "./data";
-import { EXTRA_OPTIONS, extraAmount, sanitizeExtraCodes } from "./extras";
+import { EXTRA_OPTIONS, extraAmount, includedKm, rentalDays, sanitizeExtraCodes } from "./extras";
 
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
@@ -92,7 +92,9 @@ export async function buildReservationPdf(input: ReservationPdfInput): Promise<U
   top += 8;
   top = drawPrices(page, font, bold, input, shortName, end.weekday, top, contentW);
   top += 16;
-  drawReminders(page, font, bold, top, contentW);
+  const days = rentalDays(input.reservation.startAt, input.reservation.endAt);
+  const kmLine = `${days} gün için yol hakkı ${includedKm(days).toLocaleString("tr-TR")} km’dir. Günlük 300 km, 10 gün 2.200 km, aylık 3.800 km.`;
+  drawReminders(page, font, bold, top, contentW, kmLine);
   drawFooter(page, font, issued.year);
 
   return pdf.save();
@@ -337,11 +339,11 @@ function drawPriceRow(page: PDFPage, font: PDFFont, line: PriceLine, y: number, 
   });
 }
 
-function drawReminders(page: PDFPage, font: PDFFont, bold: PDFFont, top: number, contentW: number) {
+function drawReminders(page: PDFPage, font: PDFFont, bold: PDFFont, top: number, contentW: number, kmLine: string) {
   top = drawSection(page, bold, "ÖNEMLİ HATIRLATMALAR", top);
   top += 6;
   const innerW = contentW - 28;
-  const lines = REMINDERS.flatMap((item) => wrap(`•  ${item}`, font, 8, innerW));
+  const lines = [kmLine, ...REMINDERS].flatMap((item) => wrap(`•  ${item}`, font, 8, innerW));
   const h = lines.length * 12 + 16;
   const y = PAGE_H - top - h;
   drawRound(page, M, y, contentW, h, 6, { borderColor: LINE, borderWidth: 1, color: WHITE });

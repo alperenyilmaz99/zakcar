@@ -8,7 +8,8 @@
     "sub": "Standart ve SUV grubundaki tüm araçlarda geçerli",
     "badge": "İlk kiralamaya özel",
     "sortOrder": 0,
-    "isActive": true
+    "isActive": true,
+    "slot": "hero"
   },
   {
     "id": "default-card",
@@ -19,7 +20,8 @@
     "sub": "Nakit ve banka kartı ile rezervasyon imkânı",
     "badge": "Kredi kartsız",
     "sortOrder": 1,
-    "isActive": true
+    "isActive": true,
+    "slot": "hero"
   },
   {
     "id": "default-air",
@@ -30,7 +32,8 @@
     "sub": "Sabiha Gökçen ve İstanbul Havalimanı ofisleri",
     "badge": "7/24 teslim",
     "sortOrder": 2,
-    "isActive": true
+    "isActive": true,
+    "slot": "hero"
   },
   {
     "id": "default-suv",
@@ -41,6 +44,103 @@
     "sub": "Uzun yol ve aile seyahatleri için güçlü seçenekler",
     "badge": "SUV & arazi",
     "sortOrder": 3,
-    "isActive": true
+    "isActive": true,
+    "slot": "hero"
+  },
+  {
+    "id": "default-ilk-mid",
+    "imageUrl": "/assets/promo/ilk-kiralama.png",
+    "href": "/ekonomik-arac-kiralama",
+    "title": "İlk araç kiralamanızda",
+    "highlight": "%10 indirim",
+    "sub": "Standart ve SUV grubundaki tüm araçlarda geçerli",
+    "badge": "İlk kiralamaya özel",
+    "sortOrder": 0,
+    "isActive": true,
+    "slot": "mid"
+  },
+  {
+    "id": "default-card-mid",
+    "imageUrl": "/assets/promo/kredi-kartsiz.png",
+    "href": "/kredi-kartsiz-arac-kiralama",
+    "title": "Kredi kartı olmadan",
+    "highlight": "kiralayın",
+    "sub": "Nakit ve banka kartı ile rezervasyon imkânı",
+    "badge": "Kredi kartsız",
+    "sortOrder": 1,
+    "isActive": true,
+    "slot": "mid"
+  },
+  {
+    "id": "default-air-mid",
+    "imageUrl": "/assets/promo/havalimani.png",
+    "href": "/sabiha-gokcen-havalimani-arac-kiralama",
+    "title": "Havalimanı teslim",
+    "highlight": "SAW & IGA",
+    "sub": "Sabiha Gökçen ve İstanbul Havalimanı ofisleri",
+    "badge": "7/24 teslim",
+    "sortOrder": 2,
+    "isActive": true,
+    "slot": "mid"
+  },
+  {
+    "id": "default-suv-mid",
+    "imageUrl": "/assets/promo/suv.png",
+    "href": "/4x4-suv-arac-kiralama",
+    "title": "SUV ve 4x4",
+    "highlight": "geniş filo",
+    "sub": "Uzun yol ve aile seyahatleri için güçlü seçenekler",
+    "badge": "SUV & arazi",
+    "sortOrder": 3,
+    "isActive": true,
+    "slot": "mid"
+  },
+  {
+    "id": "default-ilk-campaigns",
+    "imageUrl": "/assets/promo/ilk-kiralama.png",
+    "href": "/ekonomik-arac-kiralama",
+    "title": "İlk araç kiralamanızda",
+    "highlight": "%10 indirim",
+    "sub": "Standart ve SUV grubundaki tüm araçlarda geçerli",
+    "badge": "İlk kiralamaya özel",
+    "sortOrder": 0,
+    "isActive": true,
+    "slot": "campaigns"
+  },
+  {
+    "id": "default-card-campaigns",
+    "imageUrl": "/assets/promo/kredi-kartsiz.png",
+    "href": "/kredi-kartsiz-arac-kiralama",
+    "title": "Kredi kartı olmadan",
+    "highlight": "kiralayın",
+    "sub": "Nakit ve banka kartı ile rezervasyon imkânı",
+    "badge": "Kredi kartsız",
+    "sortOrder": 1,
+    "isActive": true,
+    "slot": "campaigns"
+  },
+  {
+    "id": "default-air-campaigns",
+    "imageUrl": "/assets/promo/havalimani.png",
+    "href": "/sabiha-gokcen-havalimani-arac-kiralama",
+    "title": "Havalimanı teslim",
+    "highlight": "SAW & IGA",
+    "sub": "Sabiha Gökçen ve İstanbul Havalimanı ofisleri",
+    "badge": "7/24 teslim",
+    "sortOrder": 2,
+    "isActive": true,
+    "slot": "campaigns"
+  },
+  {
+    "id": "default-suv-campaigns",
+    "imageUrl": "/assets/promo/suv.png",
+    "href": "/4x4-suv-arac-kiralama",
+    "title": "SUV ve 4x4",
+    "highlight": "geniş filo",
+    "sub": "Uzun yol ve aile seyahatleri için güçlü seçenekler",
+    "badge": "SUV & arazi",
+    "sortOrder": 3,
+    "isActive": true,
+    "slot": "campaigns"
   }
 ]

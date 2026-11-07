@@ -4,9 +4,14 @@ import Link from "next/link";
 import type { Vehicle } from "@/lib/types";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { specLabel } from "@/lib/i18n";
+import { depositForDays, rentalDays } from "@/lib/extras";
+import { formatTryAmount } from "@/lib/format";
+import { useSearch } from "@/hooks/useSearch";
 
 export function VehicleDetailInfo({ vehicle }: { vehicle: Vehicle }) {
   const { t, formatPrice, locale } = usePrefs();
+  const { search } = useSearch();
+  const days = search.from && search.to ? rentalDays(search.from, search.to) : 1;
 
   const rows = [
     [t("vehicle.group"), specLabel(locale, vehicle.group)],
@@ -14,6 +19,7 @@ export function VehicleDetailInfo({ vehicle }: { vehicle: Vehicle }) {
     [t("vehicle.gear"), specLabel(locale, vehicle.transmission)],
     [t("vehicle.capacity"), `${vehicle.capacity} ${t("card.person")}`],
     [t("vehicle.price"), `${formatPrice(vehicle.price)} ${t("vehicle.perDay")}`],
+    [t("card.deposit"), formatPrice(formatTryAmount(depositForDays(days)))],
   ];
 
   return (

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { composeFlightNumber, rpcFailure, validateReservationInput, type Reservation, type ReservationInput } from "@/lib/booking";
+import { composeFlightNumber, legacyFlightNumber, rpcFailure, validateReservationInput, type Reservation, type ReservationInput } from "@/lib/booking";
 import { normalizeCouponCode } from "@/lib/coupon-math";
 import { resolveCouponPercent } from "@/lib/coupons";
-import { sanitizeExtraCodes } from "@/lib/extras";
+import { depositForDays, rentalDays, sanitizeExtraCodes } from "@/lib/extras";
 import { sendReservationConfirmation } from "@/lib/reservation-mail";
 import { bearerToken, createServerSupabase, hasServerSupabase } from "@/lib/supabase/server";
 
@@ -41,26 +41,11 @@ export async function POST(req: Request) {
   }
 
   const supabase = createServerSupabase(bearerToken(req));
-  const base = {
-    p_model_slug: body.modelSlug,
-    p_pickup_code: body.pickupCode,
-    p_dropoff_code: body.dropoffCode,
-    p_start_at: body.startAt,
-    p_end_at: body.endAt,
-    p_first_name: body.firstName.trim(),
-    p_last_name: body.lastName.trim(),
-    p_email: body.email.trim(),
-    p_phone: body.phone.trim(),
-    p_flight_number: composeFlightNumber(body) || null,
-  };
   const extras = sanitizeExtraCodes(body.extraCodes);
-  let { data, error } = await supabase.rpc("create_public_reservation", {
-    ...base,
-    p_birth_date: body.birthDate || null,
-    p_extra_codes: extras.length ? extras.join(",") : null,
-  });
-  if (error && isOldReservationFunction(error)) {
-    ({ data, error } = await supabase.rpc("create_public_reservation", base));
+  const requestedFlight = composeFlightNumber(body) || null;
+  let { data, error } = await insertReservation(supabase, body, extras, requestedFlight);
+  if (error && isFlightRejected(error)) {
+    ({ data, error } = await insertReservation(supabase, body, extras, legacyFlightNumber(body)));
   }
 
   if (error) {
@@ -94,6 +79,11 @@ export async function POST(req: Request) {
     }
   }
 
+  reservation = {
+    ...reservation,
+    deposit: depositForDays(rentalDays(body.startAt, body.endAt)),
+  };
+
   const mailSent = await sendReservationConfirmation({
     reservation,
     email: body.email.trim(),
@@ -109,6 +99,39 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ ...reservation, mailSent });
+}
+
+function isFlightRejected(error: { message?: string }) {
+  return /uçuş numarası geçersiz/i.test(error.message || "");
+}
+
+async function insertReservation(
+  supabase: ReturnType<typeof createServerSupabase>,
+  body: ReservationInput,
+  extras: string[],
+  flightNumber: string | null,
+) {
+  const base = {
+    p_model_slug: body.modelSlug,
+    p_pickup_code: body.pickupCode,
+    p_dropoff_code: body.dropoffCode,
+    p_start_at: body.startAt,
+    p_end_at: body.endAt,
+    p_first_name: body.firstName.trim(),
+    p_last_name: body.lastName.trim(),
+    p_email: body.email.trim(),
+    p_phone: body.phone.trim(),
+    p_flight_number: flightNumber,
+  };
+  let result = await supabase.rpc("create_public_reservation", {
+    ...base,
+    p_birth_date: body.birthDate || null,
+    p_extra_codes: extras.length ? extras.join(",") : null,
+  });
+  if (result.error && isOldReservationFunction(result.error)) {
+    result = await supabase.rpc("create_public_reservation", base);
+  }
+  return result;
 }
 
 function isOldReservationFunction(error: { message?: string; code?: string }) {

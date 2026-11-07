@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { AirportArticle, airportArticleTitle } from "@/components/content/AirportArticle";
 import { SearchBar } from "@/components/search/SearchBar";
 import { VehicleCatalog } from "@/components/vehicles/VehicleCatalog";
 import {
@@ -20,6 +21,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const vehicle = getVehicleBySlug(slug);
   if (vehicle) return { title: vehicle.name, description: vehicle.summary };
+  const articleTitle = airportArticleTitle(slug);
+  if (articleTitle) return { title: articleTitle, description: articleTitle };
   const seo = resolveSeoPage(slug);
   if (seo) return { title: seo.title, description: seo.description };
   return { title: slug };
@@ -33,6 +36,13 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
 
   const seo = resolveSeoPage(slug);
   if (!seo) notFound();
+  const article =
+    slug === "sabiha-gokcen-havalimani-arac-kiralama"
+      ? "saw"
+      : slug === "istanbul-3-havalimani-arac-kiralama"
+        ? "iga"
+        : null;
+  const heading = article ? airportArticleTitle(slug) : seo.title;
 
   const showCatalog = seo.type === "group" || seo.type === "brand";
   const vehicles = showCatalog
@@ -41,12 +51,12 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
 
   return (
     <div className="container-page py-10 lg:py-14">
-      <h1 className="section-title">{seo.title}</h1>
-      <p className="section-sub">{seo.description}</p>
+      <h1 className="section-title">{heading ?? seo.title}</h1>
+      {article ? null : <p className="section-sub">{seo.description}</p>}
 
       <div className="my-8">
         <SearchBar
-          defaultPickup={seo.defaultPickup}
+          defaultPickup={article === "saw" ? "saw" : article === "iga" ? "iga" : seo.defaultPickup}
           defaultGroup={seo.filterGroup}
           compact
         />
@@ -57,6 +67,8 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
           vehicles={vehicles}
           initialGroup={seo.filterGroup}
         />
+      ) : article ? (
+        <AirportArticle airport={article} />
       ) : (
         <div className="card p-8 text-center">
           <p className="text-ink-muted">

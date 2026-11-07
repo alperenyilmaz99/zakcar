@@ -6,6 +6,8 @@ import type { Vehicle } from "@/lib/types";
 import { vehicleImagePath } from "@/lib/data";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { formatMoney, parseTryAmount, specLabel } from "@/lib/i18n";
+import { depositForDays } from "@/lib/extras";
+import { formatTryAmount } from "@/lib/format";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -65,7 +67,7 @@ export function VehicleCard({ vehicle, onSelect, available, days }: VehicleCardP
         <div className="mb-2 flex items-start justify-between gap-2">
           <p className="text-xs text-ink-muted">
             {t("card.deposit")}:{" "}
-            <span className="font-medium text-ink">{formatPrice(vehicle.deposit ?? "15.540 TL")}</span>
+            <span className="font-medium text-ink">{formatPrice(formatTryAmount(depositForDays(days ?? 1)))}</span>
           </p>
           <span className="rounded bg-brand-light px-2 py-0.5 text-[11px] font-semibold text-brand-dark">
             {specLabel(locale, vehicle.group)}

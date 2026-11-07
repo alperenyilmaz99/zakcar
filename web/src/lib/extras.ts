@@ -25,6 +25,32 @@ export function rentalDays(startIso: string, endIso: string): number {
   return Math.max(1, Math.ceil((end - start) / 86_400_000));
 }
 
+const DAILY_KM = 300;
+const TEN_DAY_KM = 2200;
+const MONTHLY_KM = 3800;
+
+/** 7 güne kadar 300 km/gün. 8–10 gün 2.200 km. 30 gün 3.800 km. 11–29 gün bu ikisi arasında eşit artar. */
+export function includedKm(days: number): number {
+  const total = Math.max(1, Math.floor(days));
+  const months = Math.floor(total / 30);
+  const rest = total % 30;
+  return months * MONTHLY_KM + includedKmWithinMonth(rest);
+}
+
+function includedKmWithinMonth(days: number): number {
+  if (days <= 0) return 0;
+  if (days < 10) return Math.min(days * DAILY_KM, TEN_DAY_KM);
+  return TEN_DAY_KM + Math.round(((days - 10) * (MONTHLY_KM - TEN_DAY_KM)) / 20);
+}
+
+/** 1–3 gün 5.000 TL, 4–10 gün 10.000 TL, 11 gün ve üzeri 20.000 TL. */
+export function depositForDays(days: number): number {
+  const total = Math.max(1, Math.floor(days));
+  if (total <= 3) return 5_000;
+  if (total <= 10) return 10_000;
+  return 20_000;
+}
+
 export function sanitizeExtraCodes(codes: unknown): ExtraId[] {
   if (!Array.isArray(codes)) return [];
   const picked = new Set<ExtraId>();

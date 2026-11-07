@@ -9,7 +9,13 @@ import {
   reorderPromoCovers,
   savePromoCover,
 } from "@/lib/panel-api";
-import type { PromoCover } from "@/lib/promo";
+import { normalizePromoSlot, type PromoCover, type PromoSlot } from "@/lib/promo";
+
+const SLOTS: { id: PromoSlot; title: string; text: string }[] = [
+  { id: "hero", title: "Üst kayan kampanya", text: "Arama kutusunun hemen altındaki kayan görseller." },
+  { id: "mid", title: "Alttaki kayan kampanya", text: "Sayfanın ortasındaki ikinci kayan görseller." },
+  { id: "campaigns", title: "Kampanyalar", text: "Kampanyalar bölümü, Tüm kampanyalar butonu ve kampanyalar sayfası." },
+];
 
 export default function PromoCoversPage() {
   const [items, setItems] = useState<PromoCover[]>([]);
@@ -19,6 +25,7 @@ export default function PromoCoversPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editing, setEditing] = useState<PromoCover | null>(null);
   const addRef = useRef<HTMLInputElement>(null);
+  const addSlot = useRef<PromoSlot>("hero");
 
   const load = async () => {
     setError("");
@@ -58,8 +65,9 @@ export default function PromoCoversPage() {
 
   const onAdd = async (file: File | null) => {
     if (!file) return;
+    const slot = addSlot.current;
     await run("new", async () => {
-      await createPromoCover(file, source);
+      await createPromoCover(file, source, slot);
     });
   };
 
@@ -84,15 +92,20 @@ export default function PromoCoversPage() {
     });
   };
 
-  const move = async (index: number, dir: -1 | 1) => {
+  const groupOf = (slot: PromoSlot) =>
+    items.filter((item) => normalizePromoSlot(item.slot) === slot).sort((a, b) => a.sortOrder - b.sortOrder);
+
+  const move = async (slot: PromoSlot, index: number, dir: -1 | 1) => {
+    const group = groupOf(slot);
     const next = index + dir;
-    if (next < 0 || next >= items.length) return;
-    const copy = [...items];
+    if (next < 0 || next >= group.length) return;
+    const copy = [...group];
     const [row] = copy.splice(index, 1);
     copy.splice(next, 0, row);
-    setItems(copy);
+    const merged = SLOTS.flatMap((entry) => (entry.id === slot ? copy : groupOf(entry.id)));
+    setItems(merged);
     await run("sort", async () => {
-      await reorderPromoCovers(copy, source);
+      await reorderPromoCovers(merged, source);
     });
   };
 
@@ -106,28 +119,23 @@ export default function PromoCoversPage() {
             Kapak görselleri
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Ana sayfa kampanya kapaklarını ekleyin, değiştirin veya kaldırın.
+            Üst kayan alan, alttaki kayan alan ve kampanyalar bölümü ayrı ayrı düzenlenir.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <p className="text-xs text-ink-muted">
-            {source === "supabase" ? "Supabase" : "Yerel kayıt"} · {items.length} kapak
-          </p>
-          <input
-            ref={addRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null;
-              e.target.value = "";
-              void onAdd(file);
-            }}
-          />
-          <button type="button" className="btn-primary text-sm" onClick={() => addRef.current?.click()}>
-            Görsel ekle
-          </button>
-        </div>
+        <p className="text-xs text-ink-muted">
+          {source === "supabase" ? "Supabase" : "Yerel kayıt"} · {items.length} kapak
+        </p>
+        <input
+          ref={addRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0] || null;
+            e.target.value = "";
+            void onAdd(file);
+          }}
+        />
       </div>
 
       {source === "file" && (
@@ -141,8 +149,29 @@ export default function PromoCoversPage() {
         <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>
       )}
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
-        {items.map((cover, index) => (
+      <div className="mt-8 space-y-10">
+        {SLOTS.map((slot) => {
+          const group = groupOf(slot.id);
+          return (
+            <section key={slot.id}>
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-xl font-bold text-ink">{slot.title}</h2>
+                  <p className="mt-1 text-sm text-ink-muted">{slot.text}</p>
+                </div>
+                <button
+                  type="button"
+                  className="btn-primary text-sm"
+                  onClick={() => {
+                    addSlot.current = slot.id;
+                    addRef.current?.click();
+                  }}
+                >
+                  Görsel ekle
+                </button>
+              </div>
+              <div className="mt-4 grid gap-5 lg:grid-cols-2">
+                {group.map((cover, index) => (
           <article key={cover.id} className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card">
             <div className="relative aspect-[16/7] bg-ink">
               {cover.imageUrl ? (
@@ -192,15 +221,15 @@ export default function PromoCoversPage() {
                       type="button"
                       className="btn-outline text-xs"
                       disabled={index === 0}
-                      onClick={() => void move(index, -1)}
+                      onClick={() => void move(slot.id, index, -1)}
                     >
                       Yukarı
                     </button>
                     <button
                       type="button"
                       className="btn-outline text-xs"
-                      disabled={index === items.length - 1}
-                      onClick={() => void move(index, 1)}
+                      disabled={index === group.length - 1}
+                      onClick={() => void move(slot.id, index, 1)}
                     >
                       Aşağı
                     </button>
@@ -217,12 +246,19 @@ export default function PromoCoversPage() {
               {busyId === cover.id && <p className="text-xs text-ink-muted">Kaydediliyor…</p>}
             </div>
           </article>
-        ))}
+                ))}
+              </div>
+              {group.length === 0 && (
+                <p className="mt-4 text-sm text-ink-muted">
+                  {slot.id !== "hero" && !items.some((item) => normalizePromoSlot(item.slot) !== "hero")
+                    ? "Bu alan şu an üst kayan kampanyayla aynı görselleri gösteriyor. Ayrı liste için promo-covers.sql dosyasını yeniden çalıştırın; çalışınca mevcut görseller üç alana da kopyalanır."
+                    : "Bu alanda henüz görsel yok. “Görsel ekle” ile yükleyin."}
+                </p>
+              )}
+            </section>
+          );
+        })}
       </div>
-
-      {items.length === 0 && (
-        <p className="mt-10 text-center text-sm text-ink-muted">Henüz kapak yok. “Görsel ekle” ile yükleyin.</p>
-      )}
     </div>
   );
 }

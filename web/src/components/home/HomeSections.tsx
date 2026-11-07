@@ -47,7 +47,7 @@ export function HomeSections({
         </div>
       </section>
 
-      <PromoBanners />
+      <PromoBanners slot="mid" />
 
       <PopularSlider vehicles={vehicles} />
 

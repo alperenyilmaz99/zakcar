@@ -123,7 +123,7 @@ export default function RezervasyonSorgulamaPage() {
 }
 
 function ReservationCard({ item }: { item: Reservation }) {
-  const { t, formatPrice } = usePrefs();
+  const { t, formatPrice, locale } = usePrefs();
   return (
     <div className="card mt-4 space-y-1 p-4 text-sm">
       <p className="font-display text-lg font-bold text-brand">{item.pnr}</p>
@@ -131,7 +131,7 @@ function ReservationCard({ item }: { item: Reservation }) {
         {item.vehicleName} · {item.plate}
       </p>
       <p className="text-ink-muted">
-        {formatDate(item.startAt)} — {formatDate(item.endAt)}
+        {formatDate(item.startAt, locale)} — {formatDate(item.endAt, locale)}
       </p>
       <p className="text-ink-muted">
         {item.pickup}

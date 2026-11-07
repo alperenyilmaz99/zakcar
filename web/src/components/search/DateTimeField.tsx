@@ -81,7 +81,9 @@ export function DateTimeField({
       if (target instanceof Node && popRef.current && (target === popRef.current || popRef.current.contains(target))) return;
       const rect = rootRef.current?.getBoundingClientRect();
       if (!rect) return;
-      const next = { top: rect.bottom + 4, left: rect.left, right: window.innerWidth - rect.right, width: rect.width };
+      const width = Math.max(rect.width, 272);
+      const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+      const next = { top: rect.bottom + 4, left, right: window.innerWidth - rect.right, width: rect.width };
       setBox((prev) =>
         prev && prev.top === next.top && prev.left === next.left && prev.right === next.right && prev.width === next.width
           ? prev
@@ -144,7 +146,7 @@ export function DateTimeField({
       <div className="flex h-[52px] w-full items-center overflow-hidden rounded-xl border border-surface-border bg-white text-sm text-[#111] transition hover:border-brand">
         <button
           type="button"
-          className="flex h-full min-w-0 flex-1 items-center gap-2 px-4 text-left"
+          className="flex h-full min-w-0 flex-1 items-center gap-1.5 px-2.5 text-start"
           aria-expanded={open && panel === "date"}
           onClick={() => openPanel("date")}
         >

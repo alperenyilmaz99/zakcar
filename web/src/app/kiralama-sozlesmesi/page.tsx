@@ -43,15 +43,18 @@ export default function Page() {
           Günlük ücret, gün sayısıyla çarpılır. Ek sürücü, genç sürücü paketi, HGS, çocuk koltuğu
           ve kış lastiği ayrıca ve günlük olarak eklenir.
         </li>
-        <li>Günlük yol hakkı 300 km’dir. Aşan kilometre, teslimde bildirilen birim bedelle tahsil edilir.</li>
+        <li>
+          Yol hakkı günlük 300 km, 10 gün 2.200 km, aylık 3.800 km’dir. Aşan kilometre, teslimde
+          bildirilen birim bedelle tahsil edilir.
+        </li>
         <li>
           Ön ödeme yoktur. Kiralama bedeli araç tesliminde nakit veya banka kartıyla ödenir. Kredi
           kartı zorunlu değildir.
         </li>
         <li>
-          Depozito araç grubuna göre teslimde alınır. Araç sorunsuz ve borcu kalmadan iade edilirse
-          depozito iade edilir. Hasar, yakıt, ceza veya kilometre aşımı bu tutardan mahsup
-          edilebilir.
+          Depozito teslimde alınır: 1–3 gün 5.000 TL, 4–10 gün 10.000 TL, 11 gün ve üzeri 20.000 TL.
+          Araç sorunsuz ve borcu kalmadan iade edilirse depozito iade edilir. Hasar, yakıt, ceza
+          veya kilometre aşımı bu tutardan mahsup edilebilir.
         </li>
       </ul>
 

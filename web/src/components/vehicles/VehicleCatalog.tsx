@@ -8,7 +8,7 @@ import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { specLabel } from "@/lib/i18n";
 import { useSearch } from "@/hooks/useSearch";
 import { resolveOfficeId } from "@/lib/offices";
-import { rentalDays } from "@/lib/extras";
+import { includedKm, rentalDays } from "@/lib/extras";
 
 const GROUPS = ["Ekonomik", "SUV", "Minibüs", "Lüks"] as const;
 const FUELS = ["Elektrik", "Dizel", "Benzin", "Hibrit"] as const;
@@ -73,7 +73,12 @@ export function VehicleCatalog({ vehicles, initialGroup }: VehicleCatalogProps) 
   return (
     <div>
       <div className="mb-4 rounded-xl border border-brand/20 bg-brand-light px-4 py-3 text-sm text-brand-dark">
-        {t("catalog.notice")}
+        <p>{t("catalog.notice")}</p>
+        {days ? (
+          <p className="mt-1 font-medium">
+            {t("book.kmNotice", { days, km: includedKm(days).toLocaleString("tr-TR") })}
+          </p>
+        ) : null}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">

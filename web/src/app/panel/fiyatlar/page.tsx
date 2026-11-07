@@ -121,7 +121,7 @@ export default function PricesPage() {
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Fiyatlar</h1>
           <p className="mt-1 max-w-2xl text-sm text-ink-muted">
-            Günlük kiralama ve depozito tutarları. Kaydettikten sonra sitedeki kartlar ve rezervasyon bu tutarı kullanır.
+            Günlük kiralama tutarı. Depozito süreye göredir: 1–3 gün 5.000 TL, 4–10 gün 10.000 TL, 11 gün ve üzeri 20.000 TL.
           </p>
         </div>
         <button type="button" className="btn-outline" onClick={zeroAll} disabled={loading || busyId !== null}>

@@ -44,6 +44,17 @@ function flightError(value?: string) {
   return flight.length > 0 && !FLIGHT.test(flight);
 }
 
+const LEGACY_FLIGHT = /^[A-Z0-9 -]{2,12}$/;
+
+export function legacyFlightNumber(body: Pick<ReservationInput, "arrivalFlight" | "returnFlight">): string | null {
+  const codes = [body.arrivalFlight, body.returnFlight]
+    .map((value) => (value || "").trim().toUpperCase())
+    .filter((value) => LEGACY_FLIGHT.test(value));
+  if (!codes.length) return null;
+  const joined = codes.join(" ");
+  return LEGACY_FLIGHT.test(joined) ? joined : codes[0];
+}
+
 export function composeFlightNumber(body: Pick<ReservationInput, "arrivalFlight" | "returnFlight" | "customerNote" | "flightNumber">) {
   const arrival = (body.arrivalFlight || "").trim();
   const returning = (body.returnFlight || "").trim();

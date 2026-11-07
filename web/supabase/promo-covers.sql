@@ -11,9 +11,13 @@ create table if not exists public.promo_covers (
   badge text not null default '',
   sort_order integer not null default 0,
   is_active boolean not null default true,
+  slot text not null default 'hero',
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint promo_covers_slot_check check (slot in ('hero', 'mid', 'campaigns'))
 );
+
+alter table public.promo_covers add column if not exists slot text not null default 'hero';
 
 create index if not exists promo_covers_sort_idx on public.promo_covers (sort_order, created_at);
 
@@ -72,3 +76,15 @@ select * from (values
   ('/assets/promo/suv.png', '/4x4-suv-arac-kiralama', 'SUV ve 4x4', 'geniş filo', 'Uzun yol ve aile seyahatleri için güçlü seçenekler', 'SUV & arazi', 3)
 ) as seed(image_url, href, title, highlight, subtitle, badge, sort_order)
 where not exists (select 1 from public.promo_covers);
+
+insert into public.promo_covers (image_url, href, title, highlight, subtitle, badge, sort_order, is_active, slot)
+select image_url, href, title, highlight, subtitle, badge, sort_order, is_active, 'mid'
+from public.promo_covers
+where slot = 'hero'
+  and not exists (select 1 from public.promo_covers where slot = 'mid');
+
+insert into public.promo_covers (image_url, href, title, highlight, subtitle, badge, sort_order, is_active, slot)
+select image_url, href, title, highlight, subtitle, badge, sort_order, is_active, 'campaigns'
+from public.promo_covers
+where slot = 'hero'
+  and not exists (select 1 from public.promo_covers where slot = 'campaigns');

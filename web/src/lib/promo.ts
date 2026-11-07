@@ -1,3 +1,62 @@
+import type { MessageKey } from "@/lib/i18n";
+
+const PROMO_COPY: Record<string, { title: MessageKey; highlight: MessageKey; sub: MessageKey; badge: MessageKey }> = {
+  first: {
+    title: "promo.first.title",
+    highlight: "promo.first.highlight",
+    sub: "promo.first.sub",
+    badge: "promo.first.badge",
+  },
+  card: {
+    title: "promo.card.title",
+    highlight: "promo.card.highlight",
+    sub: "promo.card.sub",
+    badge: "promo.card.badge",
+  },
+  air: {
+    title: "promo.air.title",
+    highlight: "promo.air.highlight",
+    sub: "promo.air.sub",
+    badge: "promo.air.badge",
+  },
+  suv: {
+    title: "promo.suv.title",
+    highlight: "promo.suv.highlight",
+    sub: "promo.suv.sub",
+    badge: "promo.suv.badge",
+  },
+};
+
+const PROMO_STEM: Record<string, keyof typeof PROMO_COPY> = {
+  "default-ilk": "first",
+  "default-card": "card",
+  "default-air": "air",
+  "default-suv": "suv",
+  "İlk araç kiralamanızda": "first",
+  "Kredi kartı olmadan": "card",
+  "Havalimanı teslim": "air",
+  "SUV ve 4x4": "suv",
+};
+
+export function localizedPromo(promo: PromoCover, t: (key: MessageKey) => string): PromoCover {
+  const stem = PROMO_STEM[promo.id] || PROMO_STEM[promo.title.trim()];
+  const copy = stem ? PROMO_COPY[stem] : undefined;
+  if (!copy) return promo;
+  return {
+    ...promo,
+    title: t(copy.title),
+    highlight: t(copy.highlight),
+    sub: t(copy.sub),
+    badge: t(copy.badge),
+  };
+}
+
+export type PromoSlot = "hero" | "mid" | "campaigns";
+
+export function normalizePromoSlot(value: unknown): PromoSlot {
+  return value === "mid" || value === "campaigns" ? value : "hero";
+}
+
 export type PromoCover = {
   id: string;
   imageUrl: string;
@@ -8,6 +67,7 @@ export type PromoCover = {
   badge: string;
   sortOrder: number;
   isActive: boolean;
+  slot: PromoSlot;
 };
 
 export const DEFAULT_PROMOS: PromoCover[] = [
@@ -21,6 +81,7 @@ export const DEFAULT_PROMOS: PromoCover[] = [
     badge: "İlk kiralamaya özel",
     sortOrder: 0,
     isActive: true,
+    slot: "hero",
   },
   {
     id: "default-card",
@@ -32,6 +93,7 @@ export const DEFAULT_PROMOS: PromoCover[] = [
     badge: "Kredi kartsız",
     sortOrder: 1,
     isActive: true,
+    slot: "hero",
   },
   {
     id: "default-air",
@@ -43,6 +105,7 @@ export const DEFAULT_PROMOS: PromoCover[] = [
     badge: "7/24 teslim",
     sortOrder: 2,
     isActive: true,
+    slot: "hero",
   },
   {
     id: "default-suv",
@@ -54,8 +117,18 @@ export const DEFAULT_PROMOS: PromoCover[] = [
     badge: "SUV & arazi",
     sortOrder: 3,
     isActive: true,
+    slot: "hero",
   },
 ];
+
+export function defaultPromos(slot: PromoSlot): PromoCover[] {
+  return DEFAULT_PROMOS.map((item, index) => ({
+    ...item,
+    id: slot === "hero" ? item.id : `${item.id}-${slot}`,
+    slot,
+    sortOrder: index,
+  }));
+}
 
 export type PromoRow = {
   id: string;
@@ -67,6 +140,7 @@ export type PromoRow = {
   badge: string;
   sort_order: number;
   is_active: boolean;
+  slot?: string | null;
 };
 
 export function mapPromoRow(row: PromoRow): PromoCover {
@@ -80,6 +154,7 @@ export function mapPromoRow(row: PromoRow): PromoCover {
     badge: row.badge || "",
     sortOrder: row.sort_order ?? 0,
     isActive: row.is_active !== false,
+    slot: normalizePromoSlot(row.slot),
   };
 }
 

@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { SITE } from "@/lib/constants";
-import { DEFAULT_PROMOS, type PromoCover } from "@/lib/promo";
+import { defaultPromos, localizedPromo, type PromoCover, type PromoSlot } from "@/lib/promo";
 
-export function PromoBanners() {
+export function PromoBanners({ slot = "hero" }: { slot?: PromoSlot }) {
   const { t } = usePrefs();
-  const [promos, setPromos] = useState<PromoCover[]>(DEFAULT_PROMOS);
+  const [promos, setPromos] = useState<PromoCover[]>(() => defaultPromos(slot));
   const [active, setActive] = useState(0);
   const [tick, setTick] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -19,23 +19,21 @@ export function PromoBanners() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/promos", { cache: "no-store" });
+        const res = await fetch(`/api/promos?slot=${slot}`, { cache: "no-store" });
         const data = (await res.json()) as PromoCover[];
         if (!cancelled && Array.isArray(data)) {
           const next = data.filter((p) => p.isActive !== false && p.imageUrl);
-          if (next.length > 0) {
-            setPromos(next);
-            setActive(0);
-          }
+          setPromos(next.length > 0 ? next : defaultPromos(slot));
+          setActive(0);
         }
       } catch {
-        if (!cancelled) setPromos(DEFAULT_PROMOS);
+        if (!cancelled) setPromos(defaultPromos(slot));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [slot]);
 
   useEffect(() => {
     if (promos.length < 2 || paused) return;
@@ -68,7 +66,8 @@ export function PromoBanners() {
       }}
     >
       <div className="relative h-[300px] sm:h-[360px] lg:h-[420px]">
-        {promos.map((promo, i) => {
+        {promos.map((item, i) => {
+          const promo = localizedPromo(item, t);
           const offset = i - active;
           return (
             <article
@@ -83,9 +82,9 @@ export function PromoBanners() {
                 fill
                 priority={i === 0}
                 sizes="100vw"
-                className="object-cover object-right"
+                className="object-cover object-right rtl:-scale-x-100"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#070b16] from-[18%] via-[#070b16]/75 via-[48%] to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#070b16] from-[18%] via-[#070b16]/75 via-[48%] to-transparent rtl:bg-gradient-to-l rtl:from-[42%] rtl:via-[72%]" />
               <div className="relative flex h-full flex-col justify-center px-5 py-8 sm:px-12 lg:px-16">
                 <div className="max-w-xl">
                   <h2 className="font-display text-[1.65rem] font-bold leading-[1.12] tracking-tight text-white sm:text-4xl lg:text-[2.75rem]">
@@ -132,7 +131,7 @@ export function PromoBanners() {
           <button
             type="button"
             onClick={() => go(active - 1)}
-            className="absolute left-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-2xl leading-none text-white transition hover:bg-black/70 sm:flex sm:left-5"
+            className="absolute start-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-2xl leading-none text-white transition hover:bg-black/70 sm:flex sm:start-5 rtl:-scale-x-100"
             aria-label={t("banner.prev")}
           >
             ‹
@@ -140,7 +139,7 @@ export function PromoBanners() {
           <button
             type="button"
             onClick={() => go(active + 1)}
-            className="absolute right-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-2xl leading-none text-white transition hover:bg-black/70 sm:flex sm:right-5"
+            className="absolute end-3 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-2xl leading-none text-white transition hover:bg-black/70 sm:flex sm:end-5 rtl:-scale-x-100"
             aria-label={t("banner.next")}
           >
             ›

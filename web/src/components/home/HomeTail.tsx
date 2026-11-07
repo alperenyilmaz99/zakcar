@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { HOME_REVIEW_CARDS } from "@/lib/home-reviews";
-import { DEFAULT_PROMOS, type PromoCover } from "@/lib/promo";
+import { defaultPromos, localizedPromo, type PromoCover } from "@/lib/promo";
 
 export type HomePost = {
   slug: string;
@@ -24,20 +24,20 @@ export function HomeTail({
   hiddenReviewIds: string[];
 }) {
   const { t, locale } = usePrefs();
-  const [promos, setPromos] = useState<PromoCover[]>(DEFAULT_PROMOS);
+  const [promos, setPromos] = useState<PromoCover[]>(() => defaultPromos("campaigns"));
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/promos", { cache: "no-store" });
+        const res = await fetch("/api/promos?slot=campaigns", { cache: "no-store" });
         const data = (await res.json()) as PromoCover[];
         if (!cancelled && Array.isArray(data)) {
           const active = data.filter((item) => item.isActive !== false && item.imageUrl);
-          if (active.length) setPromos(active);
+          setPromos(active.length ? active : defaultPromos("campaigns"));
         }
       } catch {
-        if (!cancelled) setPromos(DEFAULT_PROMOS);
+        if (!cancelled) setPromos(defaultPromos("campaigns"));
       }
     })();
     return () => {
@@ -59,7 +59,9 @@ export function HomeTail({
             </Link>
           </div>
           <div className="mt-8 grid gap-5 sm:grid-cols-2">
-            {promos.slice(0, 4).map((promo) => (
+            {promos.slice(0, 4).map((item) => {
+              const promo = localizedPromo(item, t);
+              return (
               <article key={promo.id} className="card group overflow-hidden">
                 <Link href={promo.href || "/kampanyalar"} className="block">
                   <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
@@ -86,7 +88,8 @@ export function HomeTail({
                   </div>
                 </Link>
               </article>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

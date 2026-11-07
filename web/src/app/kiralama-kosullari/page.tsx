@@ -106,11 +106,10 @@ export default function Page() {
 
       <h2>Kilometre Kullanım Sınırları</h2>
       <p>
-        Araçlarımız adil kilometre kullanım prensibine göre kullanılır. Kilometre kullanımı için
-        asıl detaylar rezervasyon aşamasında “fiyata dahil olanlar” başlığı altında net olarak
-        belirtilmiştir. Daha fazla kullanımlar için çağrı merkezimiz ile iletişime geçerek bilgi
-        alabilirsiniz. Kilometre aşım ücreti rezervasyon sırasında belirtilen tutara göre
-        hesaplanır.
+        Yol hakkı günlük 300 km, 10 gün 2.200 km, aylık 3.800 km’dir. Seçtiğiniz gün sayısına göre
+        dahil kilometre rezervasyon özetinde yazılır. Bu sınırı aşan kilometre, teslimde bildirilen
+        birim bedelle hesaplanır. Daha fazla kullanım için çağrı merkezimizle iletişime
+        geçebilirsiniz.
       </p>
 
       <h2>Ödeme Koşulları ve Güvenlik</h2>
@@ -122,10 +121,9 @@ export default function Page() {
         farklı kişiye ait kredi kartı kabul edilmemektedir.
       </p>
       <p>
-        <strong>Teminat ücreti:</strong> Araç kira ücreti dışında bazı durumlarda teminat
-        (depozito) istenebilir. Araç gruplarına göre rezervasyon adımlarında belirtilen teminat
-        tutarları kiralama başlangıcında kiracının şahsi kredi kartından tahsil edilir. Aracın size
-        teslim edildiği gibi geri alınması durumunda bu tutar tamamen iade edilir.
+        <strong>Teminat ücreti:</strong> Depozito kira bedelinden ayrıdır. 1–3 gün 5.000 TL, 4–10
+        gün 10.000 TL, 11 gün ve üzeri 20.000 TL’dir. Tutar kiralama başlangıcında tahsil edilir.
+        Araç size teslim edildiği gibi geri alınırsa bu tutar tamamen iade edilir.
       </p>
       <p>
         <strong>Güvenlik:</strong> Rezervasyonunuzu daha güvenli yapabilmeniz için zakcar.com SSL

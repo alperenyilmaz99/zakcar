@@ -78,19 +78,28 @@ export function useSearch() {
   return { search, update, setSearch };
 }
 
-export function formatDate(iso: string): string {
+const DATE_LOCALE: Record<string, string> = {
+  tr: "tr-TR",
+  en: "en-US",
+  de: "de-DE",
+  ru: "ru-RU",
+  ar: "ar-SA",
+};
+
+export function formatDate(iso: string, locale = "tr"): string {
   if (!iso) return "";
-  return new Date(iso).toLocaleDateString("tr-TR", {
+  return new Date(iso).toLocaleDateString(DATE_LOCALE[locale] || "tr-TR", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
 }
 
-export function formatTime(iso: string): string {
+export function formatTime(iso: string, locale = "tr"): string {
   if (!iso) return "10:00";
-  return new Date(iso).toLocaleTimeString("tr-TR", {
+  return new Date(iso).toLocaleTimeString(DATE_LOCALE[locale] || "tr-TR", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 }

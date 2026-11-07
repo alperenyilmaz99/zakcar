@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { ManualReservationForm } from "@/components/panel/ManualReservationForm";
 import { fetchRentals, updateRentalStatus } from "@/lib/panel-api";
 import { RENTAL_STATUS_LABEL } from "@/lib/panel-data";
 import type { Rental } from "@/lib/panel-types";
@@ -111,6 +112,14 @@ function RentalsInner() {
         </div>
         <p className="text-sm text-ink-muted">{list.length} kayıt</p>
       </div>
+
+      <ManualReservationForm
+        onCreated={() => {
+          void fetchRentals().then(setRentals).catch((err: unknown) => {
+            setActionError(err instanceof Error ? err.message : "Liste yenilenemedi");
+          });
+        }}
+      />
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input

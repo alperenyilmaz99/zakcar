@@ -1,6 +1,13 @@
 import { createClient } from "@/lib/supabase/client";
 import type { FleetStatus, FleetVehicle, PanelStats, Rental, RentalStatus } from "@/lib/panel-types";
-import { DEFAULT_PROMOS, isMissingPromoTable, mapPromoRow, type PromoCover, type PromoRow } from "@/lib/promo";
+import {
+  DEFAULT_PROMOS,
+  isMissingPromoTable,
+  mapPromoRow,
+  type PromoCover,
+  type PromoRow,
+  type PromoSlot,
+} from "@/lib/promo";
 
 type FleetRow = {
   id: string;
@@ -402,22 +409,34 @@ export async function savePromoCover(
     badge: next.badge,
     sort_order: next.sortOrder,
     is_active: next.isActive,
+    slot: next.slot || "hero",
     updated_at: new Date().toISOString(),
   };
 
   const persisted = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(next.id);
   if (!persisted) {
     const { data, error } = await supabase.from("promo_covers").insert(row).select("*").single();
-    if (error) throw error;
+    if (error) throw slotColumnError(error);
     return mapPromoRow(data as PromoRow);
   }
 
   const { data, error } = await supabase.from("promo_covers").update(row).eq("id", next.id).select("*").single();
-  if (error) throw error;
+  if (error) throw slotColumnError(error);
   return mapPromoRow(data as PromoRow);
 }
 
-export async function createPromoCover(file: File, source: "supabase" | "file"): Promise<PromoCover> {
+function slotColumnError(error: { message: string }): Error {
+  if (/slot/i.test(error.message)) {
+    return new Error("Üç ayrı alanı kaydetmek için Supabase SQL Editor’da promo-covers.sql dosyasını yeniden çalıştırın.");
+  }
+  return new Error(error.message);
+}
+
+export async function createPromoCover(
+  file: File,
+  source: "supabase" | "file",
+  slot: PromoSlot,
+): Promise<PromoCover> {
   const imageUrl = await uploadPromoFile(file, source);
   const draft: PromoCover = {
     id: `new-${Date.now()}`,
@@ -429,6 +448,7 @@ export async function createPromoCover(file: File, source: "supabase" | "file"):
     badge: "Kampanya",
     sortOrder: Date.now(),
     isActive: true,
+    slot,
   };
   return savePromoCover(draft, null, source);
 }

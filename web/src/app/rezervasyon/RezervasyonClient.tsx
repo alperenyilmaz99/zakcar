@@ -8,7 +8,7 @@ import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { useCustomer } from "@/hooks/useCustomer";
 import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
 import { applyPercent, normalizeCouponCode } from "@/lib/coupon-math";
-import { EXTRA_OPTIONS, extraAmount, rentalDays, type ExtraId } from "@/lib/extras";
+import { EXTRA_OPTIONS, depositForDays, extraAmount, includedKm, rentalDays, type ExtraId } from "@/lib/extras";
 import { parseTryAmount } from "@/lib/i18n";
 import { formatTryAmount } from "@/lib/format";
 import type { ModelPrice } from "@/lib/model-prices";
@@ -46,7 +46,7 @@ export default function RezervasyonClient() {
   }, [baseVehicle]);
   const { search, update } = useSearch();
   const { user, accessToken } = useCustomer();
-  const { t, formatPrice } = usePrefs();
+  const { t, formatPrice, locale } = usePrefs();
   const money = (amount: number) => formatPrice(formatTryAmount(amount));
   const [done, setDone] = useState<(Reservation & { mailSent?: boolean }) | null>(null);
   const [error, setError] = useState("");
@@ -67,12 +67,12 @@ export default function RezervasyonClient() {
   const dropId = search.differentDrop ? resolveOfficeId(search.drop) : pickupId;
   const days = rentalDays(search.from, search.to);
   const daily = vehicle ? parseTryAmount(vehicle.price) : 0;
-  const deposit = vehicle?.deposit ? parseTryAmount(vehicle.deposit) : 0;
+  const deposit = depositForDays(days);
   const extrasTotal = extraAmount(extras, days);
   const subtotal = daily * days + extrasTotal;
   const priced = coupon ? applyPercent(subtotal, coupon.percent) : { discount: 0, total: subtotal };
   const total = priced.total;
-  const km = days * 300;
+  const km = includedKm(days);
 
   function toggleExtra(id: ExtraId) {
     setExtras((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
@@ -209,7 +209,7 @@ export default function RezervasyonClient() {
             {done.vehicleName} · {done.plate}
           </p>
           <p className="mt-1 text-sm text-ink-muted">
-            {formatDate(done.startAt)} — {formatDate(done.endAt)}
+            {formatDate(done.startAt, locale)} — {formatDate(done.endAt, locale)}
           </p>
           <p className="mt-1 text-sm text-ink-muted">
             {done.pickup}
@@ -287,7 +287,7 @@ export default function RezervasyonClient() {
                 <div>
                   <p className="text-xs text-ink-muted">{t("search.from")}</p>
                   <p className="mt-1 text-sm font-semibold text-ink">
-                    {formatDate(search.from)} {formatTime(search.from)}
+                    {formatDate(search.from, locale)} {formatTime(search.from, locale)}
                   </p>
                   <OfficeSelect
                     value={pickupId || ""}
@@ -299,7 +299,7 @@ export default function RezervasyonClient() {
                 <div>
                   <p className="text-xs text-ink-muted">{t("search.to")}</p>
                   <p className="mt-1 text-sm font-semibold text-ink">
-                    {formatDate(search.to)} {formatTime(search.to)}
+                    {formatDate(search.to, locale)} {formatTime(search.to, locale)}
                   </p>
                   <OfficeSelect
                     value={dropId || ""}
@@ -416,6 +416,7 @@ export default function RezervasyonClient() {
                     onChange={(event) => setArrivalFlight(event.target.value)}
                     autoComplete="off"
                     placeholder="Örn: TK1234"
+                    required={false}
                   />
                   <p className="mt-1.5 text-xs text-ink-muted">{t("book.flightMissing")}</p>
                 </div>
@@ -426,6 +427,7 @@ export default function RezervasyonClient() {
                     onChange={(event) => setReturnFlight(event.target.value)}
                     autoComplete="off"
                     placeholder="Örn: TK5678"
+                    required={false}
                   />
                   <p className="mt-1.5 text-xs text-ink-muted">{t("book.flightMissing")}</p>
                 </div>
@@ -448,13 +450,13 @@ export default function RezervasyonClient() {
             <SummaryBlock title={t("book.pickupInfo")}>
               <p>{pickupLabel}</p>
               <p>
-                {formatDate(search.from)} {formatTime(search.from)}
+                {formatDate(search.from, locale)} {formatTime(search.from, locale)}
               </p>
             </SummaryBlock>
             <SummaryBlock title={t("book.dropInfo")}>
               <p>{dropLabel}</p>
               <p>
-                {formatDate(search.to)} {formatTime(search.to)}
+                {formatDate(search.to, locale)} {formatTime(search.to, locale)}
               </p>
             </SummaryBlock>
             <SummaryBlock title={t("book.vehicleInfo")}>

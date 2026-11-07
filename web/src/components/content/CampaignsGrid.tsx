@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
-import type { PromoCover } from "@/lib/promo";
+import { defaultPromos, localizedPromo, type PromoCover } from "@/lib/promo";
 
 export function CampaignsGrid() {
   const { t } = usePrefs();
@@ -14,15 +14,16 @@ export function CampaignsGrid() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/promos", { cache: "no-store" });
+        const res = await fetch("/api/promos?slot=campaigns", { cache: "no-store" });
         const data = (await res.json()) as PromoCover[];
         if (!cancelled && Array.isArray(data)) {
-          setPromos(data.filter((p) => p.isActive !== false && p.imageUrl));
+          const active = data.filter((p) => p.isActive !== false && p.imageUrl);
+          setPromos(active.length ? active : defaultPromos("campaigns"));
         } else if (!cancelled) {
-          setPromos([]);
+          setPromos(defaultPromos("campaigns"));
         }
       } catch {
-        if (!cancelled) setPromos([]);
+        if (!cancelled) setPromos(defaultPromos("campaigns"));
       }
     })();
     return () => {
@@ -40,7 +41,9 @@ export function CampaignsGrid() {
 
   return (
     <div className="mt-10 grid gap-8 sm:grid-cols-2">
-      {promos.map((promo) => (
+      {promos.map((item) => {
+        const promo = localizedPromo(item, t);
+        return (
         <article key={promo.id} className="card group overflow-hidden">
           <Link href={promo.href || "/arac-modelleri"} className="block">
             <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
@@ -69,7 +72,8 @@ export function CampaignsGrid() {
             </div>
           </Link>
         </article>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
+import { ChatWidget } from "@/components/layout/ChatWidget";
 
 function WhatsAppIcon() {
   return (
@@ -25,6 +26,7 @@ export function FloatingContact() {
 
   return (
     <div className="fixed bottom-5 right-4 z-40 flex flex-col items-center gap-4 sm:bottom-7 sm:right-6">
+      <ChatWidget />
       <a
         href={waHref}
         target="_blank"

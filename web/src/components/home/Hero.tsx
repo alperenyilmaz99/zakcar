@@ -116,11 +116,11 @@ export function Hero() {
           )}
         </div>
 
-        <div className="relative mx-auto mt-8 w-full max-w-5xl lg:mt-10">
+        <div className="relative mx-auto mt-8 w-full max-w-6xl lg:mt-10">
           <SearchBar />
         </div>
       </div>
-      <PromoBanners />
+        <PromoBanners slot="hero" />
     </section>
   );
 }
