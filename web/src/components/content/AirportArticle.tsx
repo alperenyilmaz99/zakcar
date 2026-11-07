@@ -132,10 +132,56 @@ const COPY = {
   },
 } as const;
 
+const SAW_SLUGS = new Set([
+  "sabiha-gokcen-havalimani-arac-kiralama",
+  "sabiha-gokcen-havalimani-kredi-kartsiz-arac-kiralama",
+]);
+const IGA_SLUGS = new Set([
+  "istanbul-3-havalimani-arac-kiralama",
+  "iga-havalimani-kredi-kartsiz-arac-kiralama",
+]);
+
 export function airportArticleTitle(slug: string): string | null {
-  if (slug === "sabiha-gokcen-havalimani-arac-kiralama") return COPY.saw.title;
-  if (slug === "istanbul-3-havalimani-arac-kiralama") return COPY.iga.title;
+  if (slug === "sabiha-gokcen-havalimani-kredi-kartsiz-arac-kiralama") {
+    return "Sabiha Gökçen Havalimanı Kredi Kartsız Araç Kiralama";
+  }
+  if (slug === "iga-havalimani-kredi-kartsiz-arac-kiralama") {
+    return "IGA Havalimanı Kredi Kartsız Araç Kiralama";
+  }
+  if (SAW_SLUGS.has(slug)) return COPY.saw.title;
+  if (IGA_SLUGS.has(slug)) return COPY.iga.title;
   return null;
+}
+
+export function airportArticleId(slug: string): AirportId | null {
+  if (SAW_SLUGS.has(slug)) return "saw";
+  if (IGA_SLUGS.has(slug)) return "iga";
+  return null;
+}
+
+export function AirportDetailText({ text }: { text: string }) {
+  const blocks = text
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return (
+    <article className="legal-content mx-auto max-w-3xl space-y-4 text-base leading-relaxed text-ink-muted [&_h2]:mt-10 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-ink">
+      {blocks.map((block, index) =>
+        block.startsWith("## ") ? <h2 key={index}>{block.slice(3)}</h2> : <p key={index}>{block}</p>,
+      )}
+      <p>
+        Telefon{" "}
+        <a href={`tel:${SITE.phoneTel}`}>{SITE.phone}</a>
+        {" · "}
+        WhatsApp{" "}
+        <a href={`https://wa.me/${SITE.whatsapp}`} target="_blank" rel="noopener noreferrer">
+          {SITE.whatsappDisplay}
+        </a>
+        {" · "}
+        <Link href="/arac-modelleri">Araçları incele</Link>
+      </p>
+    </article>
+  );
 }
 
 export function AirportArticle({ airport }: { airport: AirportId }) {

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { AirportArticle, airportArticleTitle } from "@/components/content/AirportArticle";
+import { AirportArticle, AirportDetailText, airportArticleId, airportArticleTitle } from "@/components/content/AirportArticle";
 import { SearchBar } from "@/components/search/SearchBar";
 import { VehicleCatalog } from "@/components/vehicles/VehicleCatalog";
+import { loadAirportCards } from "@/lib/airport-store";
 import {
   filterVehicles,
   getAllSeoSlugs,
@@ -22,7 +23,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const vehicle = getVehicleBySlug(slug);
   if (vehicle) return { title: vehicle.name, description: vehicle.summary };
   const articleTitle = airportArticleTitle(slug);
-  if (articleTitle) return { title: articleTitle, description: articleTitle };
+  if (articleTitle) {
+    const { items } = await loadAirportCards();
+    const saved = items.find((item) => item.href === `/${slug}`);
+    const title = saved?.title || articleTitle;
+    return { title, description: saved?.text || title };
+  }
   const seo = resolveSeoPage(slug);
   if (seo) return { title: seo.title, description: seo.description };
   return { title: slug };
@@ -36,13 +42,11 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
 
   const seo = resolveSeoPage(slug);
   if (!seo) notFound();
-  const article =
-    slug === "sabiha-gokcen-havalimani-arac-kiralama"
-      ? "saw"
-      : slug === "istanbul-3-havalimani-arac-kiralama"
-        ? "iga"
-        : null;
-  const heading = article ? airportArticleTitle(slug) : seo.title;
+  const article = airportArticleId(slug);
+  const saved = article
+    ? (await loadAirportCards()).items.find((item) => item.href === `/${slug}`)
+    : undefined;
+  const heading = saved?.title || (article ? airportArticleTitle(slug) : seo.title);
 
   const showCatalog = seo.type === "group" || seo.type === "brand";
   const vehicles = showCatalog
@@ -67,6 +71,8 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
           vehicles={vehicles}
           initialGroup={seo.filterGroup}
         />
+      ) : article && saved?.detail ? (
+        <AirportDetailText text={saved.detail} />
       ) : article ? (
         <AirportArticle airport={article} />
       ) : (

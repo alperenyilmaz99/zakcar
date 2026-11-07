@@ -201,6 +201,8 @@ export function getAllSeoSlugs(): string[] {
     ...Object.keys(CITY_PAGES).map((c) => `${c}-arac-kiralama`),
     "sabiha-gokcen-havalimani-arac-kiralama",
     "istanbul-3-havalimani-arac-kiralama",
+    "sabiha-gokcen-havalimani-kredi-kartsiz-arac-kiralama",
+    "iga-havalimani-kredi-kartsiz-arac-kiralama",
     "antalya-havalimani-arac-kiralama",
     "adnan-menderes-havalimani-arac-kiralama",
     "esenboga-havalimani-arac-kiralama",

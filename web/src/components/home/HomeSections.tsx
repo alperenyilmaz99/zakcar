@@ -47,13 +47,13 @@ export function HomeSections({
         </div>
       </section>
 
-      <PromoBanners slot="mid" />
-
       <PopularSlider vehicles={vehicles} />
 
       <AirportCards />
 
       <SegmentSection />
+
+      <PromoBanners slot="mid" />
 
       <HomeFaq />
 
