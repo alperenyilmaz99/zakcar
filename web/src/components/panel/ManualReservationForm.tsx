@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { depositForDays, includedKm, rentalDays } from "@/lib/extras";
+import { EXTRA_OPTIONS, depositForDays, extraAmount, includedKm, rentalDays, type ExtraId } from "@/lib/extras";
 import { downloadReservationPdf } from "@/lib/panel-api";
 
 type VehicleOption = {
@@ -19,6 +19,14 @@ function localInput(date: Date) {
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
+
+const EXTRA_LABEL: Record<ExtraId, string> = {
+  driver: "Ek sürücü",
+  young: "Genç sürücü paketi",
+  hgs: "HGS",
+  child: "Çocuk koltuğu",
+  winter: "Kış lastiği",
+};
 
 function defaultRange() {
   const from = new Date();
@@ -55,6 +63,7 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
   const [arrivalFlight, setArrivalFlight] = useState("");
   const [returnFlight, setReturnFlight] = useState("");
   const [customerNote, setCustomerNote] = useState("");
+  const [extras, setExtras] = useState<ExtraId[]>([]);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
   const [createdPnr, setCreatedPnr] = useState("");
@@ -92,6 +101,7 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
   }, [startAt, endAt]);
   const deposit = depositForDays(days);
   const daily = Number(dailyPrice.replace(",", ".")) || 0;
+  const extrasTotal = extraAmount(extras, days);
 
   function chooseVehicle(id: string) {
     setFleetVehicleId(id);
@@ -130,6 +140,7 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
           arrivalFlight,
           returnFlight,
           customerNote,
+          extraCodes: extras,
         }),
       });
       const json = (await res.json()) as { pnr?: string; mailSent?: boolean; error?: string };
@@ -150,6 +161,7 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
       setArrivalFlight("");
       setReturnFlight("");
       setCustomerNote("");
+      setExtras([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Rezervasyon açılamadı.");
     } finally {
@@ -258,9 +270,45 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
             <span className="mb-1.5 block font-medium text-ink">Not</span>
             <textarea value={customerNote} onChange={(event) => setCustomerNote(event.target.value)} maxLength={400} rows={2} className="w-full rounded-xl border border-surface-border px-3 py-2.5" />
           </label>
+          <fieldset className="sm:col-span-2">
+            <legend className="mb-2 text-sm font-medium text-ink">Ek paketler</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {EXTRA_OPTIONS.map((item) => {
+                const checked = extras.includes(item.id);
+                const amount = item.dailyTry * days;
+                return (
+                  <label
+                    key={item.id}
+                    className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-sm ${
+                      checked ? "border-brand" : "border-surface-border"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() =>
+                        setExtras((current) =>
+                          current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id],
+                        )
+                      }
+                      className="mt-0.5 h-4 w-4 accent-brand"
+                    />
+                    <span>
+                      <span className="font-medium text-ink">{EXTRA_LABEL[item.id]}</span>
+                      <span className="mt-0.5 block text-xs text-ink-muted">
+                        {item.dailyTry.toLocaleString("tr-TR")} TL/gün · +{amount.toLocaleString("tr-TR")} TL
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
           <p className="text-sm text-ink-muted sm:col-span-2">
             {selected ? `${selected.plate} · ` : ""}
-            {days} gün · toplam {Math.round(daily * days).toLocaleString("tr-TR")} TL · depozito {deposit.toLocaleString("tr-TR")} TL · yol hakkı {includedKm(days).toLocaleString("tr-TR")} km
+            {days} gün · toplam {Math.round(daily * days + extrasTotal).toLocaleString("tr-TR")} TL
+            {extrasTotal > 0 ? ` (ekler ${extrasTotal.toLocaleString("tr-TR")} TL)` : ""} · depozito{" "}
+            {deposit.toLocaleString("tr-TR")} TL · yol hakkı {includedKm(days).toLocaleString("tr-TR")} km
           </p>
           {error && <p className="text-sm text-rose-700 sm:col-span-2">{error}</p>}
           {note && <p className="text-sm text-emerald-700 sm:col-span-2">{note}</p>}

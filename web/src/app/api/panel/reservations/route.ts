@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { composeFlightNumber, type Reservation } from "@/lib/booking";
-import { depositForDays, rentalDays } from "@/lib/extras";
+import { depositForDays, extraAmount, rentalDays, sanitizeExtraCodes } from "@/lib/extras";
 import { sendReservationConfirmation } from "@/lib/reservation-mail";
 import { bearerToken, createServerSupabase } from "@/lib/supabase/server";
 
@@ -97,6 +97,15 @@ type ManualBody = {
   arrivalFlight?: string;
   returnFlight?: string;
   customerNote?: string;
+  extraCodes?: string[];
+};
+
+const EXTRA_NOTE: Record<string, string> = {
+  driver: "Ek sürücü",
+  young: "Genç sürücü paketi",
+  hgs: "HGS",
+  child: "Çocuk koltuğu",
+  winter: "Kış lastiği",
 };
 
 export async function POST(req: Request) {
@@ -234,7 +243,9 @@ export async function POST(req: Request) {
   const days = rentalDays(start.toISOString(), end.toISOString());
   const daily = Math.round(dailyInput * 100) / 100;
   const deposit = depositForDays(days);
-  const total = Math.round(daily * days * 100) / 100;
+  const extras = sanitizeExtraCodes(body.extraCodes);
+  const total = Math.round((daily * days + extraAmount(extras, days)) * 100) / 100;
+  const notes = ["Panelden oluşturuldu", ...extras.map((id) => EXTRA_NOTE[id])].filter(Boolean).join(" · ");
   const rentalBase = {
     fleet_vehicle_id: vehicle.id,
     customer_id: customerId,
@@ -247,7 +258,7 @@ export async function POST(req: Request) {
     deposit_try: deposit,
     total_price_try: total,
     flight_number: flight || null,
-    notes: "Panelden oluşturuldu",
+    notes,
     created_by: staff.staffId,
   };
 
@@ -282,13 +293,14 @@ export async function POST(req: Request) {
     totalPrice: total,
     days,
     flightNumber: flight || null,
-    notes: "Panelden oluşturuldu",
+    notes,
   };
   const mailSent = await sendReservationConfirmation({
     reservation,
     email,
     customer: { firstName, lastName, phone, birthDate: birthDate || undefined },
     modelSlug: model.slug,
+    extraCodes: extras,
   });
 
   return NextResponse.json({ ...reservation, mailSent });

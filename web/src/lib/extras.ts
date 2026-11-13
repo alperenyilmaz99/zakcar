@@ -59,6 +59,28 @@ export function sanitizeExtraCodes(codes: unknown): ExtraId[] {
   return EXTRA_OPTIONS.map((item) => item.id).filter((id) => picked.has(id));
 }
 
+const NOTE_MARKERS: { id: ExtraId; marker: string }[] = [
+  { id: "young", marker: "genç sürücü" },
+  { id: "driver", marker: "ek sürücü" },
+  { id: "child", marker: "çocuk koltuğu" },
+  { id: "winter", marker: "kış lastiği" },
+  { id: "hgs", marker: "hgs" },
+];
+
+/** Rezervasyon notundaki ek adlarından kodları çıkarır. PDF yeniden indirilirken satırlar buradan gelir. */
+export function extraCodesFromNotes(notes: string | null | undefined): ExtraId[] {
+  const text = (notes || "").toLocaleLowerCase("tr-TR");
+  const found = new Set<ExtraId>();
+  for (const item of NOTE_MARKERS) {
+    if (item.id === "hgs") {
+      if (/(^|[^a-zçğıöşü])hgs([^a-zçğıöşü]|$)/i.test(text)) found.add("hgs");
+      continue;
+    }
+    if (text.includes(item.marker)) found.add(item.id);
+  }
+  return EXTRA_OPTIONS.map((item) => item.id).filter((id) => found.has(id));
+}
+
 export function extraAmount(ids: readonly string[], days: number): number {
   const safeDays = Math.max(1, days);
   return EXTRA_OPTIONS.filter((item) => ids.includes(item.id)).reduce(

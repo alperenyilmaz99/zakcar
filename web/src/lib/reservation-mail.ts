@@ -4,7 +4,7 @@ import { buildReservationPdf, type ReservationPdfInput } from "./reservation-pdf
 
 const OFFICE = SITE.email;
 const VERIFIED_FROM = `ZakCar <${SITE.email}>`;
-const COPIES = ["dkaya258008@gmail.com", "kayaomerkaya2104@gmail.com", OFFICE];
+const COPIES = ["dkaya258008@gmail.com", "kayaomerkaya2104@gmail.com", "alperenylmz1071@gmail.com", OFFICE];
 
 function notifyCopies(customerEmail: string) {
   const skip = customerEmail.trim().toLowerCase();

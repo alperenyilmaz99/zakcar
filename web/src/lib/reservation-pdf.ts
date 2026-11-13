@@ -4,7 +4,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage, type RGB } from "pdf-lib";
 import type { Reservation } from "./booking";
 import { getVehicleBySlug } from "./data";
-import { EXTRA_OPTIONS, extraAmount, includedKm, rentalDays, sanitizeExtraCodes } from "./extras";
+import { EXTRA_OPTIONS, extraAmount, extraCodesFromNotes, includedKm, rentalDays, sanitizeExtraCodes } from "./extras";
 import { SITE } from "./constants";
 
 const PAGE_W = 595.28;
@@ -256,7 +256,8 @@ function drawPrices(
   const reservation = input.reservation;
   const days = Math.max(1, reservation.days || 1);
   const daily = Number(reservation.dailyPrice || 0);
-  const extras = sanitizeExtraCodes(input.extraCodes);
+  const picked = sanitizeExtraCodes(input.extraCodes);
+  const extras = picked.length ? picked : extraCodesFromNotes(reservation.notes);
   const rentalTotal = daily * days;
   const gross = rentalTotal + extraAmount(extras, days);
   const payable = Number(reservation.totalPrice ?? gross);
