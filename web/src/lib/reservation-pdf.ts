@@ -370,13 +370,11 @@ function drawReminders(page: PDFPage, font: PDFFont, bold: PDFFont, top: number,
 function drawFooter(page: PDFPage, font: PDFFont, year: string) {
   const y = 36;
   page.drawRectangle({ x: M, y: y + 16, width: PAGE_W - M * 2, height: 0.6, color: LINE });
-  const left = `Zak Rent A Car © ${year}`;
-  const mid = `www.zakcar.com | ${SITE.email}`;
-  const right = "Sayfa 1 / 1";
+  const left = `Zak Rent a Car © ${year}`;
+  const mid = `zakrentacar.com | ${SITE.email}`;
   page.drawText(left, { x: M, y, size: 8, font, color: INK });
   const midW = font.widthOfTextAtSize(mid, 8);
   page.drawText(mid, { x: (PAGE_W - midW) / 2, y, size: 8, font, color: MUTED });
-  drawRight(page, right, PAGE_W - M, y, font, 8, MUTED);
 }
 
 function drawSection(page: PDFPage, bold: PDFFont, title: string, top: number) {
