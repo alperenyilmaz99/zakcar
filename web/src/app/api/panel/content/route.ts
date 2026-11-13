@@ -46,6 +46,20 @@ function slugify(title: string): string {
     .slice(0, 72);
 }
 
+function coverUrl(value: string | undefined): string | null {
+  const image = (value || "").trim();
+  if (!image || image.length > 500 || image.includes("..")) return null;
+  if (image.startsWith("/assets/")) return image;
+  try {
+    const url = new URL(image);
+    if (url.protocol !== "https:") return null;
+    if (!url.pathname.includes("/storage/v1/object/public/promo-covers/")) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 function blocksFromBody(body: string): BlogBlock[] {
   const parts = body
     .split(/\n{2,}/)
@@ -70,10 +84,10 @@ export async function GET(req: Request) {
     const posts = [
       ...generated
         .filter((post) => !hiddenPostSet.has(post.slug))
-        .map((post) => ({ slug: post.slug, title: post.title, excerpt: post.excerpt, source: "panel" as const })),
+        .map((post) => ({ slug: post.slug, title: post.title, excerpt: post.excerpt, image: post.image, source: "panel" as const })),
       ...getAllBlogPosts()
         .filter((post) => !generatedSlugs.has(post.slug) && !hiddenPostSet.has(post.slug))
-        .map((post) => ({ slug: post.slug, title: post.title, excerpt: post.excerpt, source: "site" as const })),
+        .map((post) => ({ slug: post.slug, title: post.title, excerpt: post.excerpt, image: post.image, source: "site" as const })),
     ];
     const reviewRows = [
       ...reviews.map((review) => ({ ...review, source: "panel" as const })),
@@ -103,6 +117,8 @@ export async function POST(req: Request) {
     title?: string;
     excerpt?: string;
     body?: string;
+    image?: string;
+    slug?: string;
     author?: string;
     location?: string;
     rating?: number;
@@ -131,17 +147,32 @@ export async function POST(req: Request) {
         slug = `${slugify(title).slice(0, 68)}-${n}`;
         n += 1;
       }
+      const uploaded = coverUrl(body.image);
+      if (body.image?.trim() && !uploaded) {
+        return NextResponse.json({ error: "Kapak görseli kaydedilemedi." }, { status: 400 });
+      }
       const stored = await saveGeneratedPost(
         {
           slug,
           title: title.slice(0, 120),
           excerpt: excerpt.slice(0, 220),
-          image: coverForSlug(slug),
+          image: uploaded || coverForSlug(slug),
           blocks,
           createdAt: new Date().toISOString(),
         },
         staff,
       );
+      return NextResponse.json({ stored });
+    }
+
+    if (body.kind === "blog-cover") {
+      const slug = (body.slug || "").trim();
+      const image = coverUrl(body.image);
+      if (!/^[a-z0-9-]{2,80}$/.test(slug)) return NextResponse.json({ error: "Yazı bulunamadı." }, { status: 400 });
+      if (!image) return NextResponse.json({ error: "Kapak görseli gerekli." }, { status: 400 });
+      const post = (await listGeneratedPosts()).find((item) => item.slug === slug);
+      if (!post) return NextResponse.json({ error: "Yalnızca panelden eklenen yazıların kapağı değişir." }, { status: 404 });
+      const stored = await saveGeneratedPost({ ...post, image }, staff);
       return NextResponse.json({ stored });
     }
 

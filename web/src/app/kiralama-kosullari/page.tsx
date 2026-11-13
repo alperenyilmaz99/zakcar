@@ -159,11 +159,11 @@ export default function Page() {
       <p>
         <strong>İptal ve iade:</strong> Rezervasyonunuzu teslim alma saatinize 24 saat kalaya kadar
         ücretsiz olarak iptal edebilirsiniz. Gerekçe belirtmeksizin yapılan iptallerin tekrarı
-        durumunda müşteri kaydınız sistemimizde olumsuz müşteri portföyüne alınabilir. Ön ödeme
-        online kredi kartı ile yapılmış ise iptal işlemiyle birlikte banka üzerinden iade işlemi
-        yapılır; genellikle 3 iş günü içerisinde ilgili karta iade edilir. Yurt dışına para iadesi
-        istenmesi durumunda banka ve finans kuruluşlarının talep ettiği EFT, havale ve muhabir
-        banka ücretleri iade bedelinden düşülür.
+        durumunda müşteri kaydınız sistemimizde olumsuz müşteri portföyüne alınabilir.{" "}
+        <strong>
+          Operasyonel nedenler, tedarik durumları veya mücbir sebepler doğrultusunda Zak Rent a Car
+          da son dakikaya kadar rezervasyonu iptal etme hakkını saklı tutar.
+        </strong>
       </p>
 
       <h2>Diğer Önemli Hususlar</h2>

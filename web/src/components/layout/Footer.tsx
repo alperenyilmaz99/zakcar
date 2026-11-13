@@ -2,18 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { SITE } from "@/lib/constants";
+import { DISTRICTS } from "@/lib/districts";
+import { GOOGLE_PLACE, SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 
 const AIRPORTS = [
   { href: "/sabiha-gokcen-havalimani-arac-kiralama", labelKey: "footer.airportSaw" as const },
   { href: "/istanbul-3-havalimani-arac-kiralama", labelKey: "footer.airportIga" as const },
-];
-
-const OFFICES = [
-  { href: "/istanbul-3-havalimani-arac-kiralama", labelKey: "loc.iga.city" as const },
-  { href: "/sabiha-gokcen-havalimani-arac-kiralama", labelKey: "loc.saw" as const },
-  { href: "/ofisler#merkez", labelKey: "loc.merkez" as const },
 ];
 
 const POPULAR_CARS = [
@@ -76,6 +71,17 @@ export function Footer() {
           >
             WhatsApp {SITE.whatsappDisplay}
           </a>
+          <a href={`mailto:${SITE.email}`} className="mt-1 block text-sm text-white/70 hover:text-brand">
+            {SITE.email}
+          </a>
+          <a
+            href={GOOGLE_PLACE.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex text-sm font-semibold text-white hover:text-brand"
+          >
+            {t("offices.google")}
+          </a>
           <div className="mt-5 flex items-center gap-3">
             <span className="h-8 w-0.5 bg-brand" aria-hidden />
             <a
@@ -98,12 +104,31 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="container-page grid gap-10 border-t border-white/10 py-12 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="container-page grid gap-10 border-t border-white/10 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <NavCol
           title={t("footer.popularAirports")}
           items={AIRPORTS.map((a) => ({ href: a.href, label: t(a.labelKey) }))}
         />
-        <NavCol title={t("nav.offices")} items={OFFICES.map((o) => ({ href: o.href, label: t(o.labelKey) }))} />
+        <div className="sm:col-span-2 lg:col-span-2">
+          <h3 className="font-semibold text-white">{t("footer.popularDistricts")}</h3>
+          <ul className="mt-3 columns-1 gap-x-8 sm:columns-2">
+            {DISTRICTS.map((district) => (
+              <li key={district.slug} className="mb-2 break-inside-avoid">
+                <Link
+                  href={`/${district.slug}`}
+                  className="text-sm text-white/65 transition hover:text-white"
+                >
+                  {t("footer.districtRental", { name: district.name })}
+                </Link>
+              </li>
+            ))}
+            <li className="mb-2 break-inside-avoid">
+              <Link href="/istanbul-arac-kiralama" className="text-sm text-white/65 transition hover:text-white">
+                {t("footer.allDistricts")}
+              </Link>
+            </li>
+          </ul>
+        </div>
         <div>
           <h3 className="font-semibold text-white">{t("footer.popularCars")}</h3>
           <ul className="mt-3 space-y-2">

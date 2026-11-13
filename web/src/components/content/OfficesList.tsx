@@ -3,27 +3,25 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Office } from "@/lib/types";
+import { GOOGLE_PLACE, SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { MessageKey } from "@/lib/i18n";
 
 const OFFICE_COPY: Record<string, { name: MessageKey; address: MessageKey; lat: number; lng: number }> = {
-  saw: { name: "loc.saw.full", address: "loc.saw.address", lat: 40.8986, lng: 29.3092 },
+  saw: { name: "loc.saw.full", address: "loc.saw.address", lat: 40.9290708, lng: 29.3066005 },
   iga: { name: "loc.iga.full", address: "loc.iga.address", lat: 41.2753, lng: 28.7519 },
   merkez: { name: "loc.merkez.full", address: "loc.merkez.address", lat: 40.929, lng: 29.3092 },
 };
-
-const ALL_PINS = "loc:40.8986,29.3092|loc:41.2753,28.7519|loc:40.929,29.3092";
 
 function mapsUrl(lat: number, lng: number) {
   return `https://www.google.com/maps?q=${lat},${lng}`;
 }
 
 function googleEmbed(selectedId: string | null) {
-  if (selectedId && OFFICE_COPY[selectedId]) {
-    const pin = OFFICE_COPY[selectedId];
-    return `https://maps.google.com/maps?hl=tr&q=${pin.lat},${pin.lng}&z=15&output=embed`;
-  }
-  return `https://maps.google.com/maps?hl=tr&ll=39,35&z=6&q=${ALL_PINS}&output=embed`;
+  if (!selectedId || selectedId === "saw") return GOOGLE_PLACE.embed;
+  const pin = OFFICE_COPY[selectedId];
+  if (!pin) return GOOGLE_PLACE.embed;
+  return `https://maps.google.com/maps?hl=tr&q=${pin.lat},${pin.lng}&z=15&output=embed`;
 }
 
 export function OfficesList({ offices }: { offices: Office[] }) {
@@ -35,7 +33,7 @@ export function OfficesList({ offices }: { offices: Office[] }) {
         name: "",
         address: "",
         phone: "0532 388 29 96",
-        email: "info@zakcar.com",
+        email: SITE.email,
         hours: "7/24",
       }
     );
@@ -112,28 +110,42 @@ export function OfficesList({ offices }: { offices: Office[] }) {
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
               <a
-                href={pin ? mapsUrl(pin.lat, pin.lng) : "https://www.google.com/maps/@39,35,6z"}
+                href={GOOGLE_PLACE.href}
                 target="_blank"
-                rel="noreferrer"
-                className="btn-outline"
+                rel="noopener noreferrer"
+                className="btn-primary"
               >
-                {t("offices.map")}
+                {t("offices.google")}
               </a>
-              <Link href="/arac-modelleri" className="btn-primary">
+              {pin && selected?.id !== "saw" ? (
+                <a href={mapsUrl(pin.lat, pin.lng)} target="_blank" rel="noopener noreferrer" className="btn-outline">
+                  {t("offices.map")}
+                </a>
+              ) : null}
+              <Link href="/arac-modelleri" className="btn-outline">
                 {t("offices.reserve")}
               </Link>
             </div>
+            <p className="text-xs text-ink-muted">{t("offices.googleNote")}</p>
           </div>
         </div>
 
-        <div className="card relative z-0 h-[28rem] overflow-hidden lg:sticky lg:top-24 lg:h-[40rem]">
+        <div className="card relative z-0 overflow-hidden lg:sticky lg:top-24">
           <iframe
-            key={selectedId ?? "all"}
-            title={pin ? t(pin.name) : t("offices.title")}
+            key={selectedId ?? "saw"}
+            title={selectedId && selectedId !== "saw" && pin ? t(pin.name) : GOOGLE_PLACE.name}
             src={googleEmbed(selectedId)}
-            className="h-full w-full border-0"
-            referrerPolicy="no-referrer-when-downgrade"
+            className="h-[28rem] w-full border-0 lg:h-[36rem]"
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
           />
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-surface-border px-4 py-3">
+            <p className="text-sm text-ink-muted">{t("offices.googleNote")}</p>
+            <a href={GOOGLE_PLACE.href} target="_blank" rel="noopener noreferrer" className="btn-primary">
+              {t("offices.google")}
+            </a>
+          </div>
         </div>
       </div>
     </div>

@@ -92,12 +92,12 @@ export function PromoBanners({ slot = "hero" }: { slot?: PromoSlot }) {
                     {promo.highlight ? <span className="mt-1 block text-brand">{promo.highlight}</span> : null}
                   </h2>
                   {promo.sub ? <p className="mt-3 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">{promo.sub}</p> : null}
-                  <div className="mt-5 flex flex-wrap gap-3">
+                  <div className="mt-3 flex w-fit max-w-[12.5rem] flex-col items-start gap-1.5 sm:mt-5 sm:max-w-none sm:flex-row sm:flex-wrap sm:gap-3">
                     {promo.badge ? (
                       <Link
                         href={promo.href || "/arac-modelleri"}
                         tabIndex={i === active ? 0 : -1}
-                        className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-brand-dark"
+                        className="rounded-full bg-brand px-2.5 py-1 text-[11px] font-semibold leading-tight text-white shadow-md transition hover:bg-brand-dark sm:px-5 sm:py-2.5 sm:text-sm sm:font-bold"
                       >
                         {promo.badge}
                       </Link>
@@ -105,7 +105,7 @@ export function PromoBanners({ slot = "hero" }: { slot?: PromoSlot }) {
                     <Link
                       href={promo.href || "/arac-modelleri"}
                       tabIndex={i === active ? 0 : -1}
-                      className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-brand-dark"
+                      className="rounded-full bg-brand px-2.5 py-1 text-[11px] font-semibold leading-tight text-white shadow-md transition hover:bg-brand-dark sm:px-5 sm:py-2.5 sm:text-sm sm:font-bold"
                     >
                       {t("banner.see")}
                     </Link>

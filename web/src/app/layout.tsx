@@ -12,7 +12,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: `${SITE.name} | Güvenilir Araç Kiralama`,
+    default: "Zak Rent A Car SAW & IGA ARAÇ KİRALAMA",
     template: `%s | ${SITE.shortName}`,
   },
   description:

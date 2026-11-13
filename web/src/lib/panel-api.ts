@@ -329,6 +329,12 @@ export async function signOutStaff(): Promise<void> {
 }
 
 const PROMO_BUCKET = "promo-covers";
+const SORT_MAX = 2_147_483_647;
+
+function nextSortOrder(current: number[]) {
+  const max = current.reduce((highest, value) => (Number.isFinite(value) && value > highest ? value : highest), -1);
+  return Math.min(max + 1, SORT_MAX);
+}
 
 export async function fetchPromoCovers(): Promise<{ items: PromoCover[]; source: "supabase" | "file" }> {
   const supabase = createClient();
@@ -407,7 +413,7 @@ export async function savePromoCover(
     highlight: next.highlight,
     subtitle: next.sub,
     badge: next.badge,
-    sort_order: next.sortOrder,
+    sort_order: Math.max(0, Math.min(Math.round(Number(next.sortOrder)) || 0, SORT_MAX)),
     is_active: next.isActive,
     slot: next.slot || "hero",
     updated_at: new Date().toISOString(),
@@ -438,15 +444,26 @@ export async function createPromoCover(
   slot: PromoSlot,
 ): Promise<PromoCover> {
   const imageUrl = await uploadPromoFile(file, source);
+  let sortOrder = 0;
+  if (source === "file") {
+    const res = await fetch("/api/promos?all=1", { cache: "no-store" });
+    const items = (await res.json()) as PromoCover[];
+    sortOrder = nextSortOrder((Array.isArray(items) ? items : []).map((item) => item.sortOrder));
+  } else {
+    const supabase = createClient();
+    const { data, error } = await supabase.from("promo_covers").select("sort_order");
+    if (error) throw error;
+    sortOrder = nextSortOrder(((data || []) as { sort_order: number | null }[]).map((row) => Number(row.sort_order)));
+  }
   const draft: PromoCover = {
-    id: `new-${Date.now()}`,
+    id: `new-${crypto.randomUUID()}`,
     imageUrl,
     href: "/arac-modelleri",
     title: "Yeni kampanya",
     highlight: "",
     sub: "",
     badge: "Kampanya",
-    sortOrder: Date.now(),
+    sortOrder,
     isActive: true,
     slot,
   };
@@ -473,6 +490,34 @@ export async function updateRentalStatus(id: string, status: RentalStatus): Prom
   const supabase = createClient();
   const { error } = await supabase.from("rentals").update({ status }).eq("id", id);
   if (error) throw error;
+}
+
+export async function downloadReservationPdf(pnr: string): Promise<void> {
+  const { data } = await createClient().auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Oturum bulunamadı. Tekrar giriş yapın.");
+  const res = await fetch(`/api/panel/reservations/pdf?pnr=${encodeURIComponent(pnr)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    let message = "PDF indirilemedi.";
+    try {
+      const json = (await res.json()) as { error?: string };
+      if (json.error) message = json.error;
+    } catch {
+      /* yanıt PDF değilse metin de olmayabilir */
+    }
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `ZakCar Rezervasyon Onayi ${pnr}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export async function updateFleetUnit(

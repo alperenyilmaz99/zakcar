@@ -13,6 +13,7 @@ const NAV = [
   { href: "/panel/fiyatlar", label: "Fiyatlar" },
   { href: "/panel/kuponlar", label: "Kuponlar" },
   { href: "/panel/kiralamalar", label: "Kiralamalar" },
+  { href: "/panel/uyeler", label: "Üyeler" },
   { href: "/panel/konumlar", label: "Konumlar" },
   { href: "/panel/kapaklar", label: "Kapaklar" },
   { href: "/panel/havalimanlari", label: "Havalimanları" },

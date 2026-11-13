@@ -77,7 +77,7 @@ lines.push("");
 lines.push("-- Ofisler");
 for (const o of OFFICES) {
   lines.push(`insert into public.offices (code, name, address, phone, email, hours, lat, lng, is_active)
-values ('${o.code}', '${esc(o.name)}', '${esc(o.address)}', '0532 388 29 96', 'info@zakcar.com', '${o.hours}', ${o.lat}, ${o.lng}, true)
+values ('${o.code}', '${esc(o.name)}', '${esc(o.address)}', '0532 388 29 96', 'info@zakrentacar.com', '${o.hours}', ${o.lat}, ${o.lng}, true)
 on conflict (code) do update set
   name = excluded.name,
   address = excluded.address,

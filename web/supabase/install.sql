@@ -456,9 +456,9 @@ create policy staff_all_rentals on public.rentals
 -- ---------------------------------------------------------------------------
 insert into public.offices (code, name, address, phone, email, hours, lat, lng)
 values
-  ('saw', 'İstanbul Sabiha Gökçen Havalimanı (SAW)', 'Sabiha Gökçen Havalimanı, Pendik / İstanbul', '0532 388 29 96', 'info@zakcar.com', '7/24', 40.8986, 29.3092),
-  ('ist', 'İstanbul Havalimanı (IST)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakcar.com', '7/24', 41.2753, 28.7519),
-  ('merkez', 'ZakCar Merkez Ofis', 'Sabiha Gökçen Havalimanı Karşısı', '0532 388 29 96', 'info@zakcar.com', '08:00 - 22:00', 40.8780, 29.2570)
+  ('saw', 'İstanbul Sabiha Gökçen Havalimanı (SAW)', 'Sabiha Gökçen Havalimanı, Pendik / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 40.8986, 29.3092),
+  ('ist', 'İstanbul Havalimanı (IST)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 41.2753, 28.7519),
+  ('merkez', 'ZakCar Merkez Ofis', 'Sabiha Gökçen Havalimanı Karşısı', '0532 388 29 96', 'info@zakrentacar.com', '08:00 - 22:00', 40.8780, 29.2570)
 on conflict (code) do nothing;
 
 -- ---------------------------------------------------------------------------
@@ -1793,9 +1793,9 @@ end $$;
 
 insert into public.offices (code, name, address, phone, email, hours, lat, lng)
 values
-  ('saw', 'İstanbul Sabiha Gökçen Havalimanı (SAW)', 'Sabiha Gökçen Havalimanı, Pendik / İstanbul', '0532 388 29 96', 'info@zakcar.com', '7/24', 40.8986, 29.3092),
-  ('iga', 'İstanbul Havalimanı (IGA)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakcar.com', '7/24', 41.2753, 28.7519),
-  ('merkez', 'ZakCar Merkez Ofis', 'Sabiha Gökçen Havalimanı Karşısı', '0532 388 29 96', 'info@zakcar.com', '08:00 - 22:00', 40.8780, 29.2570)
+  ('saw', 'İstanbul Sabiha Gökçen Havalimanı (SAW)', 'Sabiha Gökçen Havalimanı, Pendik / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 40.8986, 29.3092),
+  ('iga', 'İstanbul Havalimanı (IGA)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 41.2753, 28.7519),
+  ('merkez', 'ZakCar Merkez Ofis', 'Sabiha Gökçen Havalimanı Karşısı', '0532 388 29 96', 'info@zakrentacar.com', '08:00 - 22:00', 40.8780, 29.2570)
 on conflict (code) do update set
   name = excluded.name,
   address = excluded.address,
@@ -2400,4 +2400,73 @@ grant select on public.site_posts to anon, authenticated;
 grant insert, update, delete on public.site_posts to authenticated;
 grant select on public.site_reviews to anon, authenticated;
 grant insert, update, delete on public.site_reviews to authenticated;
+
+-- ===== members.sql =====
+-- Panelde siteye üye olan hesaplar. Şifre dönmez; yalnızca aktif personel çağırabilir.
+
+create or replace function public.list_site_members()
+returns table (
+  id uuid,
+  email text,
+  full_name text,
+  phone text,
+  created_at timestamptz,
+  last_sign_in_at timestamptz,
+  email_confirmed boolean,
+  rental_count bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_staff() then
+    raise exception 'Personel oturumu gerekli.';
+  end if;
+
+  return query
+  select
+    u.id,
+    u.email::text,
+    coalesce(
+      nullif(trim(u.raw_user_meta_data->>'full_name'), ''),
+      nullif(trim(c.full_name), ''),
+      ''
+    ) as full_name,
+    nullif(trim(c.phone), '') as phone,
+    u.created_at,
+    u.last_sign_in_at,
+    (u.email_confirmed_at is not null) as email_confirmed,
+    coalesce((
+      select count(*)::bigint
+      from public.rentals r
+      join public.customers cust on cust.id = r.customer_id
+      where cust.auth_user_id = u.id
+         or (
+           u.email is not null
+           and lower(coalesce(cust.email, '')) = lower(u.email::text)
+         )
+    ), 0) as rental_count
+  from auth.users u
+  left join lateral (
+    select cust.full_name, cust.phone
+    from public.customers cust
+    where cust.auth_user_id = u.id
+       or (
+         u.email is not null
+         and lower(coalesce(cust.email, '')) = lower(u.email::text)
+       )
+    order by (cust.auth_user_id = u.id) desc, cust.created_at desc
+    limit 1
+  ) c on true
+  where not exists (
+    select 1 from public.staff_profiles s where s.id = u.id
+  )
+  order by u.created_at desc;
+end;
+$$;
+
+revoke all on function public.list_site_members() from public, anon;
+grant execute on function public.list_site_members() to authenticated;
 

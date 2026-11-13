@@ -1,10 +1,11 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, rgb, type PDFFont, type PDFPage, type RGB } from "pdf-lib";
+import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage, type RGB } from "pdf-lib";
 import type { Reservation } from "./booking";
 import { getVehicleBySlug } from "./data";
 import { EXTRA_OPTIONS, extraAmount, includedKm, rentalDays, sanitizeExtraCodes } from "./extras";
+import { SITE } from "./constants";
 
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
@@ -59,6 +60,8 @@ export async function buildReservationPdf(input: ReservationPdfInput): Promise<U
   ]);
   const font = await pdf.embedFont(regularBytes, { subset: true });
   const bold = await pdf.embedFont(boldBytes, { subset: true });
+  const logoBytes = await readFile(path.join(process.cwd(), "public/assets/zakcar/logo-header.png"));
+  const logo = await pdf.embedPng(logoBytes);
   const page = pdf.addPage([PAGE_W, PAGE_H]);
 
   const issued = istanbulParts(input.issuedAt ?? new Date());
@@ -74,7 +77,7 @@ export async function buildReservationPdf(input: ReservationPdfInput): Promise<U
   const contentW = PAGE_W - M * 2;
 
   let top = 34;
-  top = drawHeader(page, font, bold, input.reservation.pnr, issued.date, top);
+  top = drawHeader(page, font, bold, logo, input.reservation.pnr, issued.date, top);
   top += 10;
   page.drawRectangle({ x: M, y: PAGE_H - top, width: contentW, height: 2.2, color: RED });
   top += 16;
@@ -93,23 +96,25 @@ export async function buildReservationPdf(input: ReservationPdfInput): Promise<U
   top = drawPrices(page, font, bold, input, shortName, end.weekday, top, contentW);
   top += 16;
   const days = rentalDays(input.reservation.startAt, input.reservation.endAt);
-  const kmLine = `${days} gün için yol hakkı ${includedKm(days).toLocaleString("tr-TR")} km’dir. Günlük 300 km, 10 gün 2.200 km, aylık 3.800 km.`;
+  const kmLine = `${days} gün için yol hakkı ${includedKm(days).toLocaleString("tr-TR")} km’dir.`;
   drawReminders(page, font, bold, top, contentW, kmLine);
   drawFooter(page, font, issued.year);
 
   return pdf.save();
 }
 
-function drawHeader(page: PDFPage, font: PDFFont, bold: PDFFont, pnr: string, date: string, top: number) {
-  const brandY = PAGE_H - top - 22;
-  page.drawText("ZAKCAR", { x: M, y: brandY, size: 22, font: bold, color: RED });
-  drawSpaced(page, "RENT A CAR", M, brandY - 12, font, 6.5, INK, 1.35);
+function drawHeader(page: PDFPage, font: PDFFont, bold: PDFFont, logo: PDFImage, pnr: string, date: string, top: number) {
+  const logoH = 52;
+  const logoW = (logo.width / logo.height) * logoH;
+  const logoY = PAGE_H - top - logoH;
+  page.drawImage(logo, { x: M, y: logoY, width: logoW, height: logoH });
 
   const right = PAGE_W - M;
-  drawRight(page, "REZERVASYON ONAYI", right, brandY + 2, bold, 13, INK);
-  drawRight(page, `No: #${pnr}`, right, brandY - 14, bold, 10, RED);
-  drawRight(page, `Tarih: ${date}`, right, brandY - 26, font, 8, MUTED);
-  return top + 48;
+  const titleY = logoY + logoH - 16;
+  drawRight(page, "REZERVASYON ONAYI", right, titleY, bold, 13, INK);
+  drawRight(page, `No: #${pnr}`, right, titleY - 16, bold, 10, RED);
+  drawRight(page, `Tarih: ${date}`, right, titleY - 30, font, 8, MUTED);
+  return top + logoH + 4;
 }
 
 function drawGreeting(page: PDFPage, font: PDFFont, bold: PDFFont, name: string, x: number, top: number, width: number) {
@@ -175,7 +180,6 @@ function drawInfoCards(
   for (const field of flightFields(input.reservation.flightNumber)) left.push(field);
   const right: Field[] = [
     { label: "Kiralanan Araç:", value: shortName, color: RED, bold: true },
-    { label: "Plaka:", value: input.reservation.plate || "—" },
     { label: "Vites / Yakıt:", value: spec },
   ];
   return drawPair(page, font, bold, left, right, top, contentW);
@@ -315,7 +319,7 @@ function drawPrices(
   const deposit = Number(reservation.deposit || 0);
   if (deposit > 0) {
     top += 8;
-    page.drawText(`Depozito teslimatta tahsil edilir: ${money(deposit)}`, {
+    page.drawText(`Depozito: ${money(deposit)}`, {
       x: M,
       y: PAGE_H - top - 10,
       size: 8,
@@ -350,7 +354,7 @@ function drawReminders(page: PDFPage, font: PDFFont, bold: PDFFont, top: number,
   lines.forEach((line, index) => {
     page.drawText(line, { x: M + 14, y: y + h - 18 - index * 12, size: 8, font, color: MUTED });
   });
-  const farewell = "ZAKCAR Rent a Car ailesi olarak iyi yolculuklar dileriz!";
+  const farewell = "Zak Rent A Car ailesi olarak iyi yolculuklar dileriz!";
   const size = 10;
   const textW = bold.widthOfTextAtSize(farewell, size);
   page.drawText(farewell, {
@@ -365,8 +369,8 @@ function drawReminders(page: PDFPage, font: PDFFont, bold: PDFFont, top: number,
 function drawFooter(page: PDFPage, font: PDFFont, year: string) {
   const y = 36;
   page.drawRectangle({ x: M, y: y + 16, width: PAGE_W - M * 2, height: 0.6, color: LINE });
-  const left = `ZAKCAR Rent a Car © ${year}`;
-  const mid = "www.zakcar.com | info@zakcar.com";
+  const left = `Zak Rent A Car © ${year}`;
+  const mid = `www.zakcar.com | ${SITE.email}`;
   const right = "Sayfa 1 / 1";
   page.drawText(left, { x: M, y, size: 8, font, color: INK });
   const midW = font.widthOfTextAtSize(mid, 8);
@@ -399,14 +403,6 @@ function drawRound(
     borderColor: opts.borderColor,
     borderWidth: opts.borderWidth,
   });
-}
-
-function drawSpaced(page: PDFPage, text: string, x: number, y: number, font: PDFFont, size: number, color: RGB, extra: number) {
-  let cursor = x;
-  for (const ch of text) {
-    page.drawText(ch, { x: cursor, y, size, font, color });
-    cursor += font.widthOfTextAtSize(ch, size) + extra;
-  }
 }
 
 function drawRight(page: PDFPage, text: string, right: number, y: number, font: PDFFont, size: number, color: RGB) {

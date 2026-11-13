@@ -47,6 +47,35 @@ export function HomeTail({
 
   return (
     <>
+      <section className="bg-[#121926] py-16 sm:py-20">
+        <div className="container-page">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-sm uppercase tracking-wide text-brand">{t("home.reviewsKicker")}</p>
+            <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-white sm:text-4xl lg:text-5xl">
+              {t("home.reviews")}
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base text-[#9aa4b2]">{t("home.reviewsSub")}</p>
+          </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {savedReviews.map((review) => (
+              <ReviewCard
+                key={review.id}
+                title={t("home.reviewCard")}
+                body={review.body}
+                author={review.author}
+                place={review.location}
+              />
+            ))}
+            {HOME_REVIEW_CARDS.filter((review) => !hiddenReviewIds.includes(review.id)).map((review) => {
+              const copy = review.copy[locale];
+              return (
+                <ReviewCard key={review.id} title={copy.title} body={copy.body} author={review.author} place={copy.place} masked />
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       <section className="border-t border-surface-border bg-white py-14">
         <div className="container-page">
           <div className="flex flex-wrap items-end justify-between gap-4">
@@ -130,35 +159,6 @@ export function HomeTail({
                 </Link>
               </article>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-[#121926] py-16 sm:py-20">
-        <div className="container-page">
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm uppercase tracking-wide text-brand">{t("home.reviewsKicker")}</p>
-            <h2 className="mt-3 font-display text-3xl font-medium tracking-tight text-white sm:text-4xl lg:text-5xl">
-              {t("home.reviews")}
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-base text-[#9aa4b2]">{t("home.reviewsSub")}</p>
-          </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {savedReviews.map((review) => (
-              <ReviewCard
-                key={review.id}
-                title={t("home.reviewCard")}
-                body={review.body}
-                author={review.author}
-                place={review.location}
-              />
-            ))}
-            {HOME_REVIEW_CARDS.filter((review) => !hiddenReviewIds.includes(review.id)).map((review) => {
-              const copy = review.copy[locale];
-              return (
-                <ReviewCard key={review.id} title={copy.title} body={copy.body} author={review.author} place={copy.place} masked />
-              );
-            })}
           </div>
         </div>
       </section>

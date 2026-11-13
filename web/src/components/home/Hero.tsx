@@ -66,8 +66,6 @@ const MOTTOS = [
 export function Hero() {
   const [active, setActive] = useState(0);
   const { t } = usePrefs();
-  const motto = MOTTOS[active];
-  const after = t(motto.c);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -79,18 +77,31 @@ export function Hero() {
   return (
     <section className="relative text-ink">
       <div className="container-page relative flex flex-col justify-center pb-2 pt-14 lg:pt-16">
-        <div key={active} className="animate-hero-copy mx-auto max-w-3xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ink-muted sm:text-sm">
-            {SITE.shortName} Rent A Car
-          </p>
-          <h1 className="mt-4 font-display text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-5xl lg:text-[3.25rem]">
-            {t(motto.a)}{" "}
-            <span style={{ color: motto.accent }}>{t(motto.b)}</span>
-            {after ? ` ${after}` : ""}
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-ink-muted sm:text-base lg:text-lg">
-            {t(motto.sub)}
-          </p>
+        <div className="mx-auto grid max-w-3xl text-center">
+          {MOTTOS.map((item, i) => {
+            const isActive = i === active;
+            const after = t(item.c);
+            const Title = isActive ? "h1" : "div";
+            return (
+              <div
+                key={item.tag}
+                className={`col-start-1 row-start-1 ${isActive ? "animate-hero-copy" : "invisible"}`}
+                aria-hidden={!isActive}
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-ink-muted sm:text-sm">
+                  {SITE.shortName} Rent A Car
+                </p>
+                <Title className="mt-4 font-display text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-5xl lg:text-[3.25rem]">
+                  {t(item.a)}{" "}
+                  <span style={{ color: item.accent }}>{t(item.b)}</span>
+                  {after ? ` ${after}` : ""}
+                </Title>
+                <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-ink-muted sm:text-base lg:text-lg">
+                  {t(item.sub)}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
         <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-2">

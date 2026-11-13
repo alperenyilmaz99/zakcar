@@ -29,12 +29,11 @@ const DAILY_KM = 300;
 const TEN_DAY_KM = 2200;
 const MONTHLY_KM = 3800;
 
-/** 7 güne kadar 300 km/gün. 8–10 gün 2.200 km. 30 gün 3.800 km. 11–29 gün bu ikisi arasında eşit artar. */
+/** 10 günden kısa: 300 km/gün, 2.200 km’yi aşmaz. 10–29 gün: 2.200 km’den aylık 3.800 km’ye eşit artar. 30 gün ve üzeri bütün süre aylık 3.800 km üzerinden hesaplanır. */
 export function includedKm(days: number): number {
   const total = Math.max(1, Math.floor(days));
-  const months = Math.floor(total / 30);
-  const rest = total % 30;
-  return months * MONTHLY_KM + includedKmWithinMonth(rest);
+  if (total >= 30) return Math.round((total * MONTHLY_KM) / 30);
+  return includedKmWithinMonth(total);
 }
 
 function includedKmWithinMonth(days: number): number {

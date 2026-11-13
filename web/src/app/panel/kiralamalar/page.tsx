@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ManualReservationForm } from "@/components/panel/ManualReservationForm";
-import { fetchRentals, updateRentalStatus } from "@/lib/panel-api";
+import { downloadReservationPdf, fetchRentals, updateRentalStatus } from "@/lib/panel-api";
 import { RENTAL_STATUS_LABEL } from "@/lib/panel-data";
 import type { Rental } from "@/lib/panel-types";
 import { RentalStatusBadge, formatDateTime } from "@/components/panel/Badges";
@@ -25,6 +25,7 @@ function RentalsInner() {
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -114,10 +115,16 @@ function RentalsInner() {
       </div>
 
       <ManualReservationForm
-        onCreated={() => {
-          void fetchRentals().then(setRentals).catch((err: unknown) => {
-            setActionError(err instanceof Error ? err.message : "Liste yenilenemedi");
-          });
+        onCreated={(pnr) => {
+          void fetchRentals()
+            .then((rows) => {
+              setRentals(rows);
+              const match = rows.find((rental) => rental.pnr === pnr);
+              if (match) setSelected(match.id);
+            })
+            .catch((err: unknown) => {
+              setActionError(err instanceof Error ? err.message : "Liste yenilenemedi");
+            });
         }}
       />
 
@@ -255,9 +262,24 @@ function RentalsInner() {
                   <div className="rounded-xl bg-surface-soft px-3 py-2 text-ink-muted">{detail.notes}</div>
                 )}
               </dl>
-              {actions.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {actions.map((action) => (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={downloading}
+                  onClick={() => {
+                    setDownloading(true);
+                    setActionError("");
+                    void downloadReservationPdf(detail.pnr)
+                      .catch((err: unknown) => {
+                        setActionError(err instanceof Error ? err.message : "PDF indirilemedi.");
+                      })
+                      .finally(() => setDownloading(false));
+                  }}
+                  className="btn-outline text-sm"
+                >
+                  {downloading ? "PDF hazırlanıyor" : "PDF indir"}
+                </button>
+                {actions.map((action) => (
                     <button
                       key={action.status}
                       type="button"
@@ -268,8 +290,7 @@ function RentalsInner() {
                       {saving ? "Kaydediliyor…" : action.label}
                     </button>
                   ))}
-                </div>
-              )}
+              </div>
               {actionError && <p className="text-sm text-rose-600">{actionError}</p>}
             </div>
           ) : (

@@ -24,10 +24,34 @@ export function Header() {
     { href: "/ekonomik-arac-kiralama", label: t("nav.economic") },
     { href: "/luks-arac-kiralama", label: t("nav.luxury") },
   ];
-  const services = [
+  const rentalOptions = [
     { href: "/kredi-kartsiz-arac-kiralama", label: t("nav.noCard") },
     { href: "/uzun-donem-arac-kiralama", label: t("nav.longTerm") },
-    { href: "/kurumsal-arac-kiralama", label: t("nav.corporate") },
+  ];
+  const services = [...rentalOptions, { href: "/kurumsal-arac-kiralama", label: t("nav.corporate") }];
+  const airports = NAV.airports.map((a) => ({ href: a.href, label: t(a.labelKey) }));
+  const mobileGroups = [
+    {
+      title: t("nav.corporateTitle"),
+      items: [...top, { href: "/kurumsal-arac-kiralama", label: t("nav.corporate") }],
+    },
+    {
+      title: t("nav.classes"),
+      items: [...vehicles, { href: "/arac-modelleri", label: t("nav.models") }],
+    },
+    {
+      title: t("nav.rentalOptions"),
+      items: rentalOptions,
+    },
+    {
+      title: t("nav.locations"),
+      items: airports,
+    },
+  ];
+  const mobileLinks = [
+    { href: "/kampanyalar", label: t("nav.campaigns") },
+    { href: "/rezervasyon-sorgulama", label: t("nav.lookup") },
+    { href: "/blog", label: t("nav.blog") },
   ];
   const main = [
     { href: "/kampanyalar", label: t("nav.campaigns") },
@@ -88,10 +112,7 @@ export function Header() {
           <nav className="flex items-center gap-1">
             <NavDrop label={t("nav.vehicles")} items={vehicles} />
             <NavDrop label={t("nav.services")} items={services} />
-            <NavDrop
-              label={t("nav.airports")}
-              items={NAV.airports.map((a) => ({ href: a.href, label: t(a.labelKey) }))}
-            />
+            <NavDrop label={t("nav.airports")} items={airports} />
             {main.map((item) => (
               <Link
                 key={item.href}
@@ -119,7 +140,7 @@ export function Header() {
       </div>
 
       {open && (
-        <div className="relative z-10 border-t border-surface-border bg-white px-4 py-4 lg:hidden">
+        <div className="relative z-10 max-h-[calc(100dvh-4.75rem)] overflow-y-auto border-t border-surface-border bg-white px-4 py-3 lg:hidden">
           {ready ? (
             <div className="mb-3 flex items-center justify-end gap-3">
               {user ? (
@@ -149,20 +170,35 @@ export function Header() {
               )}
             </div>
           ) : null}
-          <div className="flex flex-col gap-1">
-            {[...top, ...vehicles, ...services, ...NAV.airports.map((a) => ({ href: a.href, label: t(a.labelKey) })), ...main].map(
-              (item) => (
+          <nav className="flex flex-col">
+            {mobileGroups.map((group) => (
+              <div key={group.title} className="border-b border-surface-border py-2">
+                <p className="px-3 pb-1 pt-1 text-xs font-semibold text-ink-muted">{group.title}</p>
+                {group.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-surface-soft"
+                    onClick={() => setOpen(false)}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+            <div className="flex flex-col py-2">
+              {mobileLinks.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-surface-soft"
+                  className="rounded-lg px-3 py-2.5 text-sm font-semibold hover:bg-surface-soft"
                   onClick={() => setOpen(false)}
                 >
                   {item.label}
                 </Link>
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          </nav>
         </div>
       )}
     </header>

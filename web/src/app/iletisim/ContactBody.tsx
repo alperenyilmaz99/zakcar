@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Content } from "@/components/content/ContentPage";
+import { GOOGLE_PLACE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 
 export function ContactBody({
@@ -37,6 +38,22 @@ export function ContactBody({
       <p>
         <Link href="/sik-sorulan-sorular">{t("nav.faq")}</Link>
       </p>
+      <div className="not-prose overflow-hidden rounded-2xl border border-surface-border bg-white">
+        <iframe
+          title={GOOGLE_PLACE.name}
+          src={GOOGLE_PLACE.embed}
+          className="h-80 w-full border-0"
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+          <p className="text-sm text-ink-muted">{t("offices.googleNote")}</p>
+          <a href={GOOGLE_PLACE.href} target="_blank" rel="noopener noreferrer" className="btn-primary !text-white no-underline hover:!text-white">
+            {t("offices.google")}
+          </a>
+        </div>
+      </div>
     </Content>
   );
 }

@@ -178,6 +178,8 @@ export function AirportDetailText({ text }: { text: string }) {
           {SITE.whatsappDisplay}
         </a>
         {" · "}
+        <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+        {" · "}
         <Link href="/arac-modelleri">Araçları incele</Link>
       </p>
     </article>
@@ -260,6 +262,8 @@ export function AirportArticle({ airport }: { airport: AirportId }) {
         <a href={`https://wa.me/${SITE.whatsapp}`} target="_blank" rel="noopener noreferrer">
           {SITE.whatsappDisplay}
         </a>
+        {" · "}
+        <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
         {" · "}
         <Link href="/arac-modelleri">Araçları incele</Link>
       </p>

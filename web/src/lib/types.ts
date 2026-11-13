@@ -48,7 +48,7 @@ export interface BookingRecord {
   createdAt: string;
 }
 
-export type SeoPageType = "city" | "airport" | "brand" | "group" | "service";
+export type SeoPageType = "city" | "airport" | "brand" | "group" | "service" | "district";
 
 export interface SeoPage {
   slug: string;

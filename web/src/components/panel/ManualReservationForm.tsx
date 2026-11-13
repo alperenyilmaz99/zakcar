@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { depositForDays, includedKm, rentalDays } from "@/lib/extras";
+import { downloadReservationPdf } from "@/lib/panel-api";
 
 type VehicleOption = {
   id: string;
@@ -35,7 +36,7 @@ async function staffToken() {
   return token;
 }
 
-export function ManualReservationForm({ onCreated }: { onCreated: () => void }) {
+export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) => void }) {
   const initial = defaultRange();
   const [open, setOpen] = useState(false);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
@@ -56,7 +57,10 @@ export function ManualReservationForm({ onCreated }: { onCreated: () => void }) 
   const [customerNote, setCustomerNote] = useState("");
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
+  const [createdPnr, setCreatedPnr] = useState("");
+  const [pdfError, setPdfError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!open || vehicles.length) return;
@@ -104,6 +108,8 @@ export function ManualReservationForm({ onCreated }: { onCreated: () => void }) 
     setSaving(true);
     setError("");
     setNote("");
+    setCreatedPnr("");
+    setPdfError("");
     try {
       const token = await staffToken();
       const res = await fetch("/api/panel/reservations", {
@@ -128,11 +134,14 @@ export function ManualReservationForm({ onCreated }: { onCreated: () => void }) 
       });
       const json = (await res.json()) as { pnr?: string; mailSent?: boolean; error?: string };
       if (!res.ok || !json.pnr) throw new Error(json.error || "Rezervasyon açılamadı.");
+      setCreatedPnr(json.pnr);
       setNote(
         json.mailSent
           ? `${json.pnr} oluşturuldu. Onay e-postası müşteriye gönderildi.`
           : `${json.pnr} oluşturuldu. Onay e-postası şu an gönderilemedi.`,
       );
+      onCreated(json.pnr);
+      void savePdf(json.pnr);
       setFirstName("");
       setLastName("");
       setEmail("");
@@ -141,11 +150,22 @@ export function ManualReservationForm({ onCreated }: { onCreated: () => void }) 
       setArrivalFlight("");
       setReturnFlight("");
       setCustomerNote("");
-      onCreated();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Rezervasyon açılamadı.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function savePdf(pnr: string) {
+    setDownloading(true);
+    setPdfError("");
+    try {
+      await downloadReservationPdf(pnr);
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : "PDF indirilemedi.");
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -154,7 +174,7 @@ export function ManualReservationForm({ onCreated }: { onCreated: () => void }) 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-display text-lg font-bold text-ink">Manuel rezervasyon</h2>
-          <p className="mt-1 text-sm text-ink-muted">Müşteri bilgisi ve plaka ile kayıt açılır, onay e-postası müşteriye gider.</p>
+          <p className="mt-1 text-sm text-ink-muted">Kayıt açılınca onay belgesi indirilir ve müşteriye e-posta gider.</p>
         </div>
         <button type="button" className="btn-outline text-sm" onClick={() => setOpen((value) => !value)}>
           {open ? "Formu gizle" : "Yeni rezervasyon"}
@@ -244,10 +264,16 @@ export function ManualReservationForm({ onCreated }: { onCreated: () => void }) 
           </p>
           {error && <p className="text-sm text-rose-700 sm:col-span-2">{error}</p>}
           {note && <p className="text-sm text-emerald-700 sm:col-span-2">{note}</p>}
-          <div className="sm:col-span-2">
+          {pdfError && <p className="text-sm text-rose-700 sm:col-span-2">{pdfError}</p>}
+          <div className="flex flex-wrap gap-2 sm:col-span-2">
             <button type="submit" className="btn-primary" disabled={saving || !fleetVehicleId}>
               {saving ? "Kaydediliyor" : "Rezervasyonu oluştur"}
             </button>
+            {createdPnr && (
+              <button type="button" className="btn-outline" disabled={downloading} onClick={() => void savePdf(createdPnr)}>
+                {downloading ? "PDF hazırlanıyor" : "PDF indir"}
+              </button>
+            )}
           </div>
         </form>
       )}

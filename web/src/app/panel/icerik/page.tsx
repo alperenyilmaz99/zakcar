@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type PanelPost = { slug: string; title: string; excerpt: string; source: "panel" | "site" };
+type PanelPost = { slug: string; title: string; excerpt: string; image: string; source: "panel" | "site" };
 type PanelReview = {
   id: string;
   author: string;
@@ -23,6 +23,21 @@ const STORE_NOTE: Record<string, string> = {
 };
 
 const PLACES = ["Sabiha Gökçen", "İstanbul Havalimanı", "Merkez Ofis"];
+
+async function uploadBlogCover(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("Yalnızca görsel yükleyin.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Görsel 5 MB'dan küçük olmalı.");
+  const supabase = createClient();
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const path = `blog/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("promo-covers").upload(path, file, {
+    cacheControl: "3600",
+    upsert: false,
+    contentType: file.type || "image/jpeg",
+  });
+  if (error) throw new Error(error.message);
+  return supabase.storage.from("promo-covers").getPublicUrl(path).data.publicUrl;
+}
 
 async function staffToken(): Promise<string> {
   const { data } = await createClient().auth.getSession();
@@ -44,6 +59,9 @@ export default function PanelContentPage() {
   const [blogTitle, setBlogTitle] = useState("");
   const [blogExcerpt, setBlogExcerpt] = useState("");
   const [blogBody, setBlogBody] = useState("");
+  const [blogCover, setBlogCover] = useState<File | null>(null);
+  const [blogCoverPreview, setBlogCoverPreview] = useState("");
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const token = await staffToken();
@@ -129,6 +147,7 @@ export default function PanelContentPage() {
     setNote("");
     try {
       const token = await staffToken();
+      const image = blogCover ? await uploadBlogCover(blogCover) : "";
       const res = await fetch("/api/panel/content", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -137,6 +156,7 @@ export default function PanelContentPage() {
           title: blogTitle,
           excerpt: blogExcerpt,
           body: blogBody,
+          image,
         }),
       });
       const payload = (await res.json()) as GenerateResponse;
@@ -144,10 +164,40 @@ export default function PanelContentPage() {
       setBlogTitle("");
       setBlogExcerpt("");
       setBlogBody("");
+      setBlogCover(null);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+      setBlogCoverPreview((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return "";
+      });
       setNote("Yazı eklendi ve blog listesinde görünür.");
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Yazı kaydedilemedi");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const changeCover = async (slug: string, file: File | null) => {
+    if (!file) return;
+    setBusy(`cover-${slug}`);
+    setError("");
+    setNote("");
+    try {
+      const image = await uploadBlogCover(file);
+      const token = await staffToken();
+      const res = await fetch("/api/panel/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ kind: "blog-cover", slug, image }),
+      });
+      const payload = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(payload.error || "Kapak kaydedilemedi");
+      setNote("Kapak görseli güncellendi.");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Kapak kaydedilemedi");
     } finally {
       setBusy(null);
     }
@@ -257,6 +307,26 @@ export default function PanelContentPage() {
             <span className="text-ink-muted">Metin</span>
             <textarea value={blogBody} onChange={(event) => setBlogBody(event.target.value)} rows={5} className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2" />
           </label>
+          <label className="block text-sm">
+            <span className="text-ink-muted">Kapak görseli</span>
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="mt-1 block w-full text-sm text-ink-muted file:me-3 file:rounded-lg file:border-0 file:bg-surface-soft file:px-3 file:py-2 file:text-sm file:font-semibold file:text-ink"
+              onChange={(event) => {
+                const file = event.target.files?.[0] || null;
+                setBlogCover(file);
+                setBlogCoverPreview((current) => {
+                  if (current) URL.revokeObjectURL(current);
+                  return file ? URL.createObjectURL(file) : "";
+                });
+              }}
+            />
+          </label>
+          {blogCoverPreview ? (
+            <img src={blogCoverPreview} alt="" className="h-28 w-full rounded-lg object-cover" />
+          ) : null}
           <button type="submit" className="btn-outline w-fit" disabled={busy !== null}>
             {busy === "save-blog" ? "Kaydediliyor…" : "Yazıyı ekle"}
           </button>
@@ -303,20 +373,43 @@ export default function PanelContentPage() {
               <ul className="divide-y divide-surface-border">
                 {posts.map((post) => (
                   <li key={post.slug} className="px-4 py-3.5">
-                    <div className="flex items-start justify-between gap-3">
-                      <Link href={`/blog/${post.slug}`} className="font-semibold text-ink hover:text-brand">
-                        {post.title}
-                      </Link>
-                      <button
-                        type="button"
-                        className="shrink-0 text-sm font-semibold text-brand hover:underline"
-                        disabled={busy !== null}
-                        onClick={() => void remove("blog", post.slug, post.title)}
-                      >
-                        Sil
-                      </button>
+                    <div className="flex items-start gap-3">
+                      {post.image ? (
+                        <img src={post.image} alt="" className="h-14 w-20 shrink-0 rounded-lg object-cover" />
+                      ) : null}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <Link href={`/blog/${post.slug}`} className="font-semibold text-ink hover:text-brand">
+                            {post.title}
+                          </Link>
+                          <button
+                            type="button"
+                            className="shrink-0 text-sm font-semibold text-brand hover:underline"
+                            disabled={busy !== null}
+                            onClick={() => void remove("blog", post.slug, post.title)}
+                          >
+                            Sil
+                          </button>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{post.excerpt}</p>
+                        {post.source === "panel" ? (
+                          <label className="mt-2 block text-xs text-ink-muted">
+                            Kapak görseli
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp"
+                              disabled={busy !== null}
+                              className="mt-1 block w-full text-xs file:me-2 file:rounded-md file:border-0 file:bg-surface-soft file:px-2 file:py-1 file:font-semibold file:text-ink"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0] || null;
+                                event.target.value = "";
+                                void changeCover(post.slug, file);
+                              }}
+                            />
+                          </label>
+                        ) : null}
+                      </div>
                     </div>
-                    <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{post.excerpt}</p>
                   </li>
                 ))}
               </ul>

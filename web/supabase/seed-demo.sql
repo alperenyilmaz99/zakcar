@@ -15,7 +15,7 @@ delete from public.customers where phone like '053%' or phone like '054%' or pho
 
 -- Ofisler
 insert into public.offices (code, name, address, phone, email, hours, lat, lng, is_active)
-values ('saw', 'İstanbul Sabiha Gökçen Havalimanı (SAW)', 'Sabiha Gökçen Havalimanı, Pendik / İstanbul', '0532 388 29 96', 'info@zakcar.com', '7/24', 40.8986, 29.3092, true)
+values ('saw', 'İstanbul Sabiha Gökçen Havalimanı (SAW)', 'Sabiha Gökçen Havalimanı, Pendik / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 40.8986, 29.3092, true)
 on conflict (code) do update set
   name = excluded.name,
   address = excluded.address,
@@ -25,7 +25,7 @@ on conflict (code) do update set
   is_active = true;
 
 insert into public.offices (code, name, address, phone, email, hours, lat, lng, is_active)
-values ('ist', 'İstanbul Havalimanı (IST)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakcar.com', '7/24', 41.2753, 28.7519, true)
+values ('ist', 'İstanbul Havalimanı (IST)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 41.2753, 28.7519, true)
 on conflict (code) do update set
   name = excluded.name,
   address = excluded.address,
@@ -35,7 +35,7 @@ on conflict (code) do update set
   is_active = true;
 
 insert into public.offices (code, name, address, phone, email, hours, lat, lng, is_active)
-values ('merkez', 'ZakCar Merkez Ofis', 'Sabiha Gökçen Havalimanı Karşısı', '0532 388 29 96', 'info@zakcar.com', '08:00 - 22:00', 40.878, 29.257, true)
+values ('merkez', 'ZakCar Merkez Ofis', 'Sabiha Gökçen Havalimanı Karşısı', '0532 388 29 96', 'info@zakrentacar.com', '08:00 - 22:00', 40.878, 29.257, true)
 on conflict (code) do update set
   name = excluded.name,
   address = excluded.address,
@@ -45,7 +45,7 @@ on conflict (code) do update set
   is_active = true;
 
 insert into public.offices (code, name, address, phone, email, hours, lat, lng, is_active)
-values ('kadikoy', 'Kadıköy Ofis', 'Caferağa Mah. Moda Cad. Kadıköy / İstanbul', '0532 388 29 96', 'info@zakcar.com', '09:00 - 20:00', 40.9901, 29.029, true)
+values ('kadikoy', 'Kadıköy Ofis', 'Caferağa Mah. Moda Cad. Kadıköy / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '09:00 - 20:00', 40.9901, 29.029, true)
 on conflict (code) do update set
   name = excluded.name,
   address = excluded.address,
@@ -55,7 +55,7 @@ on conflict (code) do update set
   is_active = true;
 
 insert into public.offices (code, name, address, phone, email, hours, lat, lng, is_active)
-values ('besiktas', 'Beşiktaş Ofis', 'Sinanpaşa Mah. Beşiktaş / İstanbul', '0532 388 29 96', 'info@zakcar.com', '09:00 - 20:00', 41.0422, 29.0067, true)
+values ('besiktas', 'Beşiktaş Ofis', 'Sinanpaşa Mah. Beşiktaş / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '09:00 - 20:00', 41.0422, 29.0067, true)
 on conflict (code) do update set
   name = excluded.name,
   address = excluded.address,

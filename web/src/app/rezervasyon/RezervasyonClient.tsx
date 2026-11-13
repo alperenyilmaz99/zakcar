@@ -10,6 +10,7 @@ import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
 import { applyPercent, normalizeCouponCode } from "@/lib/coupon-math";
 import { EXTRA_OPTIONS, depositForDays, extraAmount, includedKm, rentalDays, type ExtraId } from "@/lib/extras";
 import { parseTryAmount } from "@/lib/i18n";
+import { SITE } from "@/lib/constants";
 import { formatTryAmount } from "@/lib/format";
 import type { ModelPrice } from "@/lib/model-prices";
 import { OFFICES, isBookableOffice, resolveOfficeId } from "@/lib/offices";
@@ -221,7 +222,7 @@ export default function RezervasyonClient() {
           </p>
           <p className="mt-2 text-sm font-medium text-ink">{reservationStatusLabel(done.status, t)}</p>
           <p className="mt-4 text-sm text-ink-muted">{t("book.payLater")}</p>
-          <p className="mt-2 text-sm text-ink">{done.mailSent ? t("book.mailSent") : t("book.mailMissed")}</p>
+          <p className="mt-2 text-sm text-ink">{done.mailSent ? t("book.mailSent", { email: SITE.email }) : t("book.mailMissed")}</p>
           <div className="mt-6 flex flex-col gap-3">
             <Link href={`/rezervasyon-sorgulama?pnr=${encodeURIComponent(done.pnr)}`} className="btn-outline w-full">
               {t("nav.lookup")}
@@ -524,7 +525,7 @@ export default function RezervasyonClient() {
               className="mt-0.5 h-5 w-5 shrink-0 accent-brand"
             />
             <span>
-              {t("book.kvkkLead")}{" "}
+              {t("book.kvkkLead") ? <>{t("book.kvkkLead")} </> : null}
               <Link href="/kiralama-kosullari" target="_blank" className="font-semibold text-brand hover:underline">
                 {t("book.kvkkTerms")}
               </Link>
@@ -539,7 +540,7 @@ export default function RezervasyonClient() {
                 className="font-semibold text-brand hover:underline"
               >
                 {t("book.kvkkNotice")}
-              </Link>{" "}
+              </Link>
               {t("book.kvkkTail")}
             </span>
           </label>

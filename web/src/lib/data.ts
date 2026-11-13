@@ -1,3 +1,4 @@
+import { districtBySlug, districtSlugs } from "./districts";
 import type { VehicleCatalog, Vehicle, Office, SeoPage } from "./types";
 import vehiclesData from "@/data/vehicles.json";
 import officesData from "@/data/offices.json";
@@ -101,15 +102,15 @@ const CITY_PAGES: Record<string, string> = {
 const SERVICE_PAGES: Record<string, { title: string; desc: string }> = {
   "uzun-donem-arac-kiralama": {
     title: "Uzun Dönem Araç Kiralama",
-    desc: "Aylık ve uzun dönem filo çözümleri.",
+    desc: "Aylık ve daha uzun kiralamalar. Depozito süreye göre, ödeme teslimde.",
   },
   "kredi-kartsiz-arac-kiralama": {
     title: "Kredi Kartsız Araç Kiralama",
-    desc: "Kredi kartı olmadan kiralama imkânı.",
+    desc: "Kredi kartı ve provizyon yok. Ödeme araç başında nakit, banka kartı veya kredi kartıyla.",
   },
   "kurumsal-arac-kiralama": {
     title: "Kurumsal Araç Kiralama",
-    desc: "Şirketiniz için özel filo teklifleri.",
+    desc: "Şirketler için araç kiralama. Teslim Sabiha Gökçen, İstanbul Havalimanı ve merkez ofiste.",
   },
   "havalimani-arac-kiralama": {
     title: "Havalimanı Araç Kiralama",
@@ -151,11 +152,27 @@ export function resolveSeoPage(slug: string): SeoPage | null {
     };
   }
 
+  const district = districtBySlug(slug);
+  if (district) {
+    const side = district.side === "anadolu" ? "Anadolu" : "Avrupa";
+    const pickup = district.pickup === "saw" ? "Sabiha Gökçen" : "İstanbul Havalimanı";
+    return {
+      slug,
+      title: `${district.name} Araç Kiralama`,
+      description: `${district.name} araç kiralama. ${side} yakası için teslim noktası ${pickup}. Kredi kartı zorunlu değil, ödeme teslimde.`,
+      type: "district",
+      defaultPickup: district.pickup,
+    };
+  }
+
   if (CITY_PAGES[base]) {
     return {
       slug,
       title: `${CITY_PAGES[base]} Araç Kiralama`,
-      description: `${CITY_PAGES[base]} ve çevresinde araç kiralama.`,
+      description:
+        base === "istanbul"
+          ? "İstanbul araç kiralama. Anadolu yakasında Sabiha Gökçen, Avrupa yakasında İstanbul Havalimanı teslimi. Semt semt sayfalar."
+          : `${CITY_PAGES[base]} ve çevresinde araç kiralama.`,
       type: "city",
       defaultPickup: CITY_PAGES[base],
     };
@@ -199,6 +216,7 @@ export function getAllSeoSlugs(): string[] {
     ...Object.keys(SERVICE_PAGES),
     ...catalog.brands.map((b) => `${brandSlug(b)}-arac-kiralama`),
     ...Object.keys(CITY_PAGES).map((c) => `${c}-arac-kiralama`),
+    ...districtSlugs(),
     "sabiha-gokcen-havalimani-arac-kiralama",
     "istanbul-3-havalimani-arac-kiralama",
     "sabiha-gokcen-havalimani-kredi-kartsiz-arac-kiralama",

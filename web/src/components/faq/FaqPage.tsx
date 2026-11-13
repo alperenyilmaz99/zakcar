@@ -61,6 +61,10 @@ export function FaqPage() {
           WhatsApp {SITE.whatsappDisplay}
         </a>
         {" · "}
+        <a href={`mailto:${SITE.email}`} className="font-semibold text-brand">
+          {SITE.email}
+        </a>
+        {" · "}
         <Link href="/kiralama-kosullari" className="font-semibold text-brand">
           {t("nav.terms")}
         </Link>

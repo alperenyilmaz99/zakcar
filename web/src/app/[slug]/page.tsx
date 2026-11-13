@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AirportArticle, AirportDetailText, airportArticleId, airportArticleTitle } from "@/components/content/AirportArticle";
+import { DistrictArticle, IstanbulDistrictIndex } from "@/components/content/DistrictArticle";
+import { ServiceArticle, isServiceArticle } from "@/components/content/ServiceArticle";
+import { districtBySlug } from "@/lib/districts";
 import { SearchBar } from "@/components/search/SearchBar";
 import { VehicleCatalog } from "@/components/vehicles/VehicleCatalog";
 import { loadAirportCards } from "@/lib/airport-store";
@@ -75,6 +78,12 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
         <AirportDetailText text={saved.detail} />
       ) : article ? (
         <AirportArticle airport={article} />
+      ) : isServiceArticle(slug) ? (
+        <ServiceArticle slug={slug} />
+      ) : districtBySlug(slug) ? (
+        <DistrictArticle district={districtBySlug(slug)!} />
+      ) : slug === "istanbul-arac-kiralama" ? (
+        <IstanbulDistrictIndex />
       ) : (
         <div className="card p-8 text-center">
           <p className="text-ink-muted">
