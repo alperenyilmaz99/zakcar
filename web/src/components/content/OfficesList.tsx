@@ -7,10 +7,12 @@ import { GOOGLE_PLACE, SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { MessageKey } from "@/lib/i18n";
 
+const SAW_MAP = "https://www.google.com/maps/search/?api=1&query=İstanbul+Sabiha+Gökçen+Havalimanı";
+
 const OFFICE_COPY: Record<string, { name: MessageKey; address: MessageKey; lat: number; lng: number }> = {
-  saw: { name: "loc.saw.full", address: "loc.saw.address", lat: 40.9290708, lng: 29.3066005 },
+  saw: { name: "loc.saw.full", address: "loc.saw.address", lat: 40.8986, lng: 29.3092 },
   iga: { name: "loc.iga.full", address: "loc.iga.address", lat: 41.2753, lng: 28.7519 },
-  merkez: { name: "loc.merkez.full", address: "loc.merkez.address", lat: 40.929, lng: 29.3092 },
+  merkez: { name: "loc.merkez.full", address: "loc.merkez.address", lat: 40.9290708, lng: 29.3066005 },
 };
 
 function mapsUrl(lat: number, lng: number) {
@@ -18,7 +20,10 @@ function mapsUrl(lat: number, lng: number) {
 }
 
 function googleEmbed(selectedId: string | null) {
-  if (!selectedId || selectedId === "saw") return GOOGLE_PLACE.embed;
+  if (selectedId === "saw") {
+    return "https://maps.google.com/maps?hl=tr&q=İstanbul+Sabiha+Gökçen+Havalimanı&z=14&output=embed";
+  }
+  if (!selectedId || selectedId === "merkez") return GOOGLE_PLACE.embed;
   const pin = OFFICE_COPY[selectedId];
   if (!pin) return GOOGLE_PLACE.embed;
   return `https://maps.google.com/maps?hl=tr&q=${pin.lat},${pin.lng}&z=15&output=embed`;
@@ -49,6 +54,8 @@ export function OfficesList({ offices }: { offices: Office[] }) {
   const contact = selected ?? listed[0];
   if (!contact) return null;
   const pin = selected ? OFFICE_COPY[selected.id] : null;
+  const showsOffice = !selectedId || selectedId === "merkez";
+  const mapHref = selectedId === "saw" ? SAW_MAP : pin ? mapsUrl(pin.lat, pin.lng) : GOOGLE_PLACE.href;
 
   function choose(id: string) {
     if (selectedId === id) {
@@ -109,31 +116,21 @@ export function OfficesList({ offices }: { offices: Office[] }) {
               {contact.hours}
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
-              <a
-                href={GOOGLE_PLACE.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-primary"
-              >
-                {t("offices.google")}
+              <a href={mapHref} target="_blank" rel="noopener noreferrer" className="btn-primary">
+                {showsOffice ? t("offices.google") : t("offices.map")}
               </a>
-              {pin && selected?.id !== "saw" ? (
-                <a href={mapsUrl(pin.lat, pin.lng)} target="_blank" rel="noopener noreferrer" className="btn-outline">
-                  {t("offices.map")}
-                </a>
-              ) : null}
               <Link href="/arac-modelleri" className="btn-outline">
                 {t("offices.reserve")}
               </Link>
             </div>
-            <p className="text-xs text-ink-muted">{t("offices.googleNote")}</p>
+            {showsOffice ? <p className="text-xs text-ink-muted">{t("offices.googleNote")}</p> : null}
           </div>
         </div>
 
         <div className="card relative z-0 overflow-hidden lg:sticky lg:top-24">
           <iframe
             key={selectedId ?? "saw"}
-            title={selectedId && selectedId !== "saw" && pin ? t(pin.name) : GOOGLE_PLACE.name}
+            title={pin ? t(pin.name) : GOOGLE_PLACE.name}
             src={googleEmbed(selectedId)}
             className="h-[28rem] w-full border-0 lg:h-[36rem]"
             allowFullScreen
@@ -141,9 +138,9 @@ export function OfficesList({ offices }: { offices: Office[] }) {
             referrerPolicy="strict-origin-when-cross-origin"
           />
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-surface-border px-4 py-3">
-            <p className="text-sm text-ink-muted">{t("offices.googleNote")}</p>
-            <a href={GOOGLE_PLACE.href} target="_blank" rel="noopener noreferrer" className="btn-primary">
-              {t("offices.google")}
+            <p className="text-sm text-ink-muted">{showsOffice ? t("offices.googleNote") : t(pin?.name ?? "loc.saw.full")}</p>
+            <a href={mapHref} target="_blank" rel="noopener noreferrer" className="btn-primary">
+              {showsOffice ? t("offices.google") : t("offices.map")}
             </a>
           </div>
         </div>

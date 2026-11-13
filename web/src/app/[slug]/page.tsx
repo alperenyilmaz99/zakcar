@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AirportArticle, AirportDetailText, airportArticleId, airportArticleTitle } from "@/components/content/AirportArticle";
 import { DistrictArticle, IstanbulDistrictIndex } from "@/components/content/DistrictArticle";
-import { ServiceArticle, isServiceArticle } from "@/components/content/ServiceArticle";
+import { ServiceArticle, ServiceHeading } from "@/components/content/ServiceArticle";
+import { isServiceArticle } from "@/lib/service-slugs";
 import { districtBySlug } from "@/lib/districts";
 import { SearchBar } from "@/components/search/SearchBar";
 import { VehicleCatalog } from "@/components/vehicles/VehicleCatalog";
@@ -58,8 +59,14 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
 
   return (
     <div className="container-page py-10 lg:py-14">
-      <h1 className="section-title">{heading ?? seo.title}</h1>
-      {article ? null : <p className="section-sub">{seo.description}</p>}
+      {isServiceArticle(slug) ? (
+        <ServiceHeading slug={slug} />
+      ) : (
+        <>
+          <h1 className="section-title">{heading ?? seo.title}</h1>
+          {article ? null : <p className="section-sub">{seo.description}</p>}
+        </>
+      )}
 
       <div className="my-8">
         <SearchBar

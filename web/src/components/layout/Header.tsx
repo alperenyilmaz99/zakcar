@@ -172,36 +172,73 @@ export function Header() {
           ) : null}
           <nav className="flex flex-col">
             {mobileGroups.map((group) => (
-              <div key={group.title} className="border-b border-surface-border py-2">
-                <p className="px-3 pb-1 pt-1 text-xs font-semibold text-ink-muted">{group.title}</p>
-                {group.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-surface-soft"
-                    onClick={() => setOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
+              <MobileSection
+                key={group.title}
+                title={group.title}
+                items={group.items}
+                onNavigate={() => setOpen(false)}
+              />
             ))}
-            <div className="flex flex-col py-2">
-              {mobileLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-lg px-3 py-2.5 text-sm font-semibold hover:bg-surface-soft"
-                  onClick={() => setOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
+            {mobileLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="border-b border-surface-border px-3 py-3.5 text-[15px] font-medium text-ink"
+                onClick={() => setOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
         </div>
       )}
     </header>
+  );
+}
+
+function MobileSection({
+  title,
+  items,
+  onNavigate,
+}: {
+  title: string;
+  items: readonly { href: string; label: string }[];
+  onNavigate: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-b border-surface-border">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between px-3 py-3.5 text-start text-[15px] font-medium text-ink"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((value) => !value)}
+      >
+        {title}
+        <svg
+          viewBox="0 0 20 20"
+          aria-hidden
+          className={`h-4 w-4 shrink-0 text-ink-muted transition ${expanded ? "rotate-180" : ""}`}
+        >
+          <path d="M5 7.5 10 12.5 15 7.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {expanded ? (
+        <div className="pb-2">
+          {items.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="block px-3 py-2.5 text-sm text-ink-muted"
+              onClick={onNavigate}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
