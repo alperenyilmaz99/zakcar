@@ -75,6 +75,22 @@ export function Footer() {
             {SITE.email}
           </a>
           <a
+            href={SITE.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 block text-sm text-white/70 hover:text-brand"
+          >
+            {t("contact.facebook")}
+          </a>
+          <a
+            href={SITE.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 block text-sm text-white/70 hover:text-brand"
+          >
+            {t("contact.instagram")}
+          </a>
+          <a
             href={GOOGLE_PLACE.href}
             target="_blank"
             rel="noopener noreferrer"
@@ -99,6 +115,24 @@ export function Footer() {
               aria-label={t("contact.phone")}
             >
               <PhoneIcon />
+            </a>
+            <a
+              href={SITE.facebook}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white transition hover:bg-brand"
+              aria-label={t("contact.facebook")}
+            >
+              <FacebookIcon />
+            </a>
+            <a
+              href={SITE.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white transition hover:bg-brand"
+              aria-label={t("contact.instagram")}
+            >
+              <InstagramIcon />
             </a>
           </div>
         </div>
@@ -176,6 +210,22 @@ function PhoneIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
       <path d="M6.62 10.79a15.15 15.15 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.4 21 3 13.6 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z" />
+    </svg>
+  );
+}
+
+function FacebookIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
+      <path d="M14.5 8.5V6.8c0-.7.5-1 1.1-1h1.4V3h-2.4C11.8 3 11 4.6 11 6.6v1.9H9v2.8h2V21h3.5v-9.7h2.3l.3-2.8h-2.6Z" />
+    </svg>
+  );
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
+      <path d="M8 3h8a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5Zm8 1.8H8A3.2 3.2 0 0 0 4.8 8v8A3.2 3.2 0 0 0 8 19.2h8A3.2 3.2 0 0 0 19.2 16V8A3.2 3.2 0 0 0 16 4.8ZM12 8.2A3.8 3.8 0 1 1 8.2 12 3.8 3.8 0 0 1 12 8.2Zm0 1.6A2.2 2.2 0 1 0 14.2 12 2.2 2.2 0 0 0 12 9.8Zm4.35-2.55a.95.95 0 1 1-.95.95.95.95 0 0 1 .95-.95Z" />
     </svg>
   );
 }

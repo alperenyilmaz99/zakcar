@@ -1,5 +1,6 @@
 export const SERVICE_SLUGS = [
   "kredi-kartsiz-arac-kiralama",
+  "findeks-sorgusuz-arac-kiralama",
   "uzun-donem-arac-kiralama",
   "kurumsal-arac-kiralama",
 ] as const;

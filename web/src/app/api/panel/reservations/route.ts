@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { composeFlightNumber, type Reservation } from "@/lib/booking";
+import { composeFlightNumber, pickupHourIsPast, type Reservation } from "@/lib/booking";
 import { depositForDays, extraAmount, rentalDays, sanitizeExtraCodes } from "@/lib/extras";
 import { sendReservationConfirmation } from "@/lib/reservation-mail";
 import { bearerToken, createServerSupabase } from "@/lib/supabase/server";
@@ -143,6 +143,9 @@ export async function POST(req: Request) {
   }
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
     return NextResponse.json({ error: "Bırakış, alıştan sonra olmalı." }, { status: 400 });
+  }
+  if (pickupHourIsPast(start)) {
+    return NextResponse.json({ error: "Alış saati geçmişte kalamaz." }, { status: 400 });
   }
   if (end.getTime() - start.getTime() > 90 * 86_400_000) {
     return NextResponse.json({ error: "Tek seferde en fazla 90 gün kiralanabilir." }, { status: 400 });

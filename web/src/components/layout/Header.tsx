@@ -26,6 +26,7 @@ export function Header() {
   ];
   const rentalOptions = [
     { href: "/kredi-kartsiz-arac-kiralama", label: t("nav.noCard") },
+    { href: "/findeks-sorgusuz-arac-kiralama", label: t("nav.findeks") },
     { href: "/uzun-donem-arac-kiralama", label: t("nav.longTerm") },
   ];
   const services = [...rentalOptions, { href: "/kurumsal-arac-kiralama", label: t("nav.corporate") }];

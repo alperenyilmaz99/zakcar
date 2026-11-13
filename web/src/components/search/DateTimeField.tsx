@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
+import { pickupHourIsPast } from "@/lib/booking";
 import type { Locale } from "@/lib/i18n";
 
 const INTL: Record<Locale, string> = {
@@ -122,6 +123,22 @@ export function DateTimeField({
   }, [open, panel, box]);
 
   const minDate = min ? startOfDay(new Date(min)) : startOfDay(new Date());
+  const minStamp = min ? new Date(min).getTime() : null;
+
+  function hourBlocked(day: Date, hour: number) {
+    const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, 0, 0, 0);
+    if (pickupHourIsPast(at)) return true;
+    return minStamp !== null && at.getTime() <= minStamp;
+  }
+
+  function chooseHour(day: Date, preferred: number) {
+    if (!hourBlocked(day, preferred)) return preferred;
+    for (let hour = preferred + 1; hour < 24; hour += 1) {
+      if (!hourBlocked(day, hour)) return hour;
+    }
+    return preferred;
+  }
+
   const days = useMemo(() => monthCells(view), [view]);
   const today = startOfDay(new Date());
   const labels = weekdayLabels(loc);
@@ -207,7 +224,7 @@ export function DateTimeField({
 
           <div className="grid grid-cols-7 gap-0.5">
             {days.map((day) => {
-              const disabled = startOfDay(day) < minDate;
+              const disabled = startOfDay(day) < minDate || HOURS.every((_, hour) => hourBlocked(day, hour));
               const isSelected = sameDay(day, selected);
               const isToday = sameDay(day, today);
               const outside = day.getMonth() !== view.getMonth();
@@ -217,7 +234,7 @@ export function DateTimeField({
                   type="button"
                   disabled={disabled}
                   onClick={() => {
-                    apply(day, selected.getHours());
+                    apply(day, chooseHour(day, selected.getHours()));
                     onOpenChange(false);
                   }}
                   className={`h-9 rounded-lg text-sm transition ${
@@ -254,17 +271,23 @@ export function DateTimeField({
         >
           {HOURS.map((hour) => {
             const active = hour === timeValue;
+            const blocked = hourBlocked(selected, Number(hour.slice(0, 2)));
             return (
               <button
                 key={hour}
                 type="button"
+                disabled={blocked}
                 data-selected={active ? "true" : "false"}
                 onClick={() => {
                   apply(selected, Number(hour.slice(0, 2)));
                   onOpenChange(false);
                 }}
                 className={`flex h-9 w-full items-center rounded-lg px-3 text-sm ${
-                  active ? "bg-brand font-semibold text-white" : "text-[#111] hover:bg-[#FFF1F2] hover:text-brand"
+                  blocked
+                    ? "cursor-not-allowed text-[#C4C4C4]"
+                    : active
+                      ? "bg-brand font-semibold text-white"
+                      : "text-[#111] hover:bg-[#FFF1F2] hover:text-brand"
                 }`}
               >
                 {hour}

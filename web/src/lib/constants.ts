@@ -7,6 +7,8 @@ export const SITE = {
   address: "Yenişehir Mahallesi, Osmanlı Bulvarı, No:10 Çağdaş Center A Blok 50, 34890 Pendik/İstanbul",
   whatsapp: "908503077384",
   whatsappDisplay: "+90 850 307 7384",
+  facebook: "https://www.facebook.com/profile.php?id=61590545227699",
+  instagram: "https://www.instagram.com/zakcarrentall/",
   logo: "/assets/zakcar/logo-header.png",
   logoMark: "/assets/zakcar/logo-mark.png",
 } as const;
@@ -32,6 +34,7 @@ export const NAV = {
   ],
   services: [
     { href: "/kredi-kartsiz-arac-kiralama", label: "Kredi Kartsız" },
+    { href: "/findeks-sorgusuz-arac-kiralama", label: "Findeks Sorgusuz" },
     { href: "/uzun-donem-arac-kiralama", label: "Uzun Dönem" },
     { href: "/kurumsal-arac-kiralama", label: "Kurumsal" },
   ],

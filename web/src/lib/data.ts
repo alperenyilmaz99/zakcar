@@ -108,6 +108,10 @@ const SERVICE_PAGES: Record<string, { title: string; desc: string }> = {
     title: "Kredi Kartsız Araç Kiralama",
     desc: "Kredi kartı ve provizyon yok. Ödeme araç başında nakit, banka kartı veya kredi kartıyla.",
   },
+  "findeks-sorgusuz-arac-kiralama": {
+    title: "Findeks Sorgusuz Araç Kiralama",
+    desc: "Findeks sorgusu yok. Ödeme araç başında nakit, banka kartı veya kredi kartıyla.",
+  },
   "kurumsal-arac-kiralama": {
     title: "Kurumsal Araç Kiralama",
     desc: "Şirketler için araç kiralama. Teslim Sabiha Gökçen, İstanbul Havalimanı ve merkez ofiste.",

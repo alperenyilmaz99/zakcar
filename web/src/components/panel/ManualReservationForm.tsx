@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { pickupHourIsPast, startOfHour } from "@/lib/booking";
 import { createClient } from "@/lib/supabase/client";
 import { EXTRA_OPTIONS, depositForDays, extraAmount, includedKm, rentalDays, type ExtraId } from "@/lib/extras";
 import { downloadReservationPdf } from "@/lib/panel-api";
@@ -115,6 +116,10 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (saving) return;
+    if (pickupHourIsPast(new Date(startAt))) {
+      setError("Alış saati geçmişte kalamaz.");
+      return;
+    }
     setSaving(true);
     setError("");
     setNote("");
@@ -248,11 +253,11 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-ink">Alış</span>
-            <input required type="datetime-local" value={startAt} onChange={(event) => setStartAt(event.target.value)} className="w-full rounded-xl border border-surface-border px-3 py-2.5" />
+            <input required type="datetime-local" min={localInput(startOfHour(new Date()))} value={startAt} onChange={(event) => setStartAt(event.target.value)} className="w-full rounded-xl border border-surface-border px-3 py-2.5" />
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-ink">Bırakış</span>
-            <input required type="datetime-local" value={endAt} onChange={(event) => setEndAt(event.target.value)} className="w-full rounded-xl border border-surface-border px-3 py-2.5" />
+            <input required type="datetime-local" min={startAt} value={endAt} onChange={(event) => setEndAt(event.target.value)} className="w-full rounded-xl border border-surface-border px-3 py-2.5" />
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-ink">Günlük fiyat (TL)</span>

@@ -2034,8 +2034,8 @@ begin
   if v_start is null or v_end is null or v_end <= v_start then
     raise exception 'Bırakış, alıştan sonra olmalı.';
   end if;
-  if v_start < now() - interval '2 hours' then
-    raise exception 'Alış tarihi geçmişte kalamaz.';
+  if v_start < date_trunc('hour', now()) then
+    raise exception 'Alış saati geçmişte kalamaz.';
   end if;
   if v_start > now() + interval '365 days' then
     raise exception 'Alış tarihi en fazla 1 yıl sonrası olabilir.';

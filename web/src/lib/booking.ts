@@ -37,6 +37,19 @@ export type ReservationInput = {
 };
 
 const BOOKABLE = new Set(["saw", "iga", "merkez"]);
+
+export function startOfHour(date: Date) {
+  const next = new Date(date);
+  next.setMinutes(0, 0, 0);
+  next.setMilliseconds(0);
+  return next;
+}
+
+/** Aynı günün geçmiş saatleri kapalıdır. İçinde bulunulan saat seçilebilir. */
+export function pickupHourIsPast(start: Date, now = new Date()) {
+  if (Number.isNaN(start.getTime())) return true;
+  return startOfHour(start).getTime() < startOfHour(now).getTime();
+}
 const FLIGHT = /^[A-Za-z0-9 -]{2,12}$/;
 
 function flightError(value?: string) {
@@ -102,6 +115,7 @@ export function validateReservationInput(body: ReservationInput): string | null 
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
     return "Bırakış, alıştan sonra olmalı.";
   }
+  if (pickupHourIsPast(start)) return "Alış saati geçmişte kalamaz.";
   if (flightError(body.arrivalFlight) || flightError(body.returnFlight) || flightError(body.flightNumber)) {
     return "Uçuş numarası geçersiz.";
   }

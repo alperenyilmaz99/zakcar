@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { pickupHourIsPast } from "@/lib/booking";
 import type { SearchState } from "@/lib/types";
 import { resolveOfficeId } from "@/lib/offices";
 
@@ -24,9 +25,7 @@ function readStoredSearch(): SearchState {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
     const storedFrom = parsed.from ? new Date(parsed.from) : null;
-    const startToday = new Date();
-    startToday.setHours(0, 0, 0, 0);
-    const stale = !storedFrom || Number.isNaN(storedFrom.getTime()) || storedFrom < startToday;
+    const stale = !storedFrom || Number.isNaN(storedFrom.getTime()) || pickupHourIsPast(storedFrom);
     return {
       pickup: resolveOfficeId(parsed.pickup ?? "") ?? parsed.pickup ?? "",
       drop: resolveOfficeId(parsed.drop ?? "") ?? parsed.drop ?? "",

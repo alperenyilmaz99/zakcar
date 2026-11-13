@@ -14,7 +14,7 @@ import { SITE } from "@/lib/constants";
 import { formatTryAmount } from "@/lib/format";
 import type { ModelPrice } from "@/lib/model-prices";
 import { OFFICES, isBookableOffice, resolveOfficeId } from "@/lib/offices";
-import type { Reservation } from "@/lib/booking";
+import { pickupHourIsPast, type Reservation } from "@/lib/booking";
 import { reservationStatusLabel } from "@/lib/reservation-label";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { MessageKey } from "@/lib/i18n";
@@ -116,6 +116,10 @@ export default function RezervasyonClient() {
       setError(t("book.needOffice"));
       return;
     }
+    if (step === 0 && pickupHourIsPast(new Date(search.from))) {
+      setError(t("book.pastPickup"));
+      return;
+    }
     const form = formRef.current;
     if (form) {
       const visible = [...form.querySelectorAll("input, select, textarea")].filter(
@@ -192,6 +196,10 @@ export default function RezervasyonClient() {
 
     if (!pickupId || !dropId || !isBookableOffice(pickupId) || !isBookableOffice(dropId)) {
       setError(t("book.needOffice"));
+      return;
+    }
+    if (pickupHourIsPast(new Date(search.from))) {
+      setError(t("book.pastPickup"));
       return;
     }
 

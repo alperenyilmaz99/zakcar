@@ -8,7 +8,16 @@ import { usePrefs } from "@/components/prefs/PrefsProvider";
 export function ContactBody({
   site,
 }: {
-  site: { phone: string; phoneTel: string; email: string; address: string; whatsapp: string; whatsappDisplay: string };
+  site: {
+    phone: string;
+    phoneTel: string;
+    email: string;
+    address: string;
+    whatsapp: string;
+    whatsappDisplay: string;
+    facebook: string;
+    instagram: string;
+  };
 }) {
   const { t } = usePrefs();
 
@@ -30,6 +39,18 @@ export function ContactBody({
         <strong>{t("contact.email")}:</strong>{" "}
         <a href={`mailto:${site.email}`} className="text-brand">
           {site.email}
+        </a>
+      </p>
+      <p>
+        <strong>{t("contact.facebook")}:</strong>{" "}
+        <a href={site.facebook} target="_blank" rel="noopener noreferrer" className="text-brand">
+          {t("contact.facebook")}
+        </a>
+      </p>
+      <p>
+        <strong>{t("contact.instagram")}:</strong>{" "}
+        <a href={site.instagram} target="_blank" rel="noopener noreferrer" className="text-brand">
+          @zakcarrentall
         </a>
       </p>
       <p>
