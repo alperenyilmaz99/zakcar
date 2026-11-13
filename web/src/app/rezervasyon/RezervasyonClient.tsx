@@ -2,14 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { useCustomer } from "@/hooks/useCustomer";
 import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
 import { applyPercent, normalizeCouponCode } from "@/lib/coupon-math";
 import { EXTRA_OPTIONS, depositForDays, extraAmount, includedKm, rentalDays, type ExtraId } from "@/lib/extras";
-import { parseTryAmount } from "@/lib/i18n";
+import { parseTryAmount, specLabel } from "@/lib/i18n";
 import { SITE } from "@/lib/constants";
 import { formatTryAmount } from "@/lib/format";
 import type { ModelPrice } from "@/lib/model-prices";
@@ -19,7 +19,31 @@ import { reservationStatusLabel } from "@/lib/reservation-label";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { MessageKey } from "@/lib/i18n";
 
+const STEP_TITLE: MessageKey[] = ["book.stepRental", "book.extras", "book.yourInfo", "book.summary"];
+
+function stepClass(step: number, index: number) {
+  return step === index ? "" : "max-lg:hidden";
+}
+
+const DATE_LOCALE: Record<string, string> = {
+  tr: "tr-TR",
+  en: "en-US",
+  de: "de-DE",
+  ru: "ru-RU",
+  ar: "ar-SA",
+};
+
+function longDate(iso: string, locale: string) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString(DATE_LOCALE[locale] || "tr-TR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default function RezervasyonClient() {
+  const router = useRouter();
   const params = useSearchParams();
   const slug = params.get("vehicle") ?? "";
   const baseVehicle = useMemo(() => (slug ? getVehicleBySlug(slug) : undefined), [slug]);
@@ -62,7 +86,9 @@ export default function RezervasyonClient() {
   const [couponError, setCouponError] = useState("");
   const [checkingCode, setCheckingCode] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [step, setStep] = useState(0);
   const consentRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const pickupId = resolveOfficeId(search.pickup);
   const dropId = search.differentDrop ? resolveOfficeId(search.drop) : pickupId;
@@ -74,6 +100,48 @@ export default function RezervasyonClient() {
   const priced = coupon ? applyPercent(subtotal, coupon.percent) : { discount: 0, total: subtotal };
   const total = priced.total;
   const km = includedKm(days);
+
+  function goBack() {
+    if (step > 0) {
+      setError("");
+      setStep((current) => current - 1);
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    router.back();
+  }
+
+  function goNext() {
+    if (step === 0 && (!pickupId || !dropId || !isBookableOffice(pickupId) || !isBookableOffice(dropId))) {
+      setError(t("book.needOffice"));
+      return;
+    }
+    const form = formRef.current;
+    if (form) {
+      const visible = [...form.querySelectorAll("input, select, textarea")].filter(
+        (el): el is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement => {
+          if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)) {
+            return false;
+          }
+          if (el.disabled || (el instanceof HTMLInputElement && el.type === "hidden")) return false;
+          let node: HTMLElement | null = el;
+          while (node && node !== form) {
+            if (getComputedStyle(node).display === "none") return false;
+            node = node.parentElement;
+          }
+          return true;
+        },
+      );
+      const invalid = visible.find((el) => !el.checkValidity());
+      if (invalid) {
+        invalid.reportValidity();
+        return;
+      }
+    }
+    setError("");
+    setStep((current) => Math.min(STEP_TITLE.length - 1, current + 1));
+    window.scrollTo({ top: 0 });
+  }
 
   function toggleExtra(id: ExtraId) {
     setExtras((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
@@ -246,15 +314,107 @@ export default function RezervasyonClient() {
 
   return (
     <div className="bg-surface-soft">
-      <form key={user?.id || "guest"} onSubmit={handleSubmit} className="container-page py-8 lg:py-10">
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+      <form
+        ref={formRef}
+        key={user?.id || "guest"}
+        onSubmit={(event) => {
+          if (window.matchMedia("(max-width: 1023px)").matches && step < STEP_TITLE.length - 1) {
+            event.preventDefault();
+            goNext();
+            return;
+          }
+          void handleSubmit(event);
+        }}
+        className="container-page py-4 pb-28 lg:py-10 lg:pb-10"
+      >
+        <div className="sticky top-[4.25rem] z-40 -mx-4 mb-4 flex items-center border-b border-surface-border bg-white px-2 py-2 lg:hidden">
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label={t("book.back")}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-ink"
+          >
+            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M15 6l-6 6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <h1 className="flex-1 text-center font-display text-lg font-bold text-ink">{t(STEP_TITLE[step])}</h1>
+          <span className="w-10" />
+        </div>
+
+        <div className="hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 lg:block">
           {t("book.kmNotice", { days, km: km.toLocaleString("tr-TR") })}
         </div>
 
-        <div className="mt-5 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="grid items-start gap-5 lg:mt-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-5">
-            <section className="rounded-2xl border border-surface-border bg-white p-4 shadow-card sm:p-5">
-              <div className="grid gap-4 sm:grid-cols-[9rem_minmax(0,1fr)_auto] sm:items-center">
+            <section className={`lg:rounded-2xl lg:border lg:border-surface-border lg:bg-white lg:p-5 lg:shadow-card ${stepClass(step, 0)}`}>
+              <div className="lg:hidden">
+                <div className="rounded-2xl border border-surface-border bg-white p-4 shadow-card">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="rounded-full border border-surface-border px-3 py-1 text-xs font-medium text-ink">
+                    {t("card.deposit")}: {money(deposit)}
+                  </span>
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                    {specLabel(locale, vehicle.group)}
+                  </span>
+                </div>
+                <div className="relative mx-auto mt-3 aspect-[16/7] w-full max-w-[16rem]">
+                  <Image src={vehicleImagePath(vehicle.image)} alt={modelName} fill className="object-contain" />
+                </div>
+                <p className="text-center text-xs font-semibold uppercase tracking-wide text-ink-muted">{vehicle.brand}</p>
+                <p className="text-center font-display text-xl font-bold text-ink">{modelOnly || modelName}</p>
+                <div className="mt-3 flex items-center justify-center gap-4 text-xs text-ink-muted">
+                  <span>{specLabel(locale, vehicle.fuel)}</span>
+                  <span>{specLabel(locale, vehicle.transmission)}</span>
+                  <span>
+                    {vehicle.capacity} {t("card.person")}
+                  </span>
+                </div>
+                <div className="mt-4 flex items-baseline justify-center gap-3">
+                  <p className="text-sm text-ink-muted">
+                    {money(daily)} {t("book.daily")}
+                  </p>
+                  <p className="font-display text-2xl font-bold text-ink">
+                    {money(daily * days)} <span className="text-base font-semibold">{t("book.total")}</span>
+                  </p>
+                </div>
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-surface-border pt-4">
+                  <div className="min-w-0">
+                    <p className="text-[11px] leading-snug text-ink-muted">{t("book.pickupWhen")}</p>
+                    <p className="mt-1 text-sm font-semibold leading-tight text-ink">{longDate(search.from, locale)}</p>
+                    <p className="text-sm font-semibold text-ink">{formatTime(search.from, locale)}</p>
+                    <OfficeSelect
+                      value={pickupId || ""}
+                      placeholder={t("search.placeholder")}
+                      onChange={(id) => update(search.differentDrop ? { pickup: id } : { pickup: id, drop: id })}
+                      labelFor={t}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] leading-snug text-ink-muted">{t("book.dropWhen")}</p>
+                    <p className="mt-1 text-sm font-semibold leading-tight text-ink">{longDate(search.to, locale)}</p>
+                    <p className="text-sm font-semibold text-ink">{formatTime(search.to, locale)}</p>
+                    <OfficeSelect
+                      value={dropId || ""}
+                      placeholder={t("search.placeholder")}
+                      onChange={(id) =>
+                        update(
+                          id === pickupId
+                            ? { differentDrop: false, drop: id }
+                            : { differentDrop: true, drop: id },
+                        )
+                      }
+                      labelFor={t}
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-950">
+                  {t("book.kmNotice", { days, km: km.toLocaleString("tr-TR") })}
+                </div>
+              </div>
+              <div className="hidden gap-4 lg:grid lg:grid-cols-[9rem_minmax(0,1fr)_auto] lg:items-center">
                 <div className="relative mx-auto aspect-[16/10] w-full max-w-[9rem]">
                   <Image src={vehicleImagePath(vehicle.image)} alt={modelName} fill className="object-contain" />
                 </div>
@@ -284,7 +444,7 @@ export default function RezervasyonClient() {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-4 border-t border-surface-border pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+              <div className="mt-5 hidden gap-4 border-t border-surface-border pt-4 lg:grid lg:grid-cols-[1fr_1fr_auto] lg:items-end">
                 <div>
                   <p className="text-xs text-ink-muted">{t("search.from")}</p>
                   <p className="mt-1 text-sm font-semibold text-ink">
@@ -324,7 +484,7 @@ export default function RezervasyonClient() {
                 </button>
               </div>
               {showCode && (
-                <div className="mt-3">
+                <div className="mt-3 hidden lg:block">
                   <div className="flex flex-wrap gap-2">
                     <input
                       value={code}
@@ -368,8 +528,8 @@ export default function RezervasyonClient() {
               )}
             </section>
 
-            <section>
-              <h2 className="font-display text-xl font-bold text-ink">{t("book.extras")}</h2>
+            <section className={stepClass(step, 1)}>
+              <h2 className="hidden font-display text-xl font-bold text-ink lg:block">{t("book.extras")}</h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 {EXTRA_OPTIONS.map((item) => {
                   const checked = extras.includes(item.id);
@@ -400,8 +560,8 @@ export default function RezervasyonClient() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-surface-border bg-white p-5 shadow-card">
-              <h2 className="font-display text-xl font-bold text-ink">{t("book.yourInfo")}</h2>
+            <section className={`rounded-2xl border border-surface-border bg-white p-5 shadow-card ${stepClass(step, 2)}`}>
+              <h2 className="hidden font-display text-xl font-bold text-ink lg:block">{t("book.yourInfo")}</h2>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <Field name="firstName" label={t("book.firstName")} required defaultValue={first || ""} placeholder="Örn: Ahmet" />
                 <Field name="lastName" label={t("book.lastName")} required defaultValue={rest.join(" ")} placeholder="Örn: Yılmaz" />
@@ -446,8 +606,8 @@ export default function RezervasyonClient() {
             </section>
           </div>
 
-          <aside className="rounded-2xl border border-surface-border bg-white p-5 shadow-card lg:sticky lg:top-24">
-            <h2 className="font-display text-xl font-bold text-ink">{t("book.summary")}</h2>
+          <aside className={`rounded-2xl border border-surface-border bg-white p-5 shadow-card lg:sticky lg:top-24 ${stepClass(step, 3)}`}>
+            <h2 className="hidden font-display text-xl font-bold text-ink lg:block">{t("book.summary")}</h2>
             <SummaryBlock title={t("book.pickupInfo")}>
               <p>{pickupLabel}</p>
               <p>
@@ -515,7 +675,7 @@ export default function RezervasyonClient() {
           </aside>
         </div>
 
-        <section className="mt-5 rounded-2xl border border-surface-border bg-white p-4 shadow-card sm:p-5">
+        <section className={`mt-5 rounded-2xl border border-surface-border bg-white p-4 shadow-card sm:p-5 ${stepClass(step, 3)}`}>
           <label className="flex items-start gap-3 text-sm leading-relaxed text-ink">
             <input
               ref={consentRef}
@@ -545,11 +705,82 @@ export default function RezervasyonClient() {
             </span>
           </label>
           {error && <p className="mt-3 text-sm text-brand">{error}</p>}
-          <button type="submit" className="btn-primary mt-4 w-full sm:w-auto" disabled={saving}>
+          <button type="submit" className="btn-primary mt-4 hidden w-full lg:inline-flex lg:w-auto" disabled={saving}>
             {saving ? t("book.saving") : t("book.submit")}
           </button>
           <p className="mt-3 text-xs text-ink-muted">{t("book.payLater")}</p>
         </section>
+
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-surface-border bg-white px-4 py-3 lg:hidden">
+          {error && step < STEP_TITLE.length - 1 ? <p className="mb-2 text-sm text-brand">{error}</p> : null}
+          {step === 0 && showCode ? (
+            <div className="mb-3">
+              <div className="flex gap-2">
+                <input
+                  value={code}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    setCode(next);
+                    setCouponError("");
+                    setCoupon((current) =>
+                      current && normalizeCouponCode(next) === current.code ? current : null,
+                    );
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void applyCoupon();
+                    }
+                  }}
+                  placeholder={t("book.discount")}
+                  autoComplete="off"
+                  className="min-w-0 flex-1 rounded-xl border border-surface-border px-4 py-2.5 text-sm uppercase"
+                />
+                <button
+                  type="button"
+                  onClick={() => void applyCoupon()}
+                  disabled={checkingCode}
+                  className="inline-flex h-11 items-center justify-center rounded-xl bg-ink px-4 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {checkingCode ? "..." : t("book.discountApply")}
+                </button>
+              </div>
+              {coupon ? (
+                <p className="mt-2 text-xs font-semibold text-ink">
+                  %{coupon.percent} {t("book.discountApplied")}
+                </p>
+              ) : couponError ? (
+                <p className="mt-2 text-xs text-brand">{couponError}</p>
+              ) : (
+                <p className="mt-2 text-xs text-ink-muted">{t("book.discountHint")}</p>
+              )}
+            </div>
+          ) : null}
+          <div className="flex gap-3">
+            {step === 0 ? (
+              <button
+                type="button"
+                onClick={() => setShowCode((open) => !open)}
+                className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-semibold text-white"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                  <path d="M7 7h.01M4 12l8-8h7v7l-8 8-7-7z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {t("book.discount")}
+              </button>
+            ) : null}
+            {step < STEP_TITLE.length - 1 ? (
+              <button type="button" onClick={goNext} className="btn-primary min-h-12 flex-1">
+                {t("book.continue")}
+                <span aria-hidden> ›</span>
+              </button>
+            ) : (
+              <button type="submit" className="btn-primary min-h-12 flex-1" disabled={saving}>
+                {saving ? t("book.saving") : t("book.submit")}
+              </button>
+            )}
+          </div>
+        </div>
       </form>
     </div>
   );
@@ -570,6 +801,7 @@ function OfficeSelect({
     <select
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      required
       className="mt-2 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink"
     >
       <option value="">{placeholder}</option>

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { ChatWidget } from "@/components/layout/ChatWidget";
@@ -22,10 +23,16 @@ function PhoneIcon() {
 
 export function FloatingContact() {
   const { t } = usePrefs();
+  const path = usePathname();
   const waHref = `https://wa.me/${SITE.whatsapp}`;
+  const aboveBar = path === "/rezervasyon";
 
   return (
-    <div className="fixed bottom-5 right-4 z-40 flex flex-col items-center gap-4 sm:bottom-7 sm:right-6">
+    <div
+      className={`fixed right-4 z-40 flex-col items-center gap-4 sm:right-6 ${
+        aboveBar ? "bottom-7 hidden lg:flex" : "bottom-5 flex sm:bottom-7"
+      }`}
+    >
       <ChatWidget />
       <a
         href={waHref}
