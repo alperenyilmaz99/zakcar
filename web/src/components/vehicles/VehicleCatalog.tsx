@@ -72,14 +72,11 @@ export function VehicleCatalog({ vehicles, initialGroup }: VehicleCatalogProps) 
 
   return (
     <div>
-      <div className="mb-4 rounded-xl border border-brand/20 bg-brand-light px-4 py-3 text-sm text-brand-dark">
-        <p>{t("catalog.notice")}</p>
-        {days ? (
-          <p className="mt-1 font-medium">
-            {t("book.kmNotice", { days, km: includedKm(days).toLocaleString("tr-TR") })}
-          </p>
-        ) : null}
-      </div>
+      {days ? (
+        <div className="mb-4 rounded-xl border border-brand/20 bg-brand-light px-4 py-3 text-sm font-medium text-brand-dark">
+          <p>{t("book.kmNotice", { days, km: includedKm(days).toLocaleString("tr-TR") })}</p>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
         {/* Elitcar-style sidebar filters — no brand */}
