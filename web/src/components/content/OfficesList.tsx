@@ -7,26 +7,30 @@ import { GOOGLE_PLACE, SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { MessageKey } from "@/lib/i18n";
 
-const SAW_MAP = "https://www.google.com/maps/search/?api=1&query=İstanbul+Sabiha+Gökçen+Havalimanı";
+function pinQuery(lat: number, lng: number, label: string) {
+  return encodeURIComponent(`${lat},${lng} (${label})`);
+}
+
+function pinEmbed(lat: number, lng: number, label: string) {
+  return `https://maps.google.com/maps?hl=tr&q=${pinQuery(lat, lng, label)}&z=15&output=embed`;
+}
+
+function pinHref(lat: number, lng: number, label: string) {
+  return `https://www.google.com/maps?q=${pinQuery(lat, lng, label)}`;
+}
 
 const OFFICE_COPY: Record<string, { name: MessageKey; address: MessageKey; lat: number; lng: number }> = {
-  saw: { name: "loc.saw.full", address: "loc.saw.address", lat: 40.8986, lng: 29.3092 },
+  saw: { name: "loc.saw.full", address: "loc.saw.address", lat: 40.8942, lng: 29.3138 },
   iga: { name: "loc.iga.full", address: "loc.iga.address", lat: 41.2753, lng: 28.7519 },
   merkez: { name: "loc.merkez.full", address: "loc.merkez.address", lat: 40.9290708, lng: 29.3066005 },
 };
 
-function mapsUrl(lat: number, lng: number) {
-  return `https://www.google.com/maps?q=${lat},${lng}`;
-}
-
 function googleEmbed(selectedId: string | null) {
-  if (selectedId === "saw") {
-    return "https://maps.google.com/maps?hl=tr&q=İstanbul+Sabiha+Gökçen+Havalimanı&z=14&output=embed";
-  }
   if (!selectedId || selectedId === "merkez") return GOOGLE_PLACE.embed;
   const pin = OFFICE_COPY[selectedId];
   if (!pin) return GOOGLE_PLACE.embed;
-  return `https://maps.google.com/maps?hl=tr&q=${pin.lat},${pin.lng}&z=15&output=embed`;
+  const label = selectedId === "saw" ? "Sabiha Gökçen SAW" : "IGA";
+  return pinEmbed(pin.lat, pin.lng, label);
 }
 
 export function OfficesList({ offices }: { offices: Office[] }) {
@@ -55,7 +59,9 @@ export function OfficesList({ offices }: { offices: Office[] }) {
   if (!contact) return null;
   const pin = selected ? OFFICE_COPY[selected.id] : null;
   const showsOffice = !selectedId || selectedId === "merkez";
-  const mapHref = selectedId === "saw" ? SAW_MAP : pin ? mapsUrl(pin.lat, pin.lng) : GOOGLE_PLACE.href;
+  const mapHref = pin
+    ? pinHref(pin.lat, pin.lng, selectedId === "saw" ? "Sabiha Gökçen SAW" : selectedId === "iga" ? "IGA" : "ZakCar")
+    : GOOGLE_PLACE.href;
 
   function choose(id: string) {
     if (selectedId === id) {

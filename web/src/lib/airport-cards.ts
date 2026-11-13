@@ -17,7 +17,7 @@ export const AIRPORT_CARDS: AirportCard[] = [
     id: "saw",
     href: "/sabiha-gokcen-havalimani-arac-kiralama",
     imageUrl: "/assets/hero/saw.jpg",
-    title: "Sabiha Gökçen Havalimanı",
+    title: "Sabiha Gökçen Havalimanı (SAW)",
     text: "Gece gündüz teslim. Karşılama ve evrak birkaç dakika sürer.",
     detail: "",
     titleKey: "home.airportSawTitle",
@@ -28,7 +28,7 @@ export const AIRPORT_CARDS: AirportCard[] = [
     id: "iga",
     href: "/istanbul-3-havalimani-arac-kiralama",
     imageUrl: "/assets/hero/iga.jpg",
-    title: "İstanbul Havalimanı",
+    title: "İstanbul Havalimanı (IGA)",
     text: "Aracınız sizi bekler. Teslim ücretsizdir, ödeme araç başında yapılır.",
     detail: "",
     titleKey: "home.airportIgaTitle",
@@ -82,13 +82,22 @@ export function mergeAirportCards(saved: AirportCardRow[]): AirportCard[] {
   });
 }
 
+const STOCK_TITLES: Record<string, readonly string[]> = {
+  saw: ["Sabiha Gökçen Havalimanı", "Sabiha Gökçen Havalimanı (SAW)"],
+  iga: ["İstanbul Havalimanı", "İstanbul Havalimanı (IGA)"],
+};
+
+export function isStockAirportTitle(id: string, title: string): boolean {
+  return (STOCK_TITLES[id] ?? []).includes(title.trim());
+}
+
 export function airportCardCopy(
   card: AirportCard,
   translate: (key: MessageKey) => string,
 ): { title: string; text: string } {
   const base = AIRPORT_CARDS.find((item) => item.id === card.id);
   return {
-    title: base && card.title === base.title ? translate(card.titleKey) : card.title,
+    title: base && isStockAirportTitle(card.id, card.title) ? translate(card.titleKey) : card.title,
     text: base && card.text === base.text ? translate(card.textKey) : card.text,
   };
 }

@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { AirportArticle, AirportDetailText, airportArticleId, airportArticleTitle } from "@/components/content/AirportArticle";
-import { DistrictArticle, IstanbulDistrictIndex } from "@/components/content/DistrictArticle";
+import { AirportArticle, AirportHeading } from "@/components/content/AirportArticle";
+import { DistrictArticle, DistrictHeading, IstanbulDistrictIndex } from "@/components/content/DistrictArticle";
+import { LandingFallback, LandingHeading } from "@/components/content/LandingHeading";
 import { ServiceArticle, ServiceHeading } from "@/components/content/ServiceArticle";
+import { airportArticleId, airportArticleTitle } from "@/lib/airport-slugs";
 import { isServiceArticle } from "@/lib/service-slugs";
 import { districtBySlug } from "@/lib/districts";
 import { SearchBar } from "@/components/search/SearchBar";
@@ -47,10 +48,10 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
   const seo = resolveSeoPage(slug);
   if (!seo) notFound();
   const article = airportArticleId(slug);
+  const district = districtBySlug(slug);
   const saved = article
     ? (await loadAirportCards()).items.find((item) => item.href === `/${slug}`)
     : undefined;
-  const heading = saved?.title || (article ? airportArticleTitle(slug) : seo.title);
 
   const showCatalog = seo.type === "group" || seo.type === "brand";
   const vehicles = showCatalog
@@ -61,11 +62,18 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
     <div className="container-page py-10 lg:py-14">
       {isServiceArticle(slug) ? (
         <ServiceHeading slug={slug} />
+      ) : article ? (
+        <AirportHeading slug={slug} savedTitle={saved?.title} />
+      ) : district ? (
+        <DistrictHeading district={district} />
       ) : (
-        <>
-          <h1 className="section-title">{heading ?? seo.title}</h1>
-          {article ? null : <p className="section-sub">{seo.description}</p>}
-        </>
+        <LandingHeading
+          slug={slug}
+          title={seo.title}
+          description={seo.description}
+          group={seo.filterGroup}
+          brand={seo.filterBrand}
+        />
       )}
 
       <div className="my-8">
@@ -81,30 +89,16 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
           vehicles={vehicles}
           initialGroup={seo.filterGroup}
         />
-      ) : article && saved?.detail ? (
-        <AirportDetailText text={saved.detail} />
       ) : article ? (
-        <AirportArticle airport={article} />
+        <AirportArticle airport={article} customDetail={saved?.detail} />
       ) : isServiceArticle(slug) ? (
         <ServiceArticle slug={slug} />
-      ) : districtBySlug(slug) ? (
-        <DistrictArticle district={districtBySlug(slug)!} />
+      ) : district ? (
+        <DistrictArticle district={district} />
       ) : slug === "istanbul-arac-kiralama" ? (
         <IstanbulDistrictIndex />
       ) : (
-        <div className="card p-8 text-center">
-          <p className="text-ink-muted">
-            ZakCar Rent A Car ile güvenilir araç kiralama deneyimi yaşayın.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="/arac-modelleri" className="btn-primary">
-              Tüm Araçları İncele
-            </Link>
-            <Link href="/iletisim" className="btn-outline">
-              Bize Ulaşın
-            </Link>
-          </div>
-        </div>
+        <LandingFallback />
       )}
     </div>
   );
