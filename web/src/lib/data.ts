@@ -199,7 +199,7 @@ export function resolveSeoPage(slug: string): SeoPage | null {
   return null;
 }
 
-export function seoForDistrict(district: { slug: string; name: string; side: "avrupa" | "anadolu"; pickup: "saw" | "iga" }) {
+export function seoForDistrict(district: { slug: string; name: string; side: "avrupa" | "anadolu"; pickup: "saw" | "iga" }): SeoPage {
   const side = district.side === "anadolu" ? "Anadolu" : "Avrupa";
   const pickup = district.pickup === "saw" ? "Sabiha Gökçen" : "İstanbul Havalimanı";
   return {
