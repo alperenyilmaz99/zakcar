@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { getPublishedBlogPosts } from "@/lib/blog";
-import { getAllSeoSlugs, getAllVehicleSlugs } from "@/lib/data";
+import { getAllSeoSlugs } from "@/lib/data";
+import { loadPublicVehicles } from "@/lib/public-vehicles";
+import { loadDistricts } from "@/lib/district-store";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://zakcar.com";
 
@@ -33,7 +35,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: p === "" ? 1 : 0.7,
   }));
 
-  for (const slug of getAllVehicleSlugs()) {
+  for (const vehicle of await loadPublicVehicles()) {
+    const slug = vehicle.slug;
     entries.push({
       url: `${BASE}/arac/${slug}`,
       lastModified: new Date(),
@@ -52,7 +55,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  for (const slug of getAllSeoSlugs()) {
+  const districtSlugs = (await loadDistricts()).items.map((item) => item.slug);
+  for (const slug of new Set([...getAllSeoSlugs(), ...districtSlugs])) {
     entries.push({
       url: `${BASE}/${slug}`,
       lastModified: new Date(),

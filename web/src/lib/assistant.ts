@@ -22,7 +22,7 @@ export function assistantSystem(locale: string): string {
 
 ZakCar İstanbul’da kısa dönem araç kiralar. Ofisler yalnızca şunlardır:
 - İstanbul Sabiha Gökçen Havalimanı (SAW), 7/24
-- İstanbul Havalimanı (IGA), 7/24
+- İstanbul Havalimanı (IST), 7/24
 - ZakCar Merkez Ofis, Sabiha Gökçen karşısı, 08:00-22:00
 Havalimanı teslimi ücretsizdir. Başka şehirde ofis yoktur.
 

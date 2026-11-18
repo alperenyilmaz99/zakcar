@@ -128,7 +128,7 @@ function ReservationCard({ item }: { item: Reservation }) {
     <div className="card mt-4 space-y-1 p-4 text-sm">
       <p className="font-display text-lg font-bold text-brand">{item.pnr}</p>
       <p className="font-medium text-ink">
-        {item.vehicleName} · {item.plate}
+        {item.vehicleName}
       </p>
       <p className="text-ink-muted">
         {formatDate(item.startAt, locale)} — {formatDate(item.endAt, locale)}

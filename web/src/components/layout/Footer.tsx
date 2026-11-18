@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { DISTRICTS } from "@/lib/districts";
 import { GOOGLE_PLACE, SITE } from "@/lib/constants";
+import { useDistricts } from "@/hooks/useDistricts";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 
 const AIRPORTS = [
@@ -22,6 +22,7 @@ const POPULAR_CARS = [
 
 export function Footer() {
   const { t } = usePrefs();
+  const districts = useDistricts();
 
   const company = [
     { href: "/hakkimizda", label: t("nav.about") },
@@ -146,7 +147,7 @@ export function Footer() {
         <div className="sm:col-span-2 lg:col-span-2">
           <h3 className="font-semibold text-white">{t("footer.popularDistricts")}</h3>
           <ul className="mt-3 columns-1 gap-x-8 sm:columns-2">
-            {DISTRICTS.map((district) => (
+            {districts.map((district) => (
               <li key={district.slug} className="mb-2 break-inside-avoid">
                 <Link
                   href={`/${district.slug}`}

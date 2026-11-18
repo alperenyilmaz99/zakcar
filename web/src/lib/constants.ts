@@ -17,7 +17,7 @@ export const GOOGLE_PLACE = {
   name: "Zakcar Rent A Car Sabiha Gökçen Kredi Kartsız Araç Kiralama",
   embed:
     "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2865.2425875497747!2d29.30660047585398!3d40.929070771361594!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x14cadb32455f8f33%3A0x98a36f6d17aa5a03!2sZakcar%20Rent%20A%20Car%20Sabiha%20G%C3%B6k%C3%A7en%20Kredi%20Karts%C4%B1z%20Ara%C3%A7%20Kiralama!5e1!3m2!1str!2str!4v1794137959082!5m2!1str!2str",
-  href: "https://www.google.com/maps?cid=10998757229308041731",
+  href: "https://www.google.com/maps/place/Zakcar+Rent+A+Car+Sabiha+G%C3%B6k%C3%A7en+Kredi+Karts%C4%B1z+Ara%C3%A7+Kiralama/@40.9290708,29.3091754,17z/data=!3m1!4b1!4m6!3m5!1s0x14cadb32455f8f33:0x98a36f6d17aa5a03!8m2!3d40.9290708!4d29.3091754!16s%2Fg%2F11w3l590r8",
 } as const;
 
 export const NAV = {

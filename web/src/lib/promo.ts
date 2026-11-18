@@ -51,10 +51,13 @@ export function localizedPromo(promo: PromoCover, t: (key: MessageKey) => string
   };
 }
 
-export type PromoSlot = "hero" | "mid" | "campaigns";
+export type PromoSlot = "hero" | "mid" | "campaigns" | "backdrop";
+
+export const HERO_BACKDROP = "/assets/zakcar/hero-bg.jpg";
 
 export function normalizePromoSlot(value: unknown): PromoSlot {
-  return value === "mid" || value === "campaigns" ? value : "hero";
+  if (value === "mid" || value === "campaigns" || value === "backdrop") return value;
+  return "hero";
 }
 
 export type PromoCover = {
@@ -100,7 +103,7 @@ export const DEFAULT_PROMOS: PromoCover[] = [
     imageUrl: "/assets/promo/havalimani.png",
     href: "/sabiha-gokcen-havalimani-arac-kiralama",
     title: "Havalimanı teslim",
-    highlight: "SAW & IGA",
+    highlight: "SAW & IST",
     sub: "Sabiha Gökçen ve İstanbul Havalimanı ofisleri",
     badge: "7/24 teslim",
     sortOrder: 2,
@@ -148,10 +151,10 @@ export function mapPromoRow(row: PromoRow): PromoCover {
     id: row.id,
     imageUrl: row.image_url,
     href: row.href || "/arac-modelleri",
-    title: row.title || "",
-    highlight: row.highlight || "",
-    sub: row.subtitle || "",
-    badge: row.badge || "",
+    title: (row.title || "").replaceAll("IGA", "IST"),
+    highlight: (row.highlight || "").replaceAll("IGA", "IST"),
+    sub: (row.subtitle || "").replaceAll("IGA", "IST"),
+    badge: (row.badge || "").replaceAll("IGA", "IST"),
     sortOrder: row.sort_order ?? 0,
     isActive: row.is_active !== false,
     slot: normalizePromoSlot(row.slot),

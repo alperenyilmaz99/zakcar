@@ -114,23 +114,39 @@ function mapRental(row: RentalRow): Rental {
   };
 }
 
-export type FleetModelOption = { id: string; name: string; slug: string };
-export type FleetOfficeOption = { id: string; name: string };
+export type FleetModelOption = {
+  id: string;
+  name: string;
+  slug: string;
+  fuel: string | null;
+  transmission: string | null;
+  group: string;
+};
 
-export async function fetchFleetFormOptions(): Promise<{
-  models: FleetModelOption[];
-  offices: FleetOfficeOption[];
-}> {
+export async function fetchFleetFormOptions(): Promise<{ models: FleetModelOption[] }> {
   const supabase = createClient();
-  const [models, offices] = await Promise.all([
-    supabase.from("vehicle_models").select("id,name,slug").eq("is_active", true).order("name"),
-    supabase.from("offices").select("id,name").eq("is_active", true).order("name"),
-  ]);
-  if (models.error) throw models.error;
-  if (offices.error) throw offices.error;
+  const { data, error } = await supabase
+    .from("vehicle_models")
+    .select("id,name,slug,fuel,transmission,vehicle_group")
+    .eq("is_active", true)
+    .order("name");
+  if (error) throw error;
   return {
-    models: (models.data || []) as FleetModelOption[],
-    offices: (offices.data || []) as FleetOfficeOption[],
+    models: ((data || []) as Array<{
+      id: string;
+      name: string;
+      slug: string;
+      fuel: string | null;
+      transmission: string | null;
+      vehicle_group: string;
+    }>).map((row) => ({
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      fuel: row.fuel,
+      transmission: row.transmission,
+      group: row.vehicle_group,
+    })),
   };
 }
 
@@ -161,17 +177,13 @@ export async function uploadVehicleImage(file: File): Promise<string> {
 
 export async function createFleetVehicle(input: {
   modelId: string;
-  officeId: string;
-  plate: string;
-  fuelLevel: number;
   km: number;
   imageUrl?: string;
+  fuel: string;
+  transmission: string;
+  group: string;
 }): Promise<void> {
-  const plate = input.plate.trim().toUpperCase().replace(/\s+/g, " ");
-  if (plate.length < 5) throw new Error("Geçerli bir plaka girin.");
   if (!input.modelId) throw new Error("Araç modeli seçin.");
-  if (!input.officeId) throw new Error("Ofis seçin.");
-  const fuel = Math.min(100, Math.max(0, Math.round(input.fuelLevel)));
   const km = Math.max(0, Math.round(input.km));
 
   const supabase = createClient();
@@ -181,90 +193,127 @@ export async function createFleetVehicle(input: {
 
   const { error } = await supabase.from("fleet_vehicles").insert({
     fleet_code: fleetCode,
-    plate,
+    plate: fleetCode,
     model_id: input.modelId,
-    home_office_id: input.officeId,
     status: "musait",
-    fuel_level: fuel,
+    fuel_level: 100,
     odometer_km: km,
   });
-  if (error) {
-    if (/duplicate|unique|fleet_vehicles_plate/i.test(error.message)) {
-      throw new Error("Bu plaka zaten kayıtlı.");
-    }
-    throw error;
-  }
-  if (input.imageUrl) await updateModelImage(input.modelId, input.imageUrl);
+  if (error) throw error;
+  await updateModelDetails(input.modelId, input);
+  await syncModelActive(input.modelId);
 }
 
-function normalizePlate(plate: string): string {
-  return plate.trim().toUpperCase().replace(/\s+/g, " ");
-}
-
-async function updateModelImage(modelId: string, imageUrl: string): Promise<void> {
+async function updateModelDetails(
+  modelId: string,
+  input: { imageUrl?: string; fuel: string; transmission: string; group: string },
+): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.from("vehicle_models").update({ image_url: imageUrl }).eq("id", modelId);
+  const row: { fuel: string; transmission: string; vehicle_group: string; image_url?: string; is_active: boolean } = {
+    fuel: input.fuel,
+    transmission: input.transmission,
+    vehicle_group: input.group,
+    is_active: true,
+  };
+  if (input.imageUrl) row.image_url = input.imageUrl;
+  const { error } = await supabase.from("vehicle_models").update(row).eq("id", modelId);
   if (error) throw error;
 }
 
 export async function updateFleetVehicle(input: {
   recordId: string;
   modelId: string;
-  officeId: string;
-  plate: string;
-  fuelLevel: number;
   km: number;
   imageUrl?: string;
+  fuel: string;
+  transmission: string;
+  group: string;
 }): Promise<void> {
-  const plate = normalizePlate(input.plate);
-  if (plate.length < 5) throw new Error("Geçerli bir plaka girin.");
   if (!input.modelId) throw new Error("Araç modeli seçin.");
-  if (!input.officeId) throw new Error("Ofis seçin.");
   const supabase = createClient();
+  const { data: current, error: readError } = await supabase
+    .from("fleet_vehicles")
+    .select("model_id")
+    .eq("id", input.recordId)
+    .maybeSingle();
+  if (readError) throw readError;
   const { error } = await supabase
     .from("fleet_vehicles")
     .update({
-      plate,
       model_id: input.modelId,
-      home_office_id: input.officeId,
-      fuel_level: Math.min(100, Math.max(0, Math.round(input.fuelLevel))),
       odometer_km: Math.max(0, Math.round(input.km)),
     })
     .eq("id", input.recordId);
-  if (error) {
-    if (/duplicate|unique|fleet_vehicles_plate/i.test(error.message)) {
-      throw new Error("Bu plaka zaten kayıtlı.");
-    }
-    throw error;
-  }
-  if (input.imageUrl) await updateModelImage(input.modelId, input.imageUrl);
+  if (error) throw error;
+  await updateModelDetails(input.modelId, input);
+  await syncModelActive(input.modelId);
+  const previous = current?.model_id as string | undefined;
+  if (previous && previous !== input.modelId) await syncModelActive(previous);
+}
+
+async function syncModelActive(modelId: string): Promise<void> {
+  const supabase = createClient();
+  const { count, error } = await supabase
+    .from("fleet_vehicles")
+    .select("id", { count: "exact", head: true })
+    .eq("model_id", modelId);
+  if (error) throw error;
+  const { error: updateError } = await supabase
+    .from("vehicle_models")
+    .update({ is_active: (count ?? 0) > 0 })
+    .eq("id", modelId);
+  if (updateError) throw updateError;
 }
 
 export async function deleteFleetVehicle(recordId: string): Promise<void> {
   const supabase = createClient();
+  const { data: current, error: readError } = await supabase
+    .from("fleet_vehicles")
+    .select("model_id")
+    .eq("id", recordId)
+    .maybeSingle();
+  if (readError) throw readError;
   const { count, error: countError } = await supabase
     .from("rentals")
     .select("id", { count: "exact", head: true })
     .eq("fleet_vehicle_id", recordId);
   if (countError) throw countError;
   if ((count ?? 0) > 0) {
-    throw new Error("Bu plakanın kiralama kaydı var. Geçmişi duran araç silinemez.");
+    throw new Error("Bu aracın kiralama kaydı var. Geçmişi duran araç silinemez.");
   }
 
   const { error } = await supabase.from("fleet_vehicles").delete().eq("id", recordId);
   if (error) {
     if (/foreign key|rentals/i.test(error.message)) {
-      throw new Error("Bu plakanın kiralama kaydı var. Geçmişi duran araç silinemez.");
+      throw new Error("Bu aracın kiralama kaydı var. Geçmişi duran araç silinemez.");
     }
     throw error;
   }
+  const modelId = current?.model_id as string | undefined;
+  if (modelId) await syncModelActive(modelId);
 }
 
 export async function fetchFleet(): Promise<FleetVehicle[]> {
   const supabase = createClient();
+  await alignModelsWithFleet();
   const { data, error } = await supabase.from("v_fleet_board").select("*").order("fleet_code");
   if (error) throw error;
   return ((data as FleetRow[]) || []).map(mapFleet);
+}
+
+async function alignModelsWithFleet(): Promise<void> {
+  const supabase = createClient();
+  const [{ data: models, error: modelError }, { data: fleet, error: fleetError }] = await Promise.all([
+    supabase.from("vehicle_models").select("id,is_active"),
+    supabase.from("fleet_vehicles").select("model_id"),
+  ]);
+  if (modelError || fleetError) return;
+  const used = new Set((fleet || []).map((row) => row.model_id as string));
+  await Promise.all(
+    ((models || []) as { id: string; is_active: boolean }[])
+      .filter((model) => model.is_active !== used.has(model.id))
+      .map((model) => supabase.from("vehicle_models").update({ is_active: used.has(model.id) }).eq("id", model.id)),
+  );
 }
 
 export async function fetchRentals(): Promise<Rental[]> {
@@ -433,7 +482,7 @@ export async function savePromoCover(
 
 function slotColumnError(error: { message: string }): Error {
   if (/slot/i.test(error.message)) {
-    return new Error("Üç ayrı alanı kaydetmek için Supabase SQL Editor’da promo-covers.sql dosyasını yeniden çalıştırın.");
+    return new Error("Arka plan görselini kaydetmek için Supabase SQL Editor’da promo-covers.sql dosyasını yeniden çalıştırın.");
   }
   return new Error(error.message);
 }
@@ -458,11 +507,11 @@ export async function createPromoCover(
   const draft: PromoCover = {
     id: `new-${crypto.randomUUID()}`,
     imageUrl,
-    href: "/arac-modelleri",
-    title: "Yeni kampanya",
+    title: slot === "backdrop" ? "Ana sayfa arka planı" : "Yeni kampanya",
     highlight: "",
     sub: "",
-    badge: "Kampanya",
+    badge: slot === "backdrop" ? "" : "Kampanya",
+    href: slot === "backdrop" ? "/" : "/arac-modelleri",
     sortOrder,
     isActive: true,
     slot,

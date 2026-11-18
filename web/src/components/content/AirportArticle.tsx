@@ -333,10 +333,10 @@ const SPOT: Record<Locale, Record<AirportId, Spot>> = {
     iga: {
       lead: "İstanbul Havalimanı'nda kredi kartı zorunluluğu olmadan araç kiralamak istiyor musunuz? ZakCar, İstanbul Havalimanı'nda kredi kartı ve Findeks sorgusu olmadan araç kiralayan ofislerden biridir.",
       after: "Rezervasyonu siteden ücretsiz oluşturursunuz; ön ödeme alınmaz. Aracınız terminal çıkışında sizi bekler, teslim ücretsizdir.",
-      handoverValue: "IGA terminal çıkışı",
+      handoverValue: "IST terminal çıkışı",
       handoverNote: "Araç sizi bekler",
       whenValue: "Araç başında",
-      reserve: "İstanbul Havalimanı'nda kredi kartsız kiralama sitedeki rezervasyon adımlarından yapılır. Alış yeri olarak IGA'yı, tarihleri ve aracı seçmeniz yeterlidir. Uçuş numarası zorunlu değildir; iniş saatinizi bildirirseniz teslim buna göre hazırlanır.",
+      reserve: "İstanbul Havalimanı'nda kredi kartsız kiralama sitedeki rezervasyon adımlarından yapılır. Alış yeri olarak IST'i, tarihleri ve aracı seçmeniz yeterlidir. Uçuş numarası zorunlu değildir; iniş saatinizi bildirirseniz teslim buna göre hazırlanır.",
       payTitle: "İstanbul Havalimanı kredi kartsız ödeme",
       stepHandover: "İstanbul Havalimanı terminal çıkışında araç teslim edilir; ödeme bu anda, araç başında alınır.",
       whoTitle: "İstanbul Havalimanı'nda kredi kartsız kiralama kimler için uygun?",
@@ -361,10 +361,10 @@ const SPOT: Record<Locale, Record<AirportId, Spot>> = {
     iga: {
       lead: "Do you want to rent a car at Istanbul Airport without a credit card? ZakCar is one of the desks there that rents with no credit card and no Findeks check.",
       after: "You make the reservation on the site for free, and nothing is prepaid. The car waits for you at the terminal exit, and handover is free.",
-      handoverValue: "IGA terminal exit",
+      handoverValue: "IST terminal exit",
       handoverNote: "The car waits for you",
       whenValue: "At the car",
-      reserve: "A rental without a credit card at Istanbul Airport starts in the reservation steps on the site. Choose IGA as the pickup, then the dates and the car. A flight number is not required. If you share your landing time, handover is prepared for it.",
+      reserve: "A rental without a credit card at Istanbul Airport starts in the reservation steps on the site. Choose IST as the pickup, then the dates and the car. A flight number is not required. If you share your landing time, handover is prepared for it.",
       payTitle: "Paying at Istanbul Airport without a credit card",
       stepHandover: "The car is handed over at the Istanbul Airport terminal exit, and you pay then, at the car.",
       whoTitle: "Who a no-card rental at Istanbul Airport suits",
@@ -389,10 +389,10 @@ const SPOT: Record<Locale, Record<AirportId, Spot>> = {
     iga: {
       lead: "Möchten Sie am Istanbul Airport ohne Kreditkarte ein Auto mieten? ZakCar ist dort eines der Büros, das ohne Kreditkarte und ohne Findeks-Prüfung vermietet.",
       after: "Die Reservierung auf der Website ist kostenlos, eine Vorauszahlung gibt es nicht. Das Auto wartet am Terminalausgang, die Übergabe ist kostenlos.",
-      handoverValue: "IGA Terminalausgang",
+      handoverValue: "IST Terminalausgang",
       handoverNote: "Das Auto wartet",
       whenValue: "Am Fahrzeug",
-      reserve: "Die Miete ohne Kreditkarte am Istanbul Airport beginnt in den Reservierungsschritten der Website. Wählen Sie IGA als Abholort, dazu die Daten und das Auto. Eine Flugnummer ist nicht nötig. Nennen Sie die Landezeit, dann wird die Übergabe danach vorbereitet.",
+      reserve: "Die Miete ohne Kreditkarte am Istanbul Airport beginnt in den Reservierungsschritten der Website. Wählen Sie IST als Abholort, dazu die Daten und das Auto. Eine Flugnummer ist nicht nötig. Nennen Sie die Landezeit, dann wird die Übergabe danach vorbereitet.",
       payTitle: "Zahlung am Istanbul Airport ohne Kreditkarte",
       stepHandover: "Das Auto wird am Terminalausgang des Istanbul Airport übergeben, die Zahlung erfolgt dann am Fahrzeug.",
       whoTitle: "Für wen die Miete ohne Kreditkarte am Istanbul Airport passt",
@@ -417,10 +417,10 @@ const SPOT: Record<Locale, Record<AirportId, Spot>> = {
     iga: {
       lead: "هل تريدون استئجار سيارة في مطار إسطنبول بدون بطاقة ائتمان؟ ZakCar من المكاتب التي تؤجر هناك بلا بطاقة ائتمان وبلا فحص Findeks.",
       after: "تنشئون الحجز من الموقع مجاناً، ولا تُؤخذ دفعة مقدمة. السيارة بانتظاركم عند مخرج المبنى، والتسليم مجاني.",
-      handoverValue: "مخرج مبنى IGA",
+      handoverValue: "مخرج مبنى IST",
       handoverNote: "السيارة بانتظاركم",
       whenValue: "عند السيارة",
-      reserve: "التأجير بلا بطاقة ائتمان في مطار إسطنبول يبدأ من خطوات الحجز في الموقع. يكفي اختيار IGA مكاناً للاستلام ثم التواريخ والسيارة. رقم الرحلة ليس إلزامياً. إذا أبلغتم بوقت الهبوط يُجهَّز التسليم على أساسه.",
+      reserve: "التأجير بلا بطاقة ائتمان في مطار إسطنبول يبدأ من خطوات الحجز في الموقع. يكفي اختيار IST مكاناً للاستلام ثم التواريخ والسيارة. رقم الرحلة ليس إلزامياً. إذا أبلغتم بوقت الهبوط يُجهَّز التسليم على أساسه.",
       payTitle: "الدفع في مطار إسطنبول بدون بطاقة ائتمان",
       stepHandover: "تُسلَّم السيارة عند مخرج مبنى مطار إسطنبول، ويُؤخذ الدفع حينها عند السيارة.",
       whoTitle: "لمن يناسب التأجير بلا بطاقة ائتمان في مطار إسطنبول؟",
@@ -445,10 +445,10 @@ const SPOT: Record<Locale, Record<AirportId, Spot>> = {
     iga: {
       lead: "Хотите арендовать машину в аэропорту Стамбула без кредитной карты? ZakCar — один из офисов там, где аренда идёт без кредитной карты и без проверки Findeks.",
       after: "Бронь на сайте бесплатная, предоплаты нет. Машина ждёт у выхода из терминала, выдача бесплатная.",
-      handoverValue: "Выход терминала IGA",
+      handoverValue: "Выход терминала IST",
       handoverNote: "Машина ждёт вас",
       whenValue: "У машины",
-      reserve: "Аренда без кредитной карты в аэропорту Стамбула начинается с шагов брони на сайте. Достаточно выбрать IGA местом выдачи, даты и машину. Номер рейса не обязателен. Если напишете время посадки, выдачу подготовят к нему.",
+      reserve: "Аренда без кредитной карты в аэропорту Стамбула начинается с шагов брони на сайте. Достаточно выбрать IST местом выдачи, даты и машину. Номер рейса не обязателен. Если напишете время посадки, выдачу подготовят к нему.",
       payTitle: "Оплата в аэропорту Стамбула без кредитной карты",
       stepHandover: "Машину выдают у выхода из терминала аэропорта Стамбула, оплату берут тогда же, у машины.",
       whoTitle: "Кому подходит аренда без карты в аэропорту Стамбула",
@@ -526,8 +526,9 @@ export function AirportHeading({ slug, savedTitle }: { slug: string; savedTitle?
   const card = AIRPORT_CARDS.find((item) => item.href === `/${slug}`);
   const translated = card ? t(card.titleKey) : "";
   const saved = savedTitle?.trim() ?? "";
-  const title =
-    locale === "tr" && saved && !(card && isStockAirportTitle(card.id, saved)) ? saved : translated;
+  const title = (
+    locale === "tr" && saved && !(card && isStockAirportTitle(card.id, saved)) ? saved : translated
+  ).replaceAll("IGA", "IST");
 
   useEffect(() => {
     if (title) document.title = `${title} | ${SITE.shortName}`;

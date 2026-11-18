@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { HeroBackdrop } from "@/components/home/HeroBackdrop";
 import { PromoBanners } from "@/components/home/PromoBanners";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SITE } from "@/lib/constants";
@@ -127,11 +128,14 @@ export function Hero() {
           )}
         </div>
 
-        <div className="relative mx-auto mt-8 w-full max-w-6xl lg:mt-10">
+      </div>
+      <div className="relative mt-8 w-full lg:mt-10">
+        <HeroBackdrop />
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-36 pt-6 sm:pb-44 sm:pt-8 lg:pb-52">
           <SearchBar />
         </div>
       </div>
-        <PromoBanners slot="hero" />
+      <PromoBanners slot="hero" />
     </section>
   );
 }

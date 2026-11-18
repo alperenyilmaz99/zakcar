@@ -5,7 +5,8 @@ import { useEffect } from "react";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { SITE } from "@/lib/constants";
 import { DISTRICT_BLURBS } from "@/lib/district-blurbs";
-import { DISTRICTS, districtLocative, relatedDistricts, type District } from "@/lib/districts";
+import { districtLocative, relatedDistricts, type District } from "@/lib/districts";
+import { useDistricts } from "@/hooks/useDistricts";
 import type { Locale } from "@/lib/i18n";
 
 const ARTICLE =
@@ -62,8 +63,9 @@ function names(locale: Locale, district: District) {
 }
 
 function blurb(locale: Locale, district: District) {
-  if (locale === "tr") return { area: district.area, around: district.around, drive: district.drive };
-  return DISTRICT_BLURBS[district.slug][locale];
+  const stored = { area: district.area, around: district.around, drive: district.drive };
+  if (locale === "tr") return stored;
+  return DISTRICT_BLURBS[district.slug]?.[locale] ?? stored;
 }
 
 export function DistrictHeading({ district }: { district: District }) {
@@ -88,7 +90,8 @@ export function DistrictArticle({ district }: { district: District }) {
   const { locale, t } = usePrefs();
   const { side, otherSide, pickup, other, place } = names(locale, district);
   const copy = blurb(locale, district);
-  const related = relatedDistricts(district);
+  const districtList = useDistricts();
+  const related = relatedDistricts(district, districtList);
   const pickupHref =
     district.pickup === "saw"
       ? "/sabiha-gokcen-havalimani-arac-kiralama"
@@ -554,9 +557,10 @@ const INDEX: Record<Locale, { lead: string; after: string; europe: string; asia:
 
 export function IstanbulDistrictIndex() {
   const { locale, t } = usePrefs();
+  const districts = useDistricts();
   const copy = INDEX[locale];
-  const europe = DISTRICTS.filter((item) => item.side === "avrupa");
-  const anatolia = DISTRICTS.filter((item) => item.side === "anadolu");
+  const europe = districts.filter((item) => item.side === "avrupa");
+  const anatolia = districts.filter((item) => item.side === "anadolu");
   return (
     <article className={ARTICLE}>
       <p>{copy.lead}</p>

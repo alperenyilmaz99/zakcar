@@ -25,6 +25,7 @@ export function HomeTail({
 }) {
   const { t, locale } = usePrefs();
   const [promos, setPromos] = useState<PromoCover[]>(() => defaultPromos("campaigns"));
+  const [shownPosts, setShownPosts] = useState(posts);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,6 +46,27 @@ export function HomeTail({
     };
   }, []);
 
+  useEffect(() => {
+    if (locale === "tr") {
+      setShownPosts(posts);
+      return;
+    }
+    let cancelled = false;
+    const slugs = posts.map((post) => post.slug).join(",");
+    (async () => {
+      try {
+        const res = await fetch(`/api/blog?locale=${locale}&slugs=${encodeURIComponent(slugs)}`, { cache: "no-store" });
+        const data = (await res.json()) as HomePost[];
+        if (!cancelled && Array.isArray(data) && data.length > 0) setShownPosts(data);
+      } catch {
+        if (!cancelled) setShownPosts(posts);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [locale, posts]);
+
   return (
     <>
       <section className="bg-[#121926] py-16 sm:py-20">
@@ -56,23 +78,28 @@ export function HomeTail({
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base text-[#9aa4b2]">{t("home.reviewsSub")}</p>
           </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {savedReviews.map((review) => (
-              <ReviewCard
-                key={review.id}
-                title={t("home.reviewCard")}
-                body={review.body}
-                author={review.author}
-                place={review.location}
-              />
-            ))}
-            {HOME_REVIEW_CARDS.filter((review) => !hiddenReviewIds.includes(review.id)).map((review) => {
-              const copy = review.copy[locale];
-              return (
-                <ReviewCard key={review.id} title={copy.title} body={copy.body} author={review.author} place={copy.place} masked />
-              );
-            })}
-          </div>
+          <ReviewMarquee
+            items={[
+              ...savedReviews.map((review) => ({
+                id: review.id,
+                title: t("home.reviewCard"),
+                body: review.body,
+                author: review.author,
+                place: review.location,
+              })),
+              ...HOME_REVIEW_CARDS.filter((review) => !hiddenReviewIds.includes(review.id)).map((review) => {
+                const copy = review.copy[locale];
+                return {
+                  id: review.id,
+                  title: copy.title,
+                  body: copy.body,
+                  author: review.author,
+                  place: copy.place,
+                  masked: true,
+                };
+              }),
+            ]}
+          />
         </div>
       </section>
 
@@ -135,7 +162,7 @@ export function HomeTail({
             </Link>
           </div>
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
+            {shownPosts.map((post) => (
               <article key={post.slug} className="card group flex flex-col overflow-hidden">
                 <Link href={`/blog/${post.slug}`} className="block">
                   <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
@@ -163,6 +190,28 @@ export function HomeTail({
         </div>
       </section>
     </>
+  );
+}
+
+function ReviewMarquee({
+  items,
+}: {
+  items: { id: string; title: string; body: string; author: string; place: string; masked?: boolean }[];
+}) {
+  if (items.length === 0) return null;
+  const loop = items.length === 1 ? [...items, ...items, ...items, ...items] : items;
+  return (
+    <div className="relative mt-10 overflow-hidden">
+      <div className="review-marquee flex w-max items-stretch">
+        {[0, 1].map((copy) =>
+          loop.map((review, index) => (
+            <div key={`${copy}-${review.id}-${index}`} className="flex w-[min(78vw,22rem)] shrink-0 pe-4" aria-hidden={copy === 1}>
+              <ReviewCard title={review.title} body={review.body} author={review.author} place={review.place} masked={review.masked} />
+            </div>
+          )),
+        )}
+      </div>
+    </div>
   );
 }
 

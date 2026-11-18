@@ -20,7 +20,7 @@ export default function Page() {
       <h2>Taraflar</h2>
       <p>
         Kiralayan: {SITE.name}. İletişim: {SITE.phone}, {SITE.email}. Teslim noktaları İstanbul
-        Sabiha Gökçen Havalimanı (SAW), İstanbul Havalimanı (IGA) ve Sabiha Gökçen karşısındaki
+        Sabiha Gökçen Havalimanı (SAW), İstanbul Havalimanı (IST) ve Sabiha Gökçen karşısındaki
         merkez ofistir.
       </p>
       <p>
@@ -91,7 +91,7 @@ export default function Page() {
 
       <h2>Teslim, iptal ve iade</h2>
       <ul>
-        <li>SAW ve IGA ofisleri 7/24 teslim yapar. Merkez ofis saatleri ofis sayfasında yazılıdır.</li>
+        <li>SAW ve IST ofisleri 7/24 teslim yapar. Merkez ofis saatleri ofis sayfasında yazılıdır.</li>
         <li>Rezervasyon, teslim saatine 24 saat kalaya kadar ücretsiz iptal edilebilir.</li>
         <li>
           Erken iadede ücret kullanılan gün sayısına göre yeniden hesaplanır. Süre uzatma çağrı

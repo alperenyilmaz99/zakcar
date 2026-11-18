@@ -12,6 +12,7 @@ function anonClient() {
 
 function bySlot(items: PromoCover[], slot: string | null, all: boolean): PromoCover[] {
   const visible = all ? items : items.filter((item) => item.isActive);
+  if (slot === "backdrop") return visible.filter((item) => normalizePromoSlot(item.slot) === "backdrop");
   if (slot !== "hero" && slot !== "mid" && slot !== "campaigns") return visible;
   const matched = visible.filter((item) => normalizePromoSlot(item.slot) === slot);
   const split = items.some((item) => normalizePromoSlot(item.slot) !== "hero");

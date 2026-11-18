@@ -4,14 +4,14 @@ import type { SiteReview, StoredPost } from "@/lib/content-types";
 import { coverForSlug } from "@/lib/generated-content";
 
 const FACTS = `ZakCar Rent A Car, İstanbul’da kısa dönem araç kiralar.
-Ofisler yalnızca şunlardır: İstanbul Sabiha Gökçen Havalimanı (SAW) 7/24, İstanbul Havalimanı (IGA) 7/24, ZakCar Merkez Ofis (Sabiha Gökçen karşısı, 08:00-22:00).
+Ofisler yalnızca şunlardır: İstanbul Sabiha Gökçen Havalimanı (SAW) 7/24, İstanbul Havalimanı (IST) 7/24, ZakCar Merkez Ofis (Sabiha Gökçen karşısı, 08:00-22:00).
 Kredi kartı zorunlu değildir, Findeks sorgusu yoktur. Ön ödeme yoktur; ödeme araç tesliminde yapılır.
 Depozito süreye göredir: 1–3 gün 5.000 TL, 4–10 gün 10.000 TL, 11 gün ve üzeri 20.000 TL. İade koşulludur. Standart kasko ve 7/24 yol yardım fiyata dahildir. Havalimanı teslimi ücretsizdir. Yol hakkı günlük 300 km, 10 gün 2.200 km, aylık 3.800 km’dir.
 İlk kiralamada standart ve SUV grubunda %10 indirim vardır.
 Ekler: ek sürücü, genç sürücü paketi, HGS, çocuk koltuğu, kış lastiği.
 Telefon +90 532 388 2996. WhatsApp +90 850 307 7384.
 Başka şehir ofisi, online ödeme, zorunlu kredi kartı veya uydurma fiyat yazma.
-Yazılar yalnızca İstanbul araç kiralaması ile SAW ve IGA teslimi hakkındadır. İzmir, Antalya, Bodrum ve diğer şehir gezi rehberleri yazılmaz.`;
+Yazılar yalnızca İstanbul araç kiralaması ile SAW ve IST teslimi hakkındadır. İzmir, Antalya, Bodrum ve diğer şehir gezi rehberleri yazılmaz.`;
 
 const BLOCK_SAMPLE = `[
   {"type":"paragraph","text":"Giriş: okurun sorununu ve ZakCar’ın buna nasıl baktığını iki üç cümleyle anlat."},

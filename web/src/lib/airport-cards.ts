@@ -28,7 +28,7 @@ export const AIRPORT_CARDS: AirportCard[] = [
     id: "iga",
     href: "/istanbul-3-havalimani-arac-kiralama",
     imageUrl: "/assets/hero/iga.jpg",
-    title: "İstanbul Havalimanı (IGA)",
+    title: "İstanbul Havalimanı (IST)",
     text: "Aracınız sizi bekler. Teslim ücretsizdir, ödeme araç başında yapılır.",
     detail: "",
     titleKey: "home.airportIgaTitle",
@@ -50,7 +50,7 @@ export const AIRPORT_CARDS: AirportCard[] = [
     id: "iga-card",
     href: "/iga-havalimani-kredi-kartsiz-arac-kiralama",
     imageUrl: "/assets/hero/iga.jpg",
-    title: "IGA Havalimanı Kredi Kartsız Araç Kiralama",
+    title: "IST Havalimanı Kredi Kartsız Araç Kiralama",
     text: "Kart limiti bloke edilmez. Ödeme araç başında, teslim ücretsizdir.",
     detail: "",
     titleKey: "home.airportIgaCardTitle",
@@ -84,7 +84,8 @@ export function mergeAirportCards(saved: AirportCardRow[]): AirportCard[] {
 
 const STOCK_TITLES: Record<string, readonly string[]> = {
   saw: ["Sabiha Gökçen Havalimanı", "Sabiha Gökçen Havalimanı (SAW)"],
-  iga: ["İstanbul Havalimanı", "İstanbul Havalimanı (IGA)"],
+  iga: ["İstanbul Havalimanı", "İstanbul Havalimanı (IGA)", "İstanbul Havalimanı (IST)"],
+  "iga-card": ["IGA Havalimanı Kredi Kartsız Araç Kiralama", "IST Havalimanı Kredi Kartsız Araç Kiralama"],
 };
 
 export function isStockAirportTitle(id: string, title: string): boolean {
@@ -96,8 +97,10 @@ export function airportCardCopy(
   translate: (key: MessageKey) => string,
 ): { title: string; text: string } {
   const base = AIRPORT_CARDS.find((item) => item.id === card.id);
+  const title = base && isStockAirportTitle(card.id, card.title) ? translate(card.titleKey) : card.title;
+  const text = base && card.text === base.text ? translate(card.textKey) : card.text;
   return {
-    title: base && isStockAirportTitle(card.id, card.title) ? translate(card.titleKey) : card.title,
-    text: base && card.text === base.text ? translate(card.textKey) : card.text,
+    title: title.replaceAll("IGA", "IST"),
+    text: text.replaceAll("IGA", "IST"),
   };
 }

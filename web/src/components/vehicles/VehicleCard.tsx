@@ -14,9 +14,10 @@ interface VehicleCardProps {
   onSelect?: (slug: string) => void;
   available?: number | null;
   days?: number;
+  priceOnly?: boolean;
 }
 
-export function VehicleCard({ vehicle, onSelect, available, days }: VehicleCardProps) {
+export function VehicleCard({ vehicle, onSelect, available, days, priceOnly }: VehicleCardProps) {
   const { t, formatPrice, locale, currency } = usePrefs();
   const shortName = vehicle.name
     .replace(" Araç Kiralama", "")
@@ -90,7 +91,7 @@ export function VehicleCard({ vehicle, onSelect, available, days }: VehicleCardP
             {formatPrice(vehicle.price)}{" "}
             <span className="text-sm font-medium text-ink-muted">{t("card.daily")}</span>
           </p>
-          {days && days > 0 ? (
+          {priceOnly ? null : days && days > 0 ? (
             <>
               <p className="mt-1 text-sm font-semibold leading-tight text-ink">
                 {t("card.total")} {formatMoney(parseTryAmount(vehicle.price) * days, currency, locale)}

@@ -3,16 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { useCustomer } from "@/hooks/useCustomer";
-import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
+import { vehicleImagePath } from "@/lib/data";
 import { applyPercent, normalizeCouponCode } from "@/lib/coupon-math";
 import { EXTRA_OPTIONS, depositForDays, extraAmount, includedKm, rentalDays, type ExtraId } from "@/lib/extras";
 import { parseTryAmount, specLabel } from "@/lib/i18n";
-import { SITE } from "@/lib/constants";
 import { formatTryAmount } from "@/lib/format";
-import type { ModelPrice } from "@/lib/model-prices";
+import type { Vehicle } from "@/lib/types";
 import { OFFICES, isBookableOffice, resolveOfficeId } from "@/lib/offices";
 import { pickupHourIsPast, type Reservation } from "@/lib/booking";
 import { reservationStatusLabel } from "@/lib/reservation-label";
@@ -46,29 +45,32 @@ export default function RezervasyonClient() {
   const router = useRouter();
   const params = useSearchParams();
   const slug = params.get("vehicle") ?? "";
-  const baseVehicle = useMemo(() => (slug ? getVehicleBySlug(slug) : undefined), [slug]);
-  const [vehicle, setVehicle] = useState(baseVehicle);
+  const [vehicle, setVehicle] = useState<Vehicle | undefined>();
+  const [vehicleReady, setVehicleReady] = useState(false);
 
   useEffect(() => {
-    setVehicle(baseVehicle);
-    if (!baseVehicle) return;
+    if (!slug) {
+      setVehicle(undefined);
+      setVehicleReady(true);
+      return;
+    }
     let cancelled = false;
-    fetch("/api/prices", { cache: "no-store" })
-      .then(async (res) => (res.ok ? ((await res.json()) as Record<string, ModelPrice>) : {}))
-      .then((prices) => {
-        const price = prices[baseVehicle.slug];
-        if (cancelled || !price) return;
-        setVehicle({
-          ...baseVehicle,
-          price: formatTryAmount(price.daily),
-          deposit: formatTryAmount(price.deposit),
-        });
+    setVehicleReady(false);
+    fetch(`/api/vehicles?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
+      .then(async (res) => (res.ok ? ((await res.json()) as Vehicle) : null))
+      .then((data) => {
+        if (!cancelled) setVehicle(data?.slug ? data : undefined);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setVehicle(undefined);
+      })
+      .finally(() => {
+        if (!cancelled) setVehicleReady(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, [baseVehicle]);
+  }, [slug]);
   const { search, update } = useSearch();
   const { user, accessToken } = useCustomer();
   const { t, formatPrice, locale } = usePrefs();
@@ -77,6 +79,7 @@ export default function RezervasyonClient() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [extras, setExtras] = useState<ExtraId[]>([]);
+  const [licenseYears, setLicenseYears] = useState("");
   const [arrivalFlight, setArrivalFlight] = useState("");
   const [returnFlight, setReturnFlight] = useState("");
   const [customerNote, setCustomerNote] = useState("");
@@ -147,7 +150,17 @@ export default function RezervasyonClient() {
     window.scrollTo({ top: 0 });
   }
 
+  function chooseLicenseYears(value: string) {
+    setLicenseYears(value);
+    setExtras((current) => {
+      if (value === "1") return current.includes("young") ? current : [...current, "young"];
+      if (licenseYears === "1") return current.filter((item) => item !== "young");
+      return current;
+    });
+  }
+
   function toggleExtra(id: ExtraId) {
+    if (id === "young" && licenseYears === "1") return;
     setExtras((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   }
 
@@ -209,6 +222,10 @@ export default function RezervasyonClient() {
       setError(t("book.birthInvalid"));
       return;
     }
+    if (!["1", "2", "3", "4", "5"].includes(licenseYears)) {
+      setError(t("book.licenseYearsRequired"));
+      return;
+    }
 
     const token = await accessToken();
     setSaving(true);
@@ -247,6 +264,7 @@ export default function RezervasyonClient() {
           email: String(fd.get("email") || ""),
           phone: String(fd.get("phone") || ""),
           birthDate: birth,
+          licenseYears,
           arrivalFlight,
           returnFlight,
           customerNote,
@@ -262,6 +280,14 @@ export default function RezervasyonClient() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (!vehicleReady) {
+    return (
+      <div className="container-page py-14 text-center">
+        <p className="text-sm text-ink-muted">Yükleniyor…</p>
+      </div>
+    );
   }
 
   if (!vehicle) {
@@ -283,7 +309,7 @@ export default function RezervasyonClient() {
           <h1 className="font-display text-2xl font-bold">{t("book.success")}</h1>
           <p className="mt-3 font-display text-3xl font-bold text-brand">{done.pnr}</p>
           <p className="mt-3 text-sm text-ink-muted">
-            {done.vehicleName} · {done.plate}
+            {done.vehicleName}
           </p>
           <p className="mt-1 text-sm text-ink-muted">
             {formatDate(done.startAt, locale)} — {formatDate(done.endAt, locale)}
@@ -298,7 +324,7 @@ export default function RezervasyonClient() {
           </p>
           <p className="mt-2 text-sm font-medium text-ink">{reservationStatusLabel(done.status, t)}</p>
           <p className="mt-4 text-sm text-ink-muted">{t("book.payLater")}</p>
-          <p className="mt-2 text-sm text-ink">{done.mailSent ? t("book.mailSent", { email: SITE.email }) : t("book.mailMissed")}</p>
+          <p className="mt-2 text-sm text-ink">{done.mailSent ? t("book.mailSent") : t("book.mailMissed")}</p>
           <div className="mt-6 flex flex-col gap-3">
             <Link href={`/rezervasyon-sorgulama?pnr=${encodeURIComponent(done.pnr)}`} className="btn-outline w-full">
               {t("nav.lookup")}
@@ -559,8 +585,9 @@ export default function RezervasyonClient() {
                       <input
                         type="checkbox"
                         checked={checked}
+                        disabled={item.id === "young" && licenseYears === "1"}
                         onChange={() => toggleExtra(item.id)}
-                        className="mt-1 h-5 w-5 shrink-0 accent-brand"
+                        className="mt-1 h-5 w-5 shrink-0 accent-brand disabled:opacity-60"
                       />
                     </label>
                   );
@@ -575,6 +602,35 @@ export default function RezervasyonClient() {
                 <Field name="lastName" label={t("book.lastName")} required defaultValue={rest.join(" ")} placeholder="Örn: Yılmaz" />
                 <Field name="email" label={t("book.email")} type="email" required defaultValue={user?.email || ""} />
                 <Field name="birth" label={t("book.birth")} type="date" required />
+                <fieldset className="sm:col-span-2">
+                  <legend className="mb-1.5 text-sm font-medium text-ink">{t("book.licenseYears")}</legend>
+                  <p className="mb-2 text-xs text-ink-muted">{t("book.licenseYearsHint")}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(["1", "2", "3", "4", "5"] as const).map((value) => {
+                      const selected = licenseYears === value;
+                      return (
+                        <label
+                          key={value}
+                          className={`inline-flex h-11 min-w-14 cursor-pointer items-center justify-center rounded-xl border px-4 text-sm font-semibold ${
+                            selected ? "border-brand bg-brand text-white" : "border-surface-border bg-white text-ink"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="licenseYears"
+                            value={value}
+                            required
+                            checked={selected}
+                            onChange={() => chooseLicenseYears(value)}
+                            className="sr-only"
+                          />
+                          {value === "5" ? "5+" : value}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {licenseYears === "1" ? <p className="mt-2 text-xs text-ink">{t("book.licenseYoung")}</p> : null}
+                </fieldset>
                 <Field name="phone" label={t("book.phone")} required autoComplete="tel" className="sm:col-span-2" />
               </div>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -627,6 +683,9 @@ export default function RezervasyonClient() {
               <p>
                 {formatDate(search.to, locale)} {formatTime(search.to, locale)}
               </p>
+            </SummaryBlock>
+            <SummaryBlock title={t("book.licenseYears")}>
+              <p className="font-semibold text-ink">{licenseYears === "5" ? "5+" : licenseYears || t("book.notSet")}</p>
             </SummaryBlock>
             <SummaryBlock title={t("book.vehicleInfo")}>
               <div className="flex items-start justify-between gap-3">

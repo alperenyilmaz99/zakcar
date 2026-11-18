@@ -22,14 +22,14 @@ function pinHref(lat: number, lng: number, label: string) {
 const OFFICE_COPY: Record<string, { name: MessageKey; address: MessageKey; lat: number; lng: number }> = {
   saw: { name: "loc.saw.full", address: "loc.saw.address", lat: 40.8942, lng: 29.3138 },
   iga: { name: "loc.iga.full", address: "loc.iga.address", lat: 41.2753, lng: 28.7519 },
-  merkez: { name: "loc.merkez.full", address: "loc.merkez.address", lat: 40.9290708, lng: 29.3066005 },
+  merkez: { name: "loc.merkez.full", address: "loc.merkez.address", lat: 40.9290708, lng: 29.3091754 },
 };
 
 function googleEmbed(selectedId: string | null) {
   if (!selectedId || selectedId === "merkez") return GOOGLE_PLACE.embed;
   const pin = OFFICE_COPY[selectedId];
   if (!pin) return GOOGLE_PLACE.embed;
-  const label = selectedId === "saw" ? "Sabiha Gökçen SAW" : "IGA";
+  const label = selectedId === "saw" ? "Sabiha Gökçen SAW" : "IST";
   return pinEmbed(pin.lat, pin.lng, label);
 }
 
@@ -59,9 +59,10 @@ export function OfficesList({ offices }: { offices: Office[] }) {
   if (!contact) return null;
   const pin = selected ? OFFICE_COPY[selected.id] : null;
   const showsOffice = !selectedId || selectedId === "merkez";
-  const mapHref = pin
-    ? pinHref(pin.lat, pin.lng, selectedId === "saw" ? "Sabiha Gökçen SAW" : selectedId === "iga" ? "IGA" : "ZakCar")
-    : GOOGLE_PLACE.href;
+  const mapHref =
+    showsOffice || !pin
+      ? GOOGLE_PLACE.href
+      : pinHref(pin.lat, pin.lng, selectedId === "saw" ? "Sabiha Gökçen SAW" : "IST");
 
   function choose(id: string) {
     if (selectedId === id) {

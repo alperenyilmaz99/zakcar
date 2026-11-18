@@ -151,7 +151,7 @@ export default function PanelLocationsPage() {
                 <button
                   key={v.id}
                   type="button"
-                  title={`${v.name} · ${v.plate}`}
+                  title={v.name}
                   onClick={() => setSelected(v.id)}
                   className={`absolute -translate-x-1/2 -translate-y-1/2 transition ${
                     isSel ? "z-20 scale-125" : "z-10 hover:scale-110"
@@ -184,7 +184,6 @@ export default function PanelLocationsPage() {
                 <div>
                   <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">Seçili araç</p>
                   <h2 className="mt-1 font-display text-xl font-bold text-ink">{active.name}</h2>
-                  <p className="font-mono text-sm text-ink">{active.plate}</p>
                 </div>
                 <FleetStatusBadge status={active.status} />
               </div>
@@ -259,7 +258,7 @@ export default function PanelLocationsPage() {
                 }`}
               >
                 <span className="truncate font-medium text-ink">
-                  {v.plate} · {v.name}
+                  {v.name}
                 </span>
                 <span className={`h-2 w-2 shrink-0 rounded-full ${DOT[v.status]}`} />
               </button>

@@ -157,17 +157,7 @@ export function resolveSeoPage(slug: string): SeoPage | null {
   }
 
   const district = districtBySlug(slug);
-  if (district) {
-    const side = district.side === "anadolu" ? "Anadolu" : "Avrupa";
-    const pickup = district.pickup === "saw" ? "Sabiha Gökçen" : "İstanbul Havalimanı";
-    return {
-      slug,
-      title: `${district.name} Araç Kiralama`,
-      description: `${district.name} araç kiralama. ${side} yakası için teslim noktası ${pickup}. Kredi kartı zorunlu değil, ödeme teslimde.`,
-      type: "district",
-      defaultPickup: district.pickup,
-    };
-  }
+  if (district) return seoForDistrict(district);
 
   if (CITY_PAGES[base]) {
     return {
@@ -209,6 +199,18 @@ export function resolveSeoPage(slug: string): SeoPage | null {
   return null;
 }
 
+export function seoForDistrict(district: { slug: string; name: string; side: "avrupa" | "anadolu"; pickup: "saw" | "iga" }) {
+  const side = district.side === "anadolu" ? "Anadolu" : "Avrupa";
+  const pickup = district.pickup === "saw" ? "Sabiha Gökçen" : "İstanbul Havalimanı";
+  return {
+    slug: district.slug,
+    title: `${district.name} Araç Kiralama`,
+    description: `${district.name} araç kiralama. ${side} yakası için teslim noktası ${pickup}. Kredi kartı zorunlu değil, ödeme teslimde.`,
+    type: "district" as const,
+    defaultPickup: district.pickup,
+  };
+}
+
 export function getAllVehicleSlugs(): string[] {
   return catalog.vehicles.map((v) => v.slug);
 }
@@ -233,5 +235,6 @@ export function getAllSeoSlugs(): string[] {
 }
 
 export function vehicleImagePath(image: string): string {
-  return image.startsWith("/") ? image : `/${image}`;
+  if (image.startsWith("/") || image.startsWith("http://") || image.startsWith("https://")) return image;
+  return `/${image}`;
 }

@@ -17,7 +17,7 @@ export default function Page() {
         hakkında bilgi sahibi olmanızı istiyoruz.
       </p>
       <p>
-        İşbu {SITE.shortName} Web Sitesi (zakcar.com) Gizlilik Politikası (“Gizlilik Politikası”),
+        İşbu {SITE.shortName} Web Sitesi (zakrentacar.com) Gizlilik Politikası (“Gizlilik Politikası”),
         site üzerinden toplayabileceğimiz kişisel bilgiler ile bağlantılı uygulamalarımızı
         açıklamaktadır. İşbu Gizlilik Politikası, bilgilerin site dışında herhangi bir yolla
         toplanmasını, kullanılmasını veya açıklanmasını ele almamaktadır.

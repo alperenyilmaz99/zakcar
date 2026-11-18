@@ -2,13 +2,13 @@ import { Hero } from "@/components/home/Hero";
 import { HomeSections } from "@/components/home/HomeSections";
 import { getPublishedBlogPosts } from "@/lib/blog";
 import { listHiddenKeys, listReviews } from "@/lib/generated-content";
-import { getBrands, getGroups, getVehicles } from "@/lib/data";
-import { withLivePrices } from "@/lib/model-prices";
+import { getBrands, getGroups } from "@/lib/data";
+import { loadPublicVehicles } from "@/lib/public-vehicles";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const vehicles = (await withLivePrices(getVehicles())).slice(0, 12);
+  const vehicles = (await loadPublicVehicles()).slice(0, 12);
   const groups = getGroups();
   const brands = getBrands();
   const [published, savedReviews, hiddenReviewIds] = await Promise.all([

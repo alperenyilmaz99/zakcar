@@ -4,14 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { VehicleCard } from "@/components/vehicles/VehicleCard";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
-import { rentalDays } from "@/lib/extras";
-import { useSearch } from "@/hooks/useSearch";
 import type { Vehicle } from "@/lib/types";
 
 export function PopularSlider({ vehicles }: { vehicles: Vehicle[] }) {
   const { t, locale } = usePrefs();
-  const { search } = useSearch();
-  const days = search.from && search.to ? rentalDays(search.from, search.to) : undefined;
   const trackRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(true);
@@ -90,7 +86,7 @@ export function PopularSlider({ vehicles }: { vehicles: Vehicle[] }) {
               data-slide
               className="w-[min(100%,20.5rem)] shrink-0 snap-start sm:w-[calc(50%-0.625rem)] xl:w-[calc(33.333%-0.875rem)]"
             >
-              <VehicleCard vehicle={v} days={days} />
+              <VehicleCard vehicle={v} priceOnly />
             </div>
           ))}
         </div>

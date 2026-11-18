@@ -260,6 +260,6 @@ export function districtLocative(name: string): string {
   return LOCATIVE[name] ?? name;
 }
 
-export function relatedDistricts(district: District): District[] {
-  return DISTRICTS.filter((item) => item.slug !== district.slug && item.side === district.side).slice(0, 6);
+export function relatedDistricts(district: District, all: District[] = DISTRICTS): District[] {
+  return all.filter((item) => item.slug !== district.slug && item.side === district.side).slice(0, 6);
 }

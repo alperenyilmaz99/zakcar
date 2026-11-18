@@ -8,13 +8,18 @@ import { downloadReservationPdf } from "@/lib/panel-api";
 
 type VehicleOption = {
   id: string;
-  plate: string;
   name: string;
   status: string;
   dailyPrice: number;
   officeCode: string;
+  officeName: string;
 };
 type OfficeOption = { code: string; name: string };
+
+function vehicleLabel(vehicle: VehicleOption, vehicles: VehicleOption[]) {
+  const shared = vehicles.filter((item) => item.name === vehicle.name).length > 1;
+  return shared && vehicle.officeName ? `${vehicle.name} · ${vehicle.officeName}` : vehicle.name;
+}
 
 function localInput(date: Date) {
   const pad = (value: number) => String(value).padStart(2, "0");
@@ -221,12 +226,12 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
             <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="w-full rounded-xl border border-surface-border px-3 py-2.5" />
           </label>
           <label className="block text-sm">
-            <span className="mb-1.5 block font-medium text-ink">Plaka</span>
+            <span className="mb-1.5 block font-medium text-ink">Araç</span>
             <select required value={fleetVehicleId} onChange={(event) => chooseVehicle(event.target.value)} className="w-full rounded-xl border border-surface-border px-3 py-2.5">
-              <option value="">Plaka seçin</option>
+              <option value="">Araç seçin</option>
               {vehicles.map((vehicle) => (
                 <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.plate} · {vehicle.name}
+                  {vehicleLabel(vehicle, vehicles)}
                 </option>
               ))}
             </select>
@@ -310,7 +315,7 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
             </div>
           </fieldset>
           <p className="text-sm text-ink-muted sm:col-span-2">
-            {selected ? `${selected.plate} · ` : ""}
+            {selected ? `${vehicleLabel(selected, vehicles)} · ` : ""}
             {days} gün · toplam {Math.round(daily * days + extrasTotal).toLocaleString("tr-TR")} TL
             {extrasTotal > 0 ? ` (ekler ${extrasTotal.toLocaleString("tr-TR")} TL)` : ""} · depozito{" "}
             {deposit.toLocaleString("tr-TR")} TL · yol hakkı {includedKm(days).toLocaleString("tr-TR")} km

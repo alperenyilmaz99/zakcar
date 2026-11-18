@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { NAV, SITE } from "@/lib/constants";
-import { DISTRICTS } from "@/lib/districts";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
+import { useDistricts } from "@/hooks/useDistricts";
 import { LocaleCurrencySwitch } from "@/components/layout/LocaleCurrencySwitch";
 import { useCustomer } from "@/hooks/useCustomer";
 
@@ -13,6 +13,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const { t } = usePrefs();
   const { user, ready, logout } = useCustomer();
+  const districtList = useDistricts();
 
   const top = [
     { href: "/hakkimizda", label: t("nav.about") },
@@ -32,7 +33,7 @@ export function Header() {
   ];
   const services = [...rentalOptions, { href: "/kurumsal-arac-kiralama", label: t("nav.corporate") }];
   const airports = NAV.airports.map((a) => ({ href: a.href, label: t(a.labelKey) }));
-  const districts = DISTRICTS.map((district) => ({ href: `/${district.slug}`, label: district.name }));
+  const districts = districtList.map((district) => ({ href: `/${district.slug}`, label: district.name }));
   const mobileGroups = [
     {
       title: t("nav.corporateTitle"),

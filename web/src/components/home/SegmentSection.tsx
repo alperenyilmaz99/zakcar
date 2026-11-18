@@ -2,62 +2,31 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
-import type { MessageKey } from "@/lib/i18n";
-
-const SEGMENTS: {
-  href: string;
-  title: MessageKey;
-  desc: MessageKey;
-  image: string;
-  alt: string;
-}[] = [
-  {
-    href: "/ekonomik-arac-kiralama",
-    title: "seg.eco.title",
-    desc: "seg.eco.desc",
-    image: "/assets/images/vehicles/png/renault-clio-hb.png",
-    alt: "Ekonomik araç",
-  },
-  {
-    href: "/sedan-arac-kiralama",
-    title: "seg.sedan.title",
-    desc: "seg.sedan.desc",
-    image: "/assets/images/vehicles/png/fiat-yeni-egea-sedan.png",
-    alt: "Sedan araç",
-  },
-  {
-    href: "/luks-arac-kiralama",
-    title: "seg.lux.title",
-    desc: "seg.lux.desc",
-    image: "/assets/images/vehicles/png/bmw-520.png",
-    alt: "Lüks araç",
-  },
-  {
-    href: "/4x4-suv-arac-kiralama",
-    title: "seg.suv.title",
-    desc: "seg.suv.desc",
-    image: "/assets/images/vehicles/png/hyundai-tucson.png",
-    alt: "SUV araç",
-  },
-  {
-    href: "/4x4-suv-arac-kiralama",
-    title: "seg.offroad.title",
-    desc: "seg.offroad.desc",
-    image: "/assets/images/vehicles/png/dacia-duster.png",
-    alt: "4x4 araç",
-  },
-  {
-    href: "/7-10-kisilik-arac-kiralama",
-    title: "seg.van.title",
-    desc: "seg.van.desc",
-    image: "/assets/images/vehicles/png/citroen-jumpy-8-1.png",
-    alt: "Minibüs",
-  },
-];
+import { SEGMENTS, type SegmentId } from "@/lib/segments";
+import type { SegmentImage } from "@/lib/segment-store";
 
 export function SegmentSection() {
   const { t } = usePrefs();
+  const [images, setImages] = useState<Partial<Record<SegmentId, string>>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/segments", { cache: "no-store" });
+        const data = (await res.json()) as { items?: SegmentImage[] };
+        if (cancelled || !Array.isArray(data.items)) return;
+        setImages(Object.fromEntries(data.items.map((item) => [item.id, item.imageUrl])));
+      } catch {
+        /* hazır görseller kalsın */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section className="bg-white py-16 lg:py-20">
@@ -71,10 +40,10 @@ export function SegmentSection() {
 
         <div className="mt-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 xl:gap-6">
           {SEGMENTS.map((seg) => (
-            <div key={seg.title} className="flex flex-col items-center text-center">
+            <div key={seg.id} className="flex flex-col items-center text-center">
               <div className="relative mb-5 h-[120px] w-full max-w-[220px]">
                 <Image
-                  src={seg.image}
+                  src={images[seg.id] || seg.image}
                   alt={seg.alt}
                   fill
                   className="object-contain object-center"

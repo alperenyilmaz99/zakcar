@@ -13,7 +13,7 @@ export default function Page() {
       <h2>Kişisel Verilerin Korunması ve İşlenmesi Hakkında Aydınlatma Metni</h2>
       <p>
         İşbu bilgilendirmenin amacı, {SITE.name} (“{SITE.shortName}”) tarafından yönetilmekte olan
-        zakcar.com internet sitesi (“Portal”) kullanımı sırasında elde edilen ve/veya üçüncü
+        zakrentacar.com internet sitesi (“Portal”) kullanımı sırasında elde edilen ve/veya üçüncü
         kişilerden alınan kişisel verilerin kullanımına ilişkin olarak 6698 sayılı Kişisel
         Verilerin Korunması Kanunu’nun 10. maddesi ile getirilen aydınlatma yükümlülüğünün yerine
         getirilmesidir. Ayrıca kullanıcıların Portal kullanımı ile ilgili olarak {SITE.shortName}{" "}

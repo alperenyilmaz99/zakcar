@@ -29,7 +29,7 @@ end $$;
 insert into public.offices (code, name, address, phone, email, hours, lat, lng)
 values
   ('saw', 'İstanbul Sabiha Gökçen Havalimanı (SAW)', 'Sabiha Gökçen Havalimanı, Pendik / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 40.8986, 29.3092),
-  ('iga', 'İstanbul Havalimanı (IGA)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 41.2753, 28.7519),
+  ('iga', 'İstanbul Havalimanı (IST)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 41.2753, 28.7519),
   ('merkez', 'ZakCar Merkez Ofis', 'Sabiha Gökçen Havalimanı Karşısı', '0532 388 29 96', 'info@zakrentacar.com', '08:00 - 22:00', 40.8780, 29.2570)
 on conflict (code) do update set
   name = excluded.name,

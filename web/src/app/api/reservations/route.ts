@@ -42,6 +42,7 @@ export async function POST(req: Request) {
 
   const supabase = createServerSupabase(bearerToken(req));
   const extras = sanitizeExtraCodes(body.extraCodes);
+  if (body.licenseYears === "1" && !extras.includes("young")) extras.push("young");
   const requestedFlight = composeFlightNumber(body) || null;
   let { data, error } = await insertReservation(supabase, body, extras, requestedFlight);
   if (error && isFlightRejected(error)) {

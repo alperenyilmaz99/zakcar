@@ -32,9 +32,20 @@ export type ReservationInput = {
   returnFlight?: string;
   customerNote?: string;
   birthDate?: string;
+  licenseYears?: string;
   extraCodes?: string[];
   couponCode?: string;
 };
+
+const LICENSE_YEARS = new Set(["1", "2", "3", "4", "5"]);
+
+export function isLicenseYears(value: string | undefined): value is "1" | "2" | "3" | "4" | "5" {
+  return LICENSE_YEARS.has(value || "");
+}
+
+export function licenseYearsNote(value: string): string {
+  return value === "5" ? "Ehliyet: 5+ yıl" : `Ehliyet: ${value} yıl`;
+}
 
 const BOOKABLE = new Set(["saw", "iga", "merkez"]);
 
@@ -68,11 +79,14 @@ export function legacyFlightNumber(body: Pick<ReservationInput, "arrivalFlight" 
   return LEGACY_FLIGHT.test(joined) ? joined : codes[0];
 }
 
-export function composeFlightNumber(body: Pick<ReservationInput, "arrivalFlight" | "returnFlight" | "customerNote" | "flightNumber">) {
+export function composeFlightNumber(
+  body: Pick<ReservationInput, "arrivalFlight" | "returnFlight" | "customerNote" | "flightNumber" | "licenseYears">,
+) {
   const arrival = (body.arrivalFlight || "").trim();
   const returning = (body.returnFlight || "").trim();
   const note = (body.customerNote || "").trim().replace(/\s+/g, " ").slice(0, 400);
   const parts: string[] = [];
+  if (isLicenseYears(body.licenseYears)) parts.push(licenseYearsNote(body.licenseYears));
   if (arrival) parts.push(`Geliş: ${arrival}`);
   if (returning) parts.push(`Dönüş: ${returning}`);
   if (note) parts.push(`Not: ${note}`);
@@ -125,6 +139,7 @@ export function validateReservationInput(body: ReservationInput): string | null 
   if (body.birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(body.birthDate)) {
     return "Doğum tarihi geçersiz.";
   }
+  if (!isLicenseYears(body.licenseYears)) return "Ehliyet yılını seçin.";
   if (body.couponCode && !isCouponCode(normalizeCouponCode(body.couponCode))) {
     return "Kupon kodu geçersiz.";
   }

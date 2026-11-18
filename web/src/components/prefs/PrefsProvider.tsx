@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { FALLBACK_TRY_PER, ratesFromUnknown, setTryPer, type TryPer } from "@/lib/exchange-rates";
 import {
   type Currency,
   type Locale,
@@ -42,12 +43,30 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("tr");
   const [currency, setCurrencyState] = useState<Currency>("TRY");
   const [ready, setReady] = useState(false);
+  const [rates, setRates] = useState<TryPer>(FALLBACK_TRY_PER);
 
   useEffect(() => {
     const stored = readStored();
     setLocaleState(stored.locale);
     setCurrencyState(stored.currency);
     setReady(true);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/rates", { cache: "no-store" });
+        const data = (await res.json()) as Partial<TryPer>;
+        const next = ratesFromUnknown(data);
+        if (!cancelled && next) {
+          setTryPer(next);
+          setRates(next);
+        }
+      } catch {
+        /* yedek kur kalsın */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -68,7 +87,7 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
       setLocale: setLocaleState,
       setCurrency: setCurrencyState,
     }),
-    [locale, currency],
+    [locale, currency, rates],
   );
 
   return <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>;

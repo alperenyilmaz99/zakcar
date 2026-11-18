@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { BootSplash } from "@/components/layout/BootSplash";
 import { SiteChrome } from "@/components/layout/SiteChrome";
 import { SITE } from "@/lib/constants";
 import "./globals.css";
@@ -12,7 +13,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Zak Rent A Car SAW & IGA ARAÇ KİRALAMA",
+    default: "Zak Rent A Car SAW & IST ARAÇ KİRALAMA",
     template: `%s | ${SITE.shortName}`,
   },
   description:
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <body className={`${inter.variable} font-sans`}>
+        <BootSplash />
         <SiteChrome>{children}</SiteChrome>
       </body>
     </html>

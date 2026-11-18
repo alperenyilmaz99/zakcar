@@ -16,7 +16,9 @@ const NAV = [
   { href: "/panel/uyeler", label: "Üyeler" },
   { href: "/panel/konumlar", label: "Konumlar" },
   { href: "/panel/kapaklar", label: "Kapaklar" },
+  { href: "/panel/segmentler", label: "Segmentler" },
   { href: "/panel/havalimanlari", label: "Havalimanları" },
+  { href: "/panel/semtler", label: "Semtler" },
   { href: "/panel/icerik", label: "İçerik" },
 ] as const;
 

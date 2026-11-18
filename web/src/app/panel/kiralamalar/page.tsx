@@ -60,7 +60,7 @@ function RentalsInner() {
         (r) =>
           r.customer.name.toLowerCase().includes(s) ||
           r.pnr.toLowerCase().includes(s) ||
-          r.plate.toLowerCase().includes(s) ||
+          r.vehicleName.toLowerCase().includes(s) ||
           r.customer.phone.includes(s),
       );
     }
@@ -132,7 +132,7 @@ function RentalsInner() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="İsim, PNR, plaka veya telefon…"
+          placeholder="İsim, PNR, araç veya telefon…"
           className="w-full rounded-xl border border-surface-border bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 sm:max-w-xs"
         />
         <div className="flex flex-wrap gap-2">
@@ -173,7 +173,7 @@ function RentalsInner() {
                         <span className="font-mono text-xs font-normal text-ink-muted">{r.pnr}</span>
                       </p>
                       <p className="mt-0.5 truncate text-sm text-ink-muted">
-                        {r.vehicleName} · {r.plate}
+                        {r.vehicleName}
                       </p>
                       <p className="mt-1 text-xs text-ink-muted">
                         {formatDateTime(r.startAt)} → {formatDateTime(r.endAt)}
@@ -229,7 +229,7 @@ function RentalsInner() {
                 <div>
                   <dt className="text-ink-muted">Araç</dt>
                   <dd className="font-medium text-ink">
-                    {detail.vehicleName} · {detail.plate}
+                    {detail.vehicleName}
                   </dd>
                 </div>
                 <div>

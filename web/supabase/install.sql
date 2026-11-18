@@ -1,4 +1,4 @@
-﻿-- ZakCar bos veritabani kurulumu
+-- ZakCar bos veritabani kurulumu
 -- Supabase Dashboard -> SQL Editor -> New query -> tum dosyayi calistirin
 -- Siralama: sema, yetkiler, filo, kapaklar, rezervasyon
 -- Personel hesabi bu dosyada yok. Auth kullanicisi actiktan sonra add-staff.sql
@@ -1702,7 +1702,7 @@ insert into public.promo_covers (image_url, href, title, highlight, subtitle, ba
 select * from (values
   ('/assets/promo/ilk-kiralama.png', '/ekonomik-arac-kiralama', 'İlk araç kiralamanızda', '%10 indirim', 'Standart ve SUV grubundaki tüm araçlarda geçerli', 'İlk kiralamaya özel', 0),
   ('/assets/promo/kredi-kartsiz.png', '/kredi-kartsiz-arac-kiralama', 'Kredi kartı olmadan', 'kiralayın', 'Nakit ve banka kartı ile rezervasyon imkânı', 'Kredi kartsız', 1),
-  ('/assets/promo/havalimani.png', '/sabiha-gokcen-havalimani-arac-kiralama', 'Havalimanı teslim', 'SAW & IGA', 'Sabiha Gökçen ve İstanbul Havalimanı ofisleri', '7/24 teslim', 2),
+  ('/assets/promo/havalimani.png', '/sabiha-gokcen-havalimani-arac-kiralama', 'Havalimanı teslim', 'SAW & IST', 'Sabiha Gökçen ve İstanbul Havalimanı ofisleri', '7/24 teslim', 2),
   ('/assets/promo/suv.png', '/4x4-suv-arac-kiralama', 'SUV ve 4x4', 'geniş filo', 'Uzun yol ve aile seyahatleri için güçlü seçenekler', 'SUV & arazi', 3)
 ) as seed(image_url, href, title, highlight, subtitle, badge, sort_order)
 where not exists (select 1 from public.promo_covers);
@@ -1756,7 +1756,7 @@ select * from (values
   ('saw', '/assets/hero/saw.jpg', '/sabiha-gokcen-havalimani-arac-kiralama', 'Sabiha Gökçen Havalimanı', 'Gece gündüz teslim. Karşılama ve evrak birkaç dakika sürer.', '', 0),
   ('iga', '/assets/hero/iga.jpg', '/istanbul-3-havalimani-arac-kiralama', 'İstanbul Havalimanı', 'Aracınız sizi bekler. Teslim ücretsizdir, ödeme araç başında yapılır.', '', 1),
   ('saw-card', '/assets/hero/saw.jpg', '/sabiha-gokcen-havalimani-kredi-kartsiz-arac-kiralama', 'Sabiha Gökçen Havalimanı Kredi Kartsız Araç Kiralama', 'Kredi kartı ve Findeks yok. Ödeme teslimde nakit veya banka kartıyla yapılır.', '', 2),
-  ('iga-card', '/assets/hero/iga.jpg', '/iga-havalimani-kredi-kartsiz-arac-kiralama', 'IGA Havalimanı Kredi Kartsız Araç Kiralama', 'Kart limiti bloke edilmez. Ödeme araç başında, teslim ücretsizdir.', '', 3)
+  ('iga-card', '/assets/hero/iga.jpg', '/iga-havalimani-kredi-kartsiz-arac-kiralama', 'IST Havalimanı Kredi Kartsız Araç Kiralama', 'Kart limiti bloke edilmez. Ödeme araç başında, teslim ücretsizdir.', '', 3)
 ) as seed(id, image_url, href, title, summary, detail, sort_order)
 where not exists (select 1 from public.airport_cards);
 
@@ -1794,7 +1794,7 @@ end $$;
 insert into public.offices (code, name, address, phone, email, hours, lat, lng)
 values
   ('saw', 'İstanbul Sabiha Gökçen Havalimanı (SAW)', 'Sabiha Gökçen Havalimanı, Pendik / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 40.8986, 29.3092),
-  ('iga', 'İstanbul Havalimanı (IGA)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 41.2753, 28.7519),
+  ('iga', 'İstanbul Havalimanı (IST)', 'İstanbul Havalimanı, Arnavutköy / İstanbul', '0532 388 29 96', 'info@zakrentacar.com', '7/24', 41.2753, 28.7519),
   ('merkez', 'ZakCar Merkez Ofis', 'Sabiha Gökçen Havalimanı Karşısı', '0532 388 29 96', 'info@zakrentacar.com', '08:00 - 22:00', 40.8780, 29.2570)
 on conflict (code) do update set
   name = excluded.name,

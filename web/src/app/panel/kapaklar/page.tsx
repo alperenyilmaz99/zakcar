@@ -9,7 +9,7 @@ import {
   reorderPromoCovers,
   savePromoCover,
 } from "@/lib/panel-api";
-import { normalizePromoSlot, type PromoCover, type PromoSlot } from "@/lib/promo";
+import { HERO_BACKDROP, normalizePromoSlot, type PromoCover, type PromoSlot } from "@/lib/promo";
 
 const SLOTS: { id: PromoSlot; title: string; text: string }[] = [
   { id: "hero", title: "Üst kayan kampanya", text: "Arama kutusunun hemen altındaki kayan görseller." },
@@ -119,7 +119,7 @@ export default function PromoCoversPage() {
             Kapak görselleri
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Üst kayan alan, alttaki kayan alan ve kampanyalar bölümü ayrı ayrı düzenlenir.
+            Ana sayfa arka planı, üst kayan alan, alttaki kayan alan ve kampanyalar ayrı ayrı düzenlenir.
           </p>
         </div>
         <p className="text-xs text-ink-muted">
@@ -149,7 +149,31 @@ export default function PromoCoversPage() {
         <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>
       )}
 
-      <div className="mt-8 space-y-10">
+      <BackdropEditor
+        cover={groupOf("backdrop")[0] || null}
+        busy={busyId === "backdrop" || busyId === (groupOf("backdrop")[0]?.id ?? "")}
+        onReplace={(file) => {
+          const current = groupOf("backdrop")[0];
+          if (current) {
+            void run(current.id, async () => {
+              await savePromoCover(current, file, source);
+            });
+            return;
+          }
+          addSlot.current = "backdrop";
+          void run("backdrop", async () => {
+            await createPromoCover(file, source, "backdrop");
+          });
+        }}
+        onReset={(cover) => {
+          if (!window.confirm("Arka plan varsayılan görsele dönsün mü?")) return;
+          void run(cover.id, async () => {
+            await deletePromoCover(cover, source);
+          });
+        }}
+      />
+
+      <div className="mt-10 space-y-10">
         {SLOTS.map((slot) => {
           const group = groupOf(slot.id);
           return (
@@ -260,6 +284,62 @@ export default function PromoCoversPage() {
         })}
       </div>
     </div>
+  );
+}
+
+function BackdropEditor({
+  cover,
+  busy,
+  onReplace,
+  onReset,
+}: {
+  cover: PromoCover | null;
+  busy: boolean;
+  onReplace: (file: File) => void;
+  onReset: (cover: PromoCover) => void;
+}) {
+  const src = cover?.imageUrl || HERO_BACKDROP;
+
+  return (
+    <section className="mt-8">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-bold text-ink">Ana sayfa arka planı</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            Arama kutusunun hemen altındaki geniş görsel. Yeni dosya seçince sitedeki manzara değişir.
+          </p>
+        </div>
+      </div>
+      <article className="mt-4 overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card">
+        <div className="relative aspect-[2.4/1] bg-ink">
+          <Image src={src} alt="" fill className="object-cover object-[center_58%]" sizes="960px" />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 p-4">
+          <label className="btn-primary cursor-pointer text-sm">
+            Görseli değiştir
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              disabled={busy}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) onReplace(file);
+              }}
+            />
+          </label>
+          {cover ? (
+            <button type="button" className="btn-outline text-sm" disabled={busy} onClick={() => onReset(cover)}>
+              Varsayılana dön
+            </button>
+          ) : (
+            <p className="text-sm text-ink-muted">Şu an hazır manzara görseli kullanılıyor.</p>
+          )}
+          {busy && <p className="text-xs text-ink-muted">Kaydediliyor…</p>}
+        </div>
+      </article>
+    </section>
   );
 }
 

@@ -1,8 +1,8 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { SearchBar } from "@/components/search/SearchBar";
-import { getVehicleBySlug, vehicleImagePath } from "@/lib/data";
-import { withLivePrices } from "@/lib/model-prices";
+import { vehicleImagePath } from "@/lib/data";
+import { findPublicVehicle, loadPublicVehicles } from "@/lib/public-vehicles";
 import { VehicleDetailInfo } from "@/components/vehicles/VehicleDetailInfo";
 
 export async function generateStaticParams() {
@@ -14,15 +14,14 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const vehicle = getVehicleBySlug(slug);
+  const vehicle = findPublicVehicle(await loadPublicVehicles(), slug);
   if (!vehicle) return { title: "Araç Bulunamadı" };
   return { title: vehicle.name.replace(" Araç Kiralama", ""), description: vehicle.summary };
 }
 
 export default async function VehicleDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const found = getVehicleBySlug(slug);
-  const vehicle = found ? (await withLivePrices([found]))[0] : undefined;
+  const vehicle = findPublicVehicle(await loadPublicVehicles(), slug);
   if (!vehicle) notFound();
 
   return (

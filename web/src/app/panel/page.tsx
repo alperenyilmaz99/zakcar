@@ -120,7 +120,7 @@ export default function PanelDashboardPage() {
                           <span className="font-normal text-ink-muted">· {r.pnr}</span>
                         </p>
                         <p className="mt-0.5 truncate text-sm text-ink-muted">
-                          {r.vehicleName} · {r.plate}
+                          {r.vehicleName}
                         </p>
                         <p className="mt-1 text-xs text-ink-muted">
                           {formatDateTime(r.startAt)} → {formatDateTime(r.endAt)}
@@ -151,8 +151,7 @@ export default function PanelDashboardPage() {
                   <li key={v.id} className="flex items-center gap-3 px-4 py-3.5">
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold text-ink">
-                        {v.name}{" "}
-                        <span className="font-normal text-ink-muted">· {v.plate}</span>
+                        {v.name}
                       </p>
                       <p className="mt-0.5 truncate text-sm text-ink-muted">{v.locationLabel}</p>
                       <p className="mt-1 text-xs text-ink-muted">{formatRelative(v.lastUpdated)}</p>

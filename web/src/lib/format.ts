@@ -1,5 +1,4 @@
-/** EUR → TRY (yaklaşık kur, günlük kiralama fiyatları için) */
-const EUR_TO_TRY = 37;
+import { getTryPer } from "@/lib/exchange-rates";
 
 /** "€25,00" → "925 TL" */
 export function euroToTry(price: string): string {
@@ -7,7 +6,7 @@ export function euroToTry(price: string): string {
   if (!match) return price.replace(/€/g, "₺").replace(/EUR/gi, "TL");
   const num = parseFloat(match[1].replace(/\./g, "").replace(",", "."));
   if (Number.isNaN(num)) return price;
-  const tl = Math.round(num * EUR_TO_TRY);
+  const tl = Math.round(num * getTryPer().EUR);
   return `${tl.toLocaleString("tr-TR")} TL`;
 }
 

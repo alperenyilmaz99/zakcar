@@ -14,7 +14,7 @@ create table if not exists public.promo_covers (
   slot text not null default 'hero',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint promo_covers_slot_check check (slot in ('hero', 'mid', 'campaigns'))
+  constraint promo_covers_slot_check check (slot in ('hero', 'mid', 'campaigns', 'backdrop'))
 );
 
 alter table public.promo_covers add column if not exists slot text not null default 'hero';
@@ -72,7 +72,7 @@ insert into public.promo_covers (image_url, href, title, highlight, subtitle, ba
 select * from (values
   ('/assets/promo/ilk-kiralama.png', '/ekonomik-arac-kiralama', 'İlk araç kiralamanızda', '%10 indirim', 'Standart ve SUV grubundaki tüm araçlarda geçerli', 'İlk kiralamaya özel', 0),
   ('/assets/promo/kredi-kartsiz.png', '/kredi-kartsiz-arac-kiralama', 'Kredi kartı olmadan', 'kiralayın', 'Nakit ve banka kartı ile rezervasyon imkânı', 'Kredi kartsız', 1),
-  ('/assets/promo/havalimani.png', '/sabiha-gokcen-havalimani-arac-kiralama', 'Havalimanı teslim', 'SAW & IGA', 'Sabiha Gökçen ve İstanbul Havalimanı ofisleri', '7/24 teslim', 2),
+  ('/assets/promo/havalimani.png', '/sabiha-gokcen-havalimani-arac-kiralama', 'Havalimanı teslim', 'SAW & IST', 'Sabiha Gökçen ve İstanbul Havalimanı ofisleri', '7/24 teslim', 2),
   ('/assets/promo/suv.png', '/4x4-suv-arac-kiralama', 'SUV ve 4x4', 'geniş filo', 'Uzun yol ve aile seyahatleri için güçlü seçenekler', 'SUV & arazi', 3)
 ) as seed(image_url, href, title, highlight, subtitle, badge, sort_order)
 where not exists (select 1 from public.promo_covers);
@@ -82,6 +82,9 @@ select image_url, href, title, highlight, subtitle, badge, sort_order, is_active
 from public.promo_covers
 where slot = 'hero'
   and not exists (select 1 from public.promo_covers where slot = 'mid');
+
+alter table public.promo_covers drop constraint if exists promo_covers_slot_check;
+alter table public.promo_covers add constraint promo_covers_slot_check check (slot in ('hero', 'mid', 'campaigns', 'backdrop'));
 
 insert into public.promo_covers (image_url, href, title, highlight, subtitle, badge, sort_order, is_active, slot)
 select image_url, href, title, highlight, subtitle, badge, sort_order, is_active, 'campaigns'

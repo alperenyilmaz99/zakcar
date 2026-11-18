@@ -14,13 +14,31 @@ import {
   updateFleetVehicle,
   uploadVehicleImage,
   type FleetModelOption,
-  type FleetOfficeOption,
 } from "@/lib/panel-api";
 import { STATUS_LABEL } from "@/lib/panel-data";
 import type { FleetStatus, FleetVehicle, Rental } from "@/lib/panel-types";
 import { FleetStatusBadge, RentalStatusBadge, formatDateTime, formatRelative } from "@/components/panel/Badges";
 
 const FILTERS: Array<FleetStatus | "hepsi"> = ["hepsi", "musait", "kirada", "rezerveli", "bakimda"];
+const GROUPS = ["Ekonomik", "SUV", "Minibüs", "Lüks"] as const;
+const FUELS = ["Benzin", "Dizel", "Elektrik"] as const;
+const GEARS = ["Manuel", "Otomatik"] as const;
+
+function asFuel(value: string | null | undefined): (typeof FUELS)[number] {
+  const text = (value || "").toLocaleLowerCase("tr");
+  if (text.includes("elektr")) return "Elektrik";
+  if (text.includes("dizel")) return "Dizel";
+  return "Benzin";
+}
+
+function asGear(value: string | null | undefined): (typeof GEARS)[number] {
+  return (value || "").toLocaleLowerCase("tr").includes("otomat") ? "Otomatik" : "Manuel";
+}
+
+function asGroup(value: string | null | undefined): string {
+  const found = GROUPS.find((group) => group.toLocaleLowerCase("tr") === (value || "").toLocaleLowerCase("tr"));
+  return found || value || "Ekonomik";
+}
 
 function VehiclesInner() {
   const params = useSearchParams();
@@ -35,21 +53,20 @@ function VehiclesInner() {
   const [actionError, setActionError] = useState("");
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
-  const [fuel, setFuel] = useState(100);
   const [km, setKm] = useState(0);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [models, setModels] = useState<FleetModelOption[]>([]);
-  const [offices, setOffices] = useState<FleetOfficeOption[]>([]);
   const [newModelId, setNewModelId] = useState("");
-  const [newOfficeId, setNewOfficeId] = useState("");
-  const [newPlate, setNewPlate] = useState("");
-  const [newFuel, setNewFuel] = useState(100);
+  const [newGroup, setNewGroup] = useState<string>(GROUPS[0]);
+  const [newGear, setNewGear] = useState<(typeof GEARS)[number]>("Manuel");
+  const [newFuelType, setNewFuelType] = useState<(typeof FUELS)[number]>("Benzin");
   const [newKm, setNewKm] = useState(0);
   const [newImage, setNewImage] = useState<File | null>(null);
-  const [editPlate, setEditPlate] = useState("");
   const [editModelId, setEditModelId] = useState("");
-  const [editOfficeId, setEditOfficeId] = useState("");
+  const [editGroup, setEditGroup] = useState<string>(GROUPS[0]);
+  const [editGear, setEditGear] = useState<(typeof GEARS)[number]>("Manuel");
+  const [editFuelType, setEditFuelType] = useState<(typeof FUELS)[number]>("Benzin");
   const [editImage, setEditImage] = useState<File | null>(null);
 
   useEffect(() => {
@@ -65,9 +82,7 @@ function VehiclesInner() {
           setFleet(data);
           setRentals(bookings);
           setModels(options.models);
-          setOffices(options.offices);
           setNewModelId((current) => current || options.models[0]?.id || "");
-          setNewOfficeId((current) => current || options.offices[0]?.id || "");
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Yüklenemedi");
@@ -102,9 +117,8 @@ function VehiclesInner() {
       items = items.filter(
         (v) =>
           v.name.toLowerCase().includes(s) ||
-          v.plate.toLowerCase().includes(s) ||
-          v.id.toLowerCase().includes(s) ||
-          v.office.toLowerCase().includes(s) ||
+          v.brand.toLowerCase().includes(s) ||
+          v.group.toLowerCase().includes(s) ||
           (openByVehicle.get(v.id) ?? []).some(
             (rental) =>
               rental.customer.name.toLowerCase().includes(s) ||
@@ -120,18 +134,38 @@ function VehiclesInner() {
 
   useEffect(() => {
     if (!active) return;
-    setFuel(active.fuelLevel);
     setKm(active.km);
-    setEditPlate(active.plate);
-    setEditModelId(models.find((model) => model.slug === active.vehicleSlug)?.id || models[0]?.id || "");
-    setEditOfficeId(offices.find((office) => office.name === active.office)?.id || offices[0]?.id || "");
+    const model = models.find((item) => item.slug === active.vehicleSlug);
+    setEditModelId(model?.id || models[0]?.id || "");
+    setEditGroup(asGroup(model?.group || active.group));
+    setEditGear(asGear(model?.transmission));
+    setEditFuelType(asFuel(model?.fuel));
     setEditImage(null);
-  }, [active, models, offices]);
+  }, [active, models]);
 
   async function reload() {
-    const [data, bookings] = await Promise.all([fetchFleet(), fetchRentals()]);
+    const [data, bookings, options] = await Promise.all([fetchFleet(), fetchRentals(), fetchFleetFormOptions()]);
     setFleet(data);
     setRentals(bookings);
+    setModels(options.models);
+  }
+
+  function applyNewModel(modelId: string) {
+    setNewModelId(modelId);
+    const model = models.find((item) => item.id === modelId);
+    if (!model) return;
+    setNewGroup(asGroup(model.group));
+    setNewGear(asGear(model.transmission));
+    setNewFuelType(asFuel(model.fuel));
+  }
+
+  function applyEditModel(modelId: string) {
+    setEditModelId(modelId);
+    const model = models.find((item) => item.id === modelId);
+    if (!model) return;
+    setEditGroup(asGroup(model.group));
+    setEditGear(asGear(model.transmission));
+    setEditFuelType(asFuel(model.fuel));
   }
 
   async function addVehicle() {
@@ -142,13 +176,12 @@ function VehiclesInner() {
       const imageUrl = newImage ? await uploadVehicleImage(newImage) : undefined;
       await createFleetVehicle({
         modelId: newModelId,
-        officeId: newOfficeId,
-        plate: newPlate,
-        fuelLevel: newFuel,
         km: newKm,
         imageUrl,
+        fuel: newFuelType,
+        transmission: newGear,
+        group: newGroup,
       });
-      setNewPlate("");
       setNewImage(null);
       setAdding(false);
       await reload();
@@ -166,7 +199,7 @@ function VehiclesInner() {
       setActionError("Açık kiralaması veya rezervasyonu olan araç silinemez.");
       return;
     }
-    if (!window.confirm(`${active.plate} plakalı araç silinsin mi?`)) return;
+    if (!window.confirm(`${active.name} silinsin mi?`)) return;
     setSaving(true);
     setActionError("");
     try {
@@ -189,11 +222,11 @@ function VehiclesInner() {
       await updateFleetVehicle({
         recordId: active.recordId,
         modelId: editModelId,
-        officeId: editOfficeId,
-        plate: editPlate,
-        fuelLevel: fuel,
         km,
         imageUrl,
+        fuel: editFuelType,
+        transmission: editGear,
+        group: editGroup,
       });
       setEditImage(null);
       await reload();
@@ -207,7 +240,7 @@ function VehiclesInner() {
   async function toggleBooking(vehicle: FleetVehicle) {
     if (saving) return;
     const closing = vehicle.status !== "bakimda";
-    if (closing && !window.confirm(`${vehicle.plate} rezervasyona kapatılsın mı? Sitede müsait görünmez.`)) return;
+    if (closing && !window.confirm(`${vehicle.name} rezervasyona kapatılsın mı? Sitede müsait görünmez.`)) return;
     setSaving(true);
     setActionError("");
     try {
@@ -232,7 +265,7 @@ function VehiclesInner() {
         <div>
           <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">Araçlar</h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Filo durumu, kiracı ve müsaitlik. Kapatılan plaka sitede seçilemez.
+            Filo durumu, kiracı ve müsaitlik. Kapatılan araç sitede seçilemez.
           </p>
         </div>
           <div className="flex items-center gap-3">
@@ -257,7 +290,7 @@ function VehiclesInner() {
                 Model
                 <select
                   value={newModelId}
-                  onChange={(e) => setNewModelId(e.target.value)}
+                  onChange={(e) => applyNewModel(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
                 >
                   {models.map((model) => (
@@ -268,38 +301,46 @@ function VehiclesInner() {
                 </select>
               </label>
               <label className="text-sm text-ink-muted">
-                Ofis
+                Araç grubu
                 <select
-                  value={newOfficeId}
-                  onChange={(e) => setNewOfficeId(e.target.value)}
+                  value={newGroup}
+                  onChange={(e) => setNewGroup(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
                 >
-                  {offices.map((office) => (
-                    <option key={office.id} value={office.id}>
-                      {office.name}
+                  {groupOptions(newGroup).map((group) => (
+                    <option key={group} value={group}>
+                      {group}
                     </option>
                   ))}
                 </select>
               </label>
               <label className="text-sm text-ink-muted">
-                Plaka
-                <input
-                  value={newPlate}
-                  onChange={(e) => setNewPlate(e.target.value)}
-                  placeholder="34 ABC 123"
-                  className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
-                />
+                Vites
+                <select
+                  value={newGear}
+                  onChange={(e) => setNewGear(e.target.value as (typeof GEARS)[number])}
+                  className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
+                >
+                  {GEARS.map((gear) => (
+                    <option key={gear} value={gear}>
+                      {gear}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="text-sm text-ink-muted">
-                Yakıt %
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={newFuel}
-                  onChange={(e) => setNewFuel(Number(e.target.value))}
-                  className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
-                />
+                Yakıt
+                <select
+                  value={newFuelType}
+                  onChange={(e) => setNewFuelType(e.target.value as (typeof FUELS)[number])}
+                  className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
+                >
+                  {FUELS.map((fuel) => (
+                    <option key={fuel} value={fuel}>
+                      {fuel}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="text-sm text-ink-muted">
                 Kilometre
@@ -321,6 +362,9 @@ function VehiclesInner() {
                 />
               </label>
             </div>
+            <p className="mt-3 text-xs text-ink-muted">
+              Grup, vites ve yakıt seçilen modele yazılır. Listede modelin altında görünür.
+            </p>
             <button type="submit" className="btn-primary mt-4 text-sm" disabled={saving}>
               {saving ? "Kaydediliyor…" : "Filoya ekle"}
             </button>
@@ -332,7 +376,7 @@ function VehiclesInner() {
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Plaka, model veya ofis ara…"
+          placeholder="Model veya grup ara…"
           className="w-full rounded-xl border border-surface-border bg-white px-3.5 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 sm:max-w-xs"
         />
         <div className="flex flex-wrap gap-2">
@@ -359,7 +403,6 @@ function VehiclesInner() {
           <thead className="border-b border-surface-border bg-surface-soft text-xs uppercase tracking-wide text-ink-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Araç</th>
-              <th className="px-4 py-3 font-medium">Plaka</th>
               <th className="px-4 py-3 font-medium">Durum</th>
               <th className="px-4 py-3 font-medium">Müsaitlik</th>
               <th className="px-4 py-3 font-medium">Kiracı ve süre</th>
@@ -385,13 +428,10 @@ function VehiclesInner() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-ink">{v.name}</p>
-                      <p className="text-xs text-ink-muted">
-                        {v.id} · {v.group}
-                      </p>
+                      <p className="text-xs text-ink-muted">{specLine(models, v)}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 font-mono text-ink">{v.plate}</td>
                 <td className="px-4 py-3">
                   <FleetStatusBadge status={v.status} />
                 </td>
@@ -416,17 +456,7 @@ function VehiclesInner() {
                   <RentalSummary rentals={openByVehicle.get(v.id) ?? []} />
                 </td>
                 <td className="max-w-[220px] truncate px-4 py-3 text-ink-muted">{v.locationLabel}</td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-16 overflow-hidden rounded-full bg-surface-border">
-                      <div
-                        className={`h-full rounded-full ${v.fuelLevel < 30 ? "bg-rose-500" : "bg-brand"}`}
-                        style={{ width: `${v.fuelLevel}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-ink-muted">%{v.fuelLevel}</span>
-                  </div>
-                </td>
+                <td className="px-4 py-3 text-ink-muted">{asFuel(models.find((model) => model.slug === v.vehicleSlug)?.fuel)}</td>
                 <td className="px-4 py-3 text-ink-muted">{v.km.toLocaleString("tr-TR")}</td>
                 <td className="px-4 py-3 text-ink-muted">{formatRelative(v.lastUpdated)}</td>
               </tr>
@@ -449,9 +479,7 @@ function VehiclesInner() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="font-display text-lg font-bold text-ink">{active.name}</h2>
-              <p className="font-mono text-sm text-ink-muted">
-                {active.plate} · {active.id}
-              </p>
+              <p className="text-sm text-ink-muted">{specLine(models, active)}</p>
             </div>
             <FleetStatusBadge status={active.status} />
           </div>
@@ -460,7 +488,7 @@ function VehiclesInner() {
               Model
               <select
                 value={editModelId}
-                onChange={(e) => setEditModelId(e.target.value)}
+                onChange={(e) => applyEditModel(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
               >
                 {models.map((model) => (
@@ -471,37 +499,46 @@ function VehiclesInner() {
               </select>
             </label>
             <label className="text-sm text-ink-muted">
-              Ofis
+              Araç grubu
               <select
-                value={editOfficeId}
-                onChange={(e) => setEditOfficeId(e.target.value)}
+                value={editGroup}
+                onChange={(e) => setEditGroup(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
               >
-                {offices.map((office) => (
-                  <option key={office.id} value={office.id}>
-                    {office.name}
+                {groupOptions(editGroup).map((group) => (
+                  <option key={group} value={group}>
+                    {group}
                   </option>
                 ))}
               </select>
             </label>
             <label className="text-sm text-ink-muted">
-              Plaka
-              <input
-                value={editPlate}
-                onChange={(e) => setEditPlate(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
-              />
+              Vites
+              <select
+                value={editGear}
+                onChange={(e) => setEditGear(e.target.value as (typeof GEARS)[number])}
+                className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
+              >
+                {GEARS.map((gear) => (
+                  <option key={gear} value={gear}>
+                    {gear}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="text-sm text-ink-muted">
-              Yakıt %
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={fuel}
-                onChange={(e) => setFuel(Number(e.target.value))}
-                className="mt-1 w-full rounded-xl border border-surface-border px-3 py-2 text-ink"
-              />
+              Yakıt
+              <select
+                value={editFuelType}
+                onChange={(e) => setEditFuelType(e.target.value as (typeof FUELS)[number])}
+                className="mt-1 w-full rounded-xl border border-surface-border bg-white px-3 py-2 text-ink"
+              >
+                {FUELS.map((fuel) => (
+                  <option key={fuel} value={fuel}>
+                    {fuel}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="text-sm text-ink-muted">
               Kilometre
@@ -524,7 +561,7 @@ function VehiclesInner() {
             </label>
           </div>
           <p className="mt-2 text-xs text-ink-muted">
-            Görsel, seçili modele aittir. Aynı modeldeki diğer plakalar da bu fotoğrafı kullanır.
+            Görsel, grup, vites ve yakıt seçilen modele yazılır. Aynı modeldeki diğer araçlar da bunları kullanır.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="submit" className="btn-primary text-sm" disabled={saving}>
@@ -556,6 +593,15 @@ function VehiclesInner() {
       )}
     </div>
   );
+}
+
+function groupOptions(current: string): string[] {
+  return GROUPS.includes(current as (typeof GROUPS)[number]) ? [...GROUPS] : [current, ...GROUPS];
+}
+
+function specLine(models: FleetModelOption[], vehicle: FleetVehicle): string {
+  const model = models.find((item) => item.slug === vehicle.vehicleSlug);
+  return [asGroup(model?.group || vehicle.group), asGear(model?.transmission), asFuel(model?.fuel)].join(" · ");
 }
 
 function photoSrc(src: string): string {

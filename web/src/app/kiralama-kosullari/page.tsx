@@ -126,7 +126,7 @@ export default function Page() {
         Araç size teslim edildiği gibi geri alınırsa bu tutar tamamen iade edilir.
       </p>
       <p>
-        <strong>Güvenlik:</strong> Rezervasyonunuzu daha güvenli yapabilmeniz için zakcar.com SSL
+        <strong>Güvenlik:</strong> Rezervasyonunuzu daha güvenli yapabilmeniz için zakrentacar.com SSL
         güvenlik sertifikası kullanmaktadır.
       </p>
 

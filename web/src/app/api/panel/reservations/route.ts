@@ -48,7 +48,7 @@ export async function GET(req: Request) {
 
   const [{ data: fleet, error: fleetError }, { data: models, error: modelError }, { data: offices, error: officeError }] =
     await Promise.all([
-      staff.supabase.from("fleet_vehicles").select("id, plate, status, model_id, home_office_id").order("plate"),
+      staff.supabase.from("fleet_vehicles").select("id, status, model_id, home_office_id"),
       staff.supabase.from("vehicle_models").select("id, name, slug, daily_price_try"),
       staff.supabase.from("offices").select("id, code, name").in("code", ["saw", "iga", "merkez"]),
     ]);
@@ -65,12 +65,12 @@ export async function GET(req: Request) {
       const office = row.home_office_id ? officeById.get(row.home_office_id) : undefined;
       return {
         id: row.id,
-        plate: row.plate,
         name: model?.name || "Araç",
         slug: model?.slug || "",
         status: row.status,
         dailyPrice: Number(model?.daily_price_try ?? 0),
         officeCode: office && OFFICES.has(office.code) ? office.code : "saw",
+        officeName: office?.name || "",
       };
     });
 
@@ -78,7 +78,7 @@ export async function GET(req: Request) {
     vehicles,
     offices: ((offices || []) as OfficeRow[])
       .filter((office) => OFFICES.has(office.code))
-      .map((office) => ({ code: office.code, name: office.name })),
+      .map((office) => ({ code: office.code, name: (office.name || "").replaceAll("IGA", "IST") })),
   });
 }
 
@@ -181,7 +181,7 @@ export async function POST(req: Request) {
     : { data: null };
   const model = modelRow as ModelRow | null;
   if (!vehicle || !model?.slug) {
-    return NextResponse.json({ error: "Plakayı listeden seçin." }, { status: 400 });
+    return NextResponse.json({ error: "Aracı listeden seçin." }, { status: 400 });
   }
   if (vehicle.status === "bakimda") {
     return NextResponse.json({ error: "Bu araç bakımdadır." }, { status: 400 });
@@ -196,7 +196,7 @@ export async function POST(req: Request) {
     .gt("end_at", start.toISOString())
     .limit(1);
   if (clash && clash.length > 0) {
-    return NextResponse.json({ error: "Bu plaka seçilen tarihte başka bir kiralamada." }, { status: 400 });
+    return NextResponse.json({ error: "Bu araç seçilen tarihte başka bir kiralamada." }, { status: 400 });
   }
 
   const { data: officeRows, error: officeError } = await staff.supabase

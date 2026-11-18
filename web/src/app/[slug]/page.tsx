@@ -5,17 +5,17 @@ import { LandingFallback, LandingHeading } from "@/components/content/LandingHea
 import { ServiceArticle, ServiceHeading } from "@/components/content/ServiceArticle";
 import { airportArticleId, airportArticleTitle } from "@/lib/airport-slugs";
 import { isServiceArticle } from "@/lib/service-slugs";
-import { districtBySlug } from "@/lib/districts";
 import { SearchBar } from "@/components/search/SearchBar";
 import { VehicleCatalog } from "@/components/vehicles/VehicleCatalog";
+import { AIRPORT_CARDS, isStockAirportTitle } from "@/lib/airport-cards";
 import { loadAirportCards } from "@/lib/airport-store";
+import { loadDistricts } from "@/lib/district-store";
 import {
-  filterVehicles,
   getAllSeoSlugs,
-  getVehicleBySlug,
   resolveSeoPage,
+  seoForDistrict,
 } from "@/lib/data";
-import { withLivePrices } from "@/lib/model-prices";
+import { filterPublicVehicles, findPublicVehicle, loadPublicVehicles } from "@/lib/public-vehicles";
 
 export const dynamic = "force-dynamic";
 
@@ -25,37 +25,47 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const vehicle = getVehicleBySlug(slug);
+  const vehicle = findPublicVehicle(await loadPublicVehicles(), slug);
   if (vehicle) return { title: vehicle.name, description: vehicle.summary };
   const articleTitle = airportArticleTitle(slug);
   if (articleTitle) {
     const { items } = await loadAirportCards();
     const saved = items.find((item) => item.href === `/${slug}`);
-    const title = saved?.title || articleTitle;
-    return { title, description: saved?.text || title };
+    const card = AIRPORT_CARDS.find((item) => item.href === `/${slug}`);
+    const savedTitle = saved?.title?.trim() || "";
+    const title = (
+      savedTitle && !(card && isStockAirportTitle(card.id, savedTitle)) ? savedTitle : articleTitle
+    ).replaceAll("IGA", "IST");
+    return { title, description: (saved?.text || title).replaceAll("IGA", "IST") };
   }
   const seo = resolveSeoPage(slug);
   if (seo) return { title: seo.title, description: seo.description };
+  const extra = (await loadDistricts()).items.find((item) => item.slug === slug);
+  if (extra) {
+    const page = seoForDistrict(extra);
+    return { title: page.title, description: page.description };
+  }
   return { title: slug };
 }
 
 export default async function DynamicLandingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  const vehicle = getVehicleBySlug(slug);
+  const vehicles = await loadPublicVehicles();
+  const vehicle = findPublicVehicle(vehicles, slug);
   if (vehicle) redirect(`/arac/${vehicle.slug}`);
 
-  const seo = resolveSeoPage(slug);
+  const district = (await loadDistricts()).items.find((item) => item.slug === slug) ?? null;
+  const seo = resolveSeoPage(slug) ?? (district ? seoForDistrict(district) : null);
   if (!seo) notFound();
   const article = airportArticleId(slug);
-  const district = districtBySlug(slug);
   const saved = article
     ? (await loadAirportCards()).items.find((item) => item.href === `/${slug}`)
     : undefined;
 
   const showCatalog = seo.type === "group" || seo.type === "brand";
-  const vehicles = showCatalog
-    ? await withLivePrices(filterVehicles({ group: seo.filterGroup, brand: seo.filterBrand }))
+  const catalog = showCatalog
+    ? filterPublicVehicles(vehicles, { group: seo.filterGroup, brand: seo.filterBrand })
     : [];
 
   return (
@@ -63,7 +73,7 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
       {isServiceArticle(slug) ? (
         <ServiceHeading slug={slug} />
       ) : article ? (
-        <AirportHeading slug={slug} savedTitle={saved?.title} />
+        <AirportHeading slug={slug} savedTitle={saved?.title?.replaceAll("IGA", "IST")} />
       ) : district ? (
         <DistrictHeading district={district} />
       ) : (
@@ -86,7 +96,7 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
 
       {showCatalog ? (
         <VehicleCatalog
-          vehicles={vehicles}
+          vehicles={catalog}
           initialGroup={seo.filterGroup}
         />
       ) : article ? (

@@ -33,6 +33,6 @@ select * from (values
   ('saw', '/assets/hero/saw.jpg', '/sabiha-gokcen-havalimani-arac-kiralama', 'Sabiha Gökçen Havalimanı', 'Gece gündüz teslim. Karşılama ve evrak birkaç dakika sürer.', '', 0),
   ('iga', '/assets/hero/iga.jpg', '/istanbul-3-havalimani-arac-kiralama', 'İstanbul Havalimanı', 'Aracınız sizi bekler. Teslim ücretsizdir, ödeme araç başında yapılır.', '', 1),
   ('saw-card', '/assets/hero/saw.jpg', '/sabiha-gokcen-havalimani-kredi-kartsiz-arac-kiralama', 'Sabiha Gökçen Havalimanı Kredi Kartsız Araç Kiralama', 'Kredi kartı ve Findeks yok. Ödeme teslimde nakit veya banka kartıyla yapılır.', '', 2),
-  ('iga-card', '/assets/hero/iga.jpg', '/iga-havalimani-kredi-kartsiz-arac-kiralama', 'IGA Havalimanı Kredi Kartsız Araç Kiralama', 'Kart limiti bloke edilmez. Ödeme araç başında, teslim ücretsizdir.', '', 3)
+  ('iga-card', '/assets/hero/iga.jpg', '/iga-havalimani-kredi-kartsiz-arac-kiralama', 'IST Havalimanı Kredi Kartsız Araç Kiralama', 'Kart limiti bloke edilmez. Ödeme araç başında, teslim ücretsizdir.', '', 3)
 ) as seed(id, image_url, href, title, summary, detail, sort_order)
 where not exists (select 1 from public.airport_cards);

@@ -1,8 +1,7 @@
 import { VehicleCatalog } from "@/components/vehicles/VehicleCatalog";
 import { SearchBar } from "@/components/search/SearchBar";
 import { PageIntro } from "@/components/content/PageIntro";
-import { getVehicles } from "@/lib/data";
-import { withLivePrices } from "@/lib/model-prices";
+import { loadPublicVehicles } from "@/lib/public-vehicles";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +15,7 @@ export default async function AracModelleriPage({
   searchParams: Promise<{ group?: string; pickup?: string }>;
 }) {
   const params = await searchParams;
-  const vehicles = await withLivePrices(getVehicles());
+  const vehicles = await loadPublicVehicles();
 
   return (
     <div className="container-page py-10 lg:py-14">
