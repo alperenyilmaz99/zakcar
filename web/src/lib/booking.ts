@@ -1,4 +1,5 @@
 import { isCouponCode, normalizeCouponCode } from "@/lib/coupon-math";
+import { minimumRentalDays, rentalDays } from "@/lib/extras";
 
 export type Reservation = {
   pnr: string;
@@ -35,6 +36,7 @@ export type ReservationInput = {
   licenseYears?: string;
   extraCodes?: string[];
   couponCode?: string;
+  locale?: string;
 };
 
 const LICENSE_YEARS = new Set(["1", "2", "3", "4", "5"]);
@@ -130,6 +132,10 @@ export function validateReservationInput(body: ReservationInput): string | null 
     return "Bırakış, alıştan sonra olmalı.";
   }
   if (pickupHourIsPast(start)) return "Alış saati geçmişte kalamaz.";
+  const minDays = minimumRentalDays(body.pickupCode, body.dropoffCode);
+  if (rentalDays(body.startAt, body.endAt) < minDays) {
+    return `Minimum kiralama günü ${minDays} gündür. Lütfen çağrı merkezimizle iletişime geçiniz.`;
+  }
   if (flightError(body.arrivalFlight) || flightError(body.returnFlight) || flightError(body.flightNumber)) {
     return "Uçuş numarası geçersiz.";
   }

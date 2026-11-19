@@ -13,7 +13,23 @@ type PanelReview = {
   body: string;
   source: "panel" | "site";
 };
-type ContentResponse = { posts: PanelPost[]; reviews: PanelReview[]; error?: string };
+type PanelHeroLine = {
+  id: string;
+  before: string;
+  accent: string;
+  after: string;
+  sub: string;
+  tag: string;
+  pill: boolean;
+};
+type PanelFooterService = { id: string; href: string; label: string };
+type ContentResponse = {
+  posts: PanelPost[];
+  reviews: PanelReview[];
+  heroLines?: PanelHeroLine[];
+  footerServices?: PanelFooterService[];
+  error?: string;
+};
 type GenerateResponse = { error?: string; stored?: "file" | "supabase" | "both" };
 
 const STORE_NOTE: Record<string, string> = {
@@ -49,6 +65,15 @@ async function staffToken(): Promise<string> {
 export default function PanelContentPage() {
   const [posts, setPosts] = useState<PanelPost[]>([]);
   const [reviews, setReviews] = useState<PanelReview[]>([]);
+  const [heroLines, setHeroLines] = useState<PanelHeroLine[]>([]);
+  const [heroId, setHeroId] = useState("");
+  const [heroBefore, setHeroBefore] = useState("");
+  const [heroAccent, setHeroAccent] = useState("");
+  const [heroSub, setHeroSub] = useState("");
+  const [heroTag, setHeroTag] = useState("");
+  const [footerServices, setFooterServices] = useState<PanelFooterService[]>([]);
+  const [serviceLabel, setServiceLabel] = useState("");
+  const [serviceHref, setServiceHref] = useState("");
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -73,6 +98,8 @@ export default function PanelContentPage() {
     if (!res.ok) throw new Error(data.error || "İçerik okunamadı");
     setPosts(data.posts);
     setReviews(data.reviews);
+    setHeroLines(data.heroLines || []);
+    setFooterServices(data.footerServices || []);
   }, []);
 
   useEffect(() => {
@@ -109,6 +136,56 @@ export default function PanelContentPage() {
     } finally {
       setBusy(null);
     }
+  };
+
+  const resetHero = () => {
+    setHeroId("");
+    setHeroBefore("");
+    setHeroAccent("");
+    setHeroSub("");
+    setHeroTag("");
+  };
+
+  const saveHero = async () => {
+    setBusy("save-hero");
+    setError("");
+    setNote("");
+    try {
+      const token = await staffToken();
+      const res = await fetch("/api/panel/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          kind: "hero",
+          id: heroId || undefined,
+          before: heroBefore,
+          accent: heroAccent,
+          sub: heroSub,
+          tag: heroTag,
+          pill: Boolean(heroTag.trim()),
+        }),
+      });
+      const payload = (await res.json()) as GenerateResponse;
+      if (!res.ok) throw new Error(payload.error || "Cümle kaydedilemedi");
+      const editing = Boolean(heroId);
+      resetHero();
+      setNote(editing ? "Cümle güncellendi." : "Cümle eklendi ve anasayfada görünür.");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Cümle kaydedilemedi");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const editHero = (line: PanelHeroLine) => {
+    setHeroId(line.id);
+    setHeroBefore(line.before);
+    setHeroAccent(line.accent);
+    setHeroSub(line.sub);
+    setHeroTag(line.tag);
+    setError("");
+    setNote("");
   };
 
   const saveReview = async () => {
@@ -203,7 +280,35 @@ export default function PanelContentPage() {
     }
   };
 
-  const remove = async (kind: "blog" | "review", key: string, label: string) => {
+  const saveService = async () => {
+    setBusy("save-service");
+    setError("");
+    setNote("");
+    try {
+      const token = await staffToken();
+      const res = await fetch("/api/panel/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ kind: "footer-service", title: serviceLabel, href: serviceHref }),
+      });
+      const payload = (await res.json()) as GenerateResponse;
+      if (!res.ok) throw new Error(payload.error || "Hizmet eklenemedi");
+      setServiceLabel("");
+      setServiceHref("");
+      setNote(
+        payload.stored === "file"
+          ? "Footer’a eklendi. Canlı sitede kalması için supabase/footer-services.sql dosyasını SQL Editor’da bir kez çalıştırın."
+          : "Hizmet footer’a eklendi.",
+      );
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Hizmet eklenemedi");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const remove = async (kind: "blog" | "review" | "hero" | "footer-service", key: string, label: string) => {
     if (!window.confirm(`${label} silinsin mi? Siteden de kalkar.`)) return;
     setBusy(`delete-${kind}-${key}`);
     setError("");
@@ -217,7 +322,15 @@ export default function PanelContentPage() {
       });
       const payload = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(payload.error || "Silinemedi");
-      setNote(kind === "blog" ? "Yazı siteden kaldırıldı." : "Yorum siteden kaldırıldı.");
+      setNote(
+        kind === "blog"
+          ? "Yazı siteden kaldırıldı."
+          : kind === "hero"
+            ? "Cümle siteden kaldırıldı."
+            : kind === "footer-service"
+              ? "Hizmet footer’dan kaldırıldı. Üst menü aynı kaldı."
+              : "Yorum siteden kaldırıldı.",
+      );
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Silinemedi");
@@ -230,8 +343,133 @@ export default function PanelContentPage() {
     <div>
       <h1 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">İçerik</h1>
       <p className="mt-1 max-w-2xl text-sm text-ink-muted">
-        Yorum ve blog buradan eklenebilir veya silinebilir. Silinen kayıt anasayfa ve blog listesinden de kalkar.
+        Anasayfa cümleleri, footer hizmetleri, yorum ve blog buradan eklenir. Üst menüdeki Hizmetler listesi burada değişmez.
       </p>
+
+      <form
+        className="card mt-8 grid gap-3 p-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void saveHero();
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg font-semibold text-ink">Ana sayfa cümlesi</h2>
+          {heroId ? (
+            <button type="button" className="text-sm text-ink-muted" onClick={resetHero}>
+              Yeni cümle
+            </button>
+          ) : null}
+        </div>
+        <p className="text-sm text-ink-muted">Başlığın kırmızı kısmı vurgu alanına yazılır. Buton yazısı doluysa alttaki yuvarlak seçeneklere eklenir.</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="text-ink-muted">Başlık</span>
+            <input required value={heroBefore} onChange={(event) => setHeroBefore(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-surface-border px-3" placeholder="Sabiha Gökçen'de" />
+          </label>
+          <label className="block text-sm">
+            <span className="text-ink-muted">Kırmızı vurgu</span>
+            <input value={heroAccent} onChange={(event) => setHeroAccent(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-surface-border px-3" placeholder="7/24 teslim" />
+          </label>
+        </div>
+        <label className="block text-sm">
+          <span className="text-ink-muted">Alt cümle</span>
+          <input required value={heroSub} onChange={(event) => setHeroSub(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-surface-border px-3" placeholder="Uçağınız iner inmez aracınız hazır." />
+        </label>
+        <label className="block text-sm sm:max-w-xs">
+          <span className="text-ink-muted">Buton yazısı</span>
+          <input value={heroTag} onChange={(event) => setHeroTag(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-surface-border px-3" placeholder="SAW" />
+        </label>
+        <button type="submit" className="btn-primary w-fit" disabled={busy !== null}>
+          {busy === "save-hero" ? "Kaydediliyor…" : heroId ? "Cümleyi güncelle" : "Cümle ekle"}
+        </button>
+        {heroLines.length ? (
+          <ul className="mt-2 divide-y divide-surface-border border-t border-surface-border">
+            {heroLines.map((line) => (
+              <li key={line.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
+                <div>
+                  <p className="font-semibold text-ink">
+                    {line.before} {line.accent ? <span className="text-brand">{line.accent}</span> : null}
+                  </p>
+                  <p className="mt-1 text-sm text-ink-muted">{line.sub}</p>
+                  {line.tag ? <p className="mt-1 text-xs text-ink-muted">Buton: {line.tag}</p> : null}
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" className="btn-outline text-sm" disabled={busy !== null} onClick={() => editHero(line)}>
+                    Düzenle
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-outline text-sm"
+                    disabled={busy !== null}
+                    onClick={() => remove("hero", line.id, "Bu cümle")}
+                  >
+                    Sil
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-ink-muted">Henüz ek cümle yok. Sitedeki hazır cümleler duruyor.</p>
+        )}
+      </form>
+
+      <form
+        className="card mt-6 grid gap-3 p-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void saveService();
+        }}
+      >
+        <h2 className="font-display text-lg font-semibold text-ink">Footer hizmetleri</h2>
+        <p className="text-sm text-ink-muted">
+          Buradaki liste yalnızca sayfanın altındaki Hizmetler sütununu değiştirir. Üst menüdeki dört hizmet aynı kalır.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm">
+            <span className="text-ink-muted">Hizmet adı</span>
+            <input
+              required
+              value={serviceLabel}
+              onChange={(event) => setServiceLabel(event.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-surface-border px-3"
+              placeholder="Kampanyalar"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="text-ink-muted">Bağlantı</span>
+            <input
+              required
+              value={serviceHref}
+              onChange={(event) => setServiceHref(event.target.value)}
+              className="mt-1 h-10 w-full rounded-lg border border-surface-border px-3"
+              placeholder="/kampanyalar"
+            />
+          </label>
+        </div>
+        <button type="submit" className="btn-primary w-fit" disabled={busy !== null}>
+          {busy === "save-service" ? "Ekleniyor…" : "Hizmet ekle"}
+        </button>
+        <ul className="mt-2 divide-y divide-surface-border border-t border-surface-border">
+          {footerServices.map((item) => (
+            <li key={item.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <div>
+                <p className="font-semibold text-ink">{item.label}</p>
+                <p className="mt-1 text-sm text-ink-muted">{item.href}</p>
+              </div>
+              <button
+                type="button"
+                className="btn-outline text-sm"
+                disabled={busy !== null}
+                onClick={() => remove("footer-service", item.id, item.label)}
+              >
+                Kaldır
+              </button>
+            </li>
+          ))}
+        </ul>
+      </form>
 
       <div className="mt-6 flex flex-wrap gap-3">
         <button type="button" className="btn-primary" disabled={busy !== null} onClick={() => generate("review")}>

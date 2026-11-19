@@ -88,28 +88,40 @@
   }
 
   .boot-disc {
+    box-sizing: border-box;
     display: flex;
-    width: min(32rem, 90vw);
-    aspect-ratio: 1;
+    width: min(16rem, 80vw);
+    height: min(16rem, 80vw);
+    min-width: 0;
+    min-height: 0;
+    flex: none;
+    align-self: center;
+    justify-self: center;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 9999px;
+    gap: 0.65rem;
+    border-radius: 50%;
+    overflow: hidden;
     background: #343b48;
-    padding: 11% 12% 12%;
     box-shadow: 0 18px 50px rgba(17, 17, 17, 0.28);
   }
 
   .boot-logo {
-    width: min(15.5rem, 74%);
+    display: block;
+    width: 8rem;
+    max-width: 72%;
     height: auto;
+    flex: none;
   }
 
   .boot-car {
-    width: min(9.5rem, 48%);
+    display: block;
+    width: 5rem;
+    max-width: 46%;
     height: auto;
-    margin-top: 1.35rem;
     overflow: visible;
+    flex: none;
   }
 
   .boot-drive {
@@ -125,16 +137,6 @@
     transform-box: fill-box;
     transform-origin: center;
     animation: boot-wheel 0.7s linear infinite;
-  }
-
-  .boot-msg {
-    margin-top: 1.15rem;
-    max-width: 15rem;
-    text-align: center;
-    font-size: 0.95rem;
-    font-weight: 600;
-    line-height: 1.35;
-    color: #e30613;
   }
 
   @keyframes boot-drive {
@@ -163,28 +165,27 @@
     }
   }
 
-  @keyframes review-marquee {
-    from {
-      transform: translate3d(0, 0, 0);
-    }
-    to {
-      transform: translate3d(-50%, 0, 0);
-    }
-  }
-
   .review-marquee {
-    animation: review-marquee 42s linear infinite;
+    cursor: grab;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    touch-action: pan-y;
+    user-select: none;
   }
 
-  .review-marquee:hover {
-    animation-play-state: paused;
+  .review-marquee::-webkit-scrollbar {
+    display: none;
+  }
+
+  .review-marquee.is-dragging {
+    cursor: grabbing;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .boot-drive,
     .boot-dash,
-    .boot-wheel,
-    .review-marquee {
+    .boot-wheel {
       animation: none;
     }
   }

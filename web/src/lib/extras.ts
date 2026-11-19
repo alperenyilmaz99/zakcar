@@ -1,4 +1,5 @@
 import type { MessageKey } from "@/lib/i18n";
+import { resolveOfficeId } from "@/lib/offices";
 
 /** Günlük ek ücretler. booking.sql içindeki tutarlarla aynı kalmalı. */
 export const EXTRA_OPTIONS = [
@@ -48,6 +49,26 @@ export function depositForDays(days: number): number {
   if (total <= 3) return 5_000;
   if (total <= 10) return 10_000;
   return 20_000;
+}
+
+/** İstanbul Havalimanı (IST) bırakış ücreti. Depozitodan ayrıdır. */
+export const IST_DROP_FEE = 4_000;
+
+export function officeIsIst(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const id = resolveOfficeId(value);
+  if (id) return id === "iga";
+  const text = value.toLocaleUpperCase("tr-TR");
+  return text.includes("(IST)") || text.includes(" IGA") || text.startsWith("IGA") || text.includes("İSTANBUL HAVALİMANI") || text.includes("ISTANBUL HAVALIMANI");
+}
+
+/** IST alış veya bırakışta en az 5 gün. Diğer yerlerde en az 3 gün. */
+export function minimumRentalDays(pickup?: string | null, dropoff?: string | null): number {
+  return officeIsIst(pickup) || officeIsIst(dropoff) ? 5 : 3;
+}
+
+export function dropFeeFor(pickup?: string | null, dropoff?: string | null): number {
+  return officeIsIst(pickup) || officeIsIst(dropoff) ? IST_DROP_FEE : 0;
 }
 
 export function sanitizeExtraCodes(codes: unknown): ExtraId[] {

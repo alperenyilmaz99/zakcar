@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ManualReservationForm } from "@/components/panel/ManualReservationForm";
 import { downloadReservationPdf, fetchRentals, updateRentalStatus } from "@/lib/panel-api";
+import { stripLocaleNote } from "@/lib/reservation-copy";
 import { RENTAL_STATUS_LABEL } from "@/lib/panel-data";
 import type { Rental } from "@/lib/panel-types";
 import { RentalStatusBadge, formatDateTime } from "@/components/panel/Badges";
@@ -258,9 +259,9 @@ function RentalsInner() {
                     <dd className="font-semibold text-ink">{detail.flightNumber || "—"}</dd>
                   </div>
                 </div>
-                {detail.notes && (
-                  <div className="rounded-xl bg-surface-soft px-3 py-2 text-ink-muted">{detail.notes}</div>
-                )}
+                {stripLocaleNote(detail.notes) ? (
+                  <div className="rounded-xl bg-surface-soft px-3 py-2 text-ink-muted">{stripLocaleNote(detail.notes)}</div>
+                ) : null}
               </dl>
               <div className="flex flex-wrap gap-2">
                 <button

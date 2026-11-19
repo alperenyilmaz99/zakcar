@@ -4,7 +4,10 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage, type RGB } from "pdf-lib";
 import type { Reservation } from "./booking";
 import { getVehicleBySlug } from "./data";
-import { EXTRA_OPTIONS, extraAmount, extraCodesFromNotes, includedKm, rentalDays, sanitizeExtraCodes } from "./extras";
+import { applyPercent } from "./coupon-math";
+import { EXTRA_OPTIONS, IST_DROP_FEE, dropFeeFor, extraAmount, extraCodesFromNotes, includedKm, rentalDays, sanitizeExtraCodes } from "./extras";
+import { specLabel } from "./i18n";
+import { docLocale, fillDoc, reservationDoc, type DocLocale, type ReservationDoc } from "./reservation-copy";
 import { SITE } from "./constants";
 
 const PAGE_W = 595.28;
@@ -20,20 +23,6 @@ const GREEN_BG = rgb(0.88, 0.96, 0.91);
 const WHITE = rgb(1, 1, 1);
 const HEADER = rgb(0.1, 0.12, 0.16);
 
-const EXTRA_TR: Record<string, string> = {
-  driver: "Ek Sürücü",
-  young: "Genç Sürücü Paketi",
-  hgs: "HGS",
-  child: "Çocuk Koltuğu",
-  winter: "Kış Lastiği",
-};
-
-const REMINDERS = [
-  "Araç teslim alma sırasında T.C. kimlik belgenizi ve sürücü ehliyetinizi yanınızda bulundurmanız gerekmektedir.",
-  "Kiralama süresince oluşabilecek HGS / otoyol geçiş ücretleri ve trafik cezaları sürücü sorumluluğundadır.",
-  "Rezervasyon güncellemeleri veya sorularınız için 7/24 müşteri hizmetlerimizle iletişime geçebilirsiniz.",
-];
-
 export type ReservationPdfInput = {
   reservation: Reservation;
   customer: {
@@ -46,64 +35,82 @@ export type ReservationPdfInput = {
   extraCodes?: string[];
   coupon?: { code: string; percent: number };
   issuedAt?: Date;
+  locale?: DocLocale;
 };
 
 type Field = { label: string; value: string; color?: RGB; bold?: boolean };
 type PriceLine = { desc: string; duration: string; daily: string; total: string };
 
 export async function buildReservationPdf(input: ReservationPdfInput): Promise<Uint8Array> {
+  const locale = docLocale(input.locale);
+  const copy = reservationDoc(locale);
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
+  const fontFile = locale === "ar" ? "NotoNaskhArabic" : "NotoSans";
   const [regularBytes, boldBytes] = await Promise.all([
-    readFile(path.join(process.cwd(), "src/fonts/NotoSans-Regular.ttf")),
-    readFile(path.join(process.cwd(), "src/fonts/NotoSans-Bold.ttf")),
+    readFile(path.join(process.cwd(), "src/fonts", `${fontFile}-Regular.ttf`)),
+    readFile(path.join(process.cwd(), "src/fonts", `${fontFile}-Bold.ttf`)),
   ]);
-  const font = await pdf.embedFont(regularBytes, { subset: true });
-  const bold = await pdf.embedFont(boldBytes, { subset: true });
+  const embedded = {
+    font: await pdf.embedFont(regularBytes, { subset: true }),
+    bold: await pdf.embedFont(boldBytes, { subset: true }),
+  };
+  const font = locale === "ar" ? arabicFont(embedded.font) : embedded.font;
+  const bold = locale === "ar" ? arabicFont(embedded.bold) : embedded.bold;
   const logoBytes = await readFile(path.join(process.cwd(), "public/assets/zakcar/logo-header.png"));
   const logo = await pdf.embedPng(logoBytes);
   const page = pdf.addPage([PAGE_W, PAGE_H]);
 
-  const issued = istanbulParts(input.issuedAt ?? new Date());
-  const start = istanbulParts(new Date(input.reservation.startAt));
-  const end = istanbulParts(new Date(input.reservation.endAt));
+  const issued = istanbulParts(input.issuedAt ?? new Date(), copy.intl);
+  const start = istanbulParts(new Date(input.reservation.startAt), copy.intl);
+  const end = istanbulParts(new Date(input.reservation.endAt), copy.intl);
   const vehicle = getVehicleBySlug(input.modelSlug);
   const shortName = (input.reservation.vehicleName || vehicle?.name || "Araç").replace(
     /\s+Araç Kiralama$/i,
     "",
   );
-  const spec = `${vehicle?.transmission || "—"} / ${vehicle?.fuel || "—"}`;
-  const customerName = `${titleTr(input.customer.firstName)} ${input.customer.lastName.toLocaleUpperCase("tr-TR")}`.trim();
+  const spec = `${specLabel(locale, vehicle?.transmission || "—")} / ${specLabel(locale, vehicle?.fuel || "—")}`;
+  const customerName = `${titleCase(input.customer.firstName, copy.intl)} ${input.customer.lastName.toLocaleUpperCase(copy.intl)}`.trim();
   const contentW = PAGE_W - M * 2;
 
   let top = 34;
-  top = drawHeader(page, font, bold, logo, input.reservation.pnr, issued.date, top);
+  const pageOut = locale === "ar" ? arabicPage(page) : page;
+  top = drawHeader(pageOut, font, bold, logo, input.reservation.pnr, issued.date, top, copy);
   top += 10;
-  page.drawRectangle({ x: M, y: PAGE_H - top, width: contentW, height: 2.2, color: RED });
+  pageOut.drawRectangle({ x: M, y: PAGE_H - top, width: contentW, height: 2.2, color: RED });
   top += 16;
-  top = drawGreeting(page, font, bold, customerName, M, top, contentW);
+  top = drawGreeting(pageOut, font, bold, customerName, M, top, contentW, copy);
   top += 18;
-  top = drawSection(page, bold, "MÜŞTERİ VE ARAÇ BİLGİLERİ", top);
+  top = drawSection(pageOut, bold, copy.pdfCustomerSection, top);
   top += 8;
-  top = drawInfoCards(page, font, bold, input, customerName, shortName, spec, top, contentW);
+  top = drawInfoCards(pageOut, font, bold, input, customerName, shortName, spec, top, contentW, copy);
   top += 16;
-  top = drawSection(page, bold, "TESLİMAT VE İADE BİLGİLERİ", top);
+  top = drawSection(pageOut, bold, copy.pdfDeliverySection, top);
   top += 8;
-  top = drawDelivery(page, font, bold, input.reservation, start, end, top, contentW);
+  top = drawDelivery(pageOut, font, bold, input.reservation, start, end, top, contentW, copy);
   top += 16;
-  top = drawSection(page, bold, "FİYATLANDIRMA ÖZETİ", top);
+  top = drawSection(pageOut, bold, copy.pdfPriceSection, top);
   top += 8;
-  top = drawPrices(page, font, bold, input, shortName, end.weekday, top, contentW);
+  top = drawPrices(pageOut, font, bold, input, shortName, end.weekday, top, contentW, copy);
   top += 16;
   const days = rentalDays(input.reservation.startAt, input.reservation.endAt);
-  const kmLine = `${days} gün için yol hakkı ${includedKm(days).toLocaleString("tr-TR")} km’dir.`;
-  drawReminders(page, font, bold, top, contentW, kmLine);
+  const kmLine = fillDoc(copy.pdfKm, { days, km: includedKm(days).toLocaleString(copy.intl) });
+  drawReminders(pageOut, font, bold, top, contentW, kmLine, copy);
   drawFooter(page, font, issued.year);
 
   return pdf.save();
 }
 
-function drawHeader(page: PDFPage, font: PDFFont, bold: PDFFont, logo: PDFImage, pnr: string, date: string, top: number) {
+function drawHeader(
+  page: PDFPage,
+  font: PDFFont,
+  bold: PDFFont,
+  logo: PDFImage,
+  pnr: string,
+  date: string,
+  top: number,
+  copy: ReservationDoc,
+) {
   const logoH = 52;
   const logoW = (logo.width / logo.height) * logoH;
   const logoY = PAGE_H - top - logoH;
@@ -111,19 +118,28 @@ function drawHeader(page: PDFPage, font: PDFFont, bold: PDFFont, logo: PDFImage,
 
   const right = PAGE_W - M;
   const titleY = logoY + logoH - 16;
-  drawRight(page, "REZERVASYON ONAYI", right, titleY, bold, 13, INK);
-  drawRight(page, `No: #${pnr}`, right, titleY - 16, bold, 10, RED);
-  drawRight(page, `Tarih: ${date}`, right, titleY - 30, font, 8, MUTED);
+  drawRight(page, copy.pdfTitle, right, titleY, bold, 13, INK);
+  drawRight(page, `${copy.pdfNo}: #${pnr}`, right, titleY - 16, bold, 10, RED);
+  drawRight(page, `${copy.pdfDate}: ${date}`, right, titleY - 30, font, 8, MUTED);
   return top + logoH + 4;
 }
 
-function drawGreeting(page: PDFPage, font: PDFFont, bold: PDFFont, name: string, x: number, top: number, width: number) {
+function drawGreeting(
+  page: PDFPage,
+  font: PDFFont,
+  bold: PDFFont,
+  name: string,
+  x: number,
+  top: number,
+  width: number,
+  copy: ReservationDoc,
+) {
   const h = 38;
   const y = PAGE_H - top - h;
   drawRound(page, x, y, width, h, 6, { borderColor: LINE, borderWidth: 1, color: WHITE });
   page.drawRectangle({ x: x + 1, y: y + 8, width: 3, height: h - 16, color: RED });
 
-  const badge = "REZERVASYON ONAYLANDI";
+  const badge = copy.pdfBadge;
   const badgeSize = 7;
   const badgeW = bold.widthOfTextAtSize(badge, badgeSize) + 16;
   const badgeH = 16;
@@ -132,30 +148,32 @@ function drawGreeting(page: PDFPage, font: PDFFont, bold: PDFFont, name: string,
   drawRound(page, badgeX, badgeY, badgeW, badgeH, 4, { color: GREEN_BG });
   page.drawText(badge, { x: badgeX + 8, y: badgeY + 4.5, size: badgeSize, font: bold, color: GREEN });
 
-  const greeting = `Sayın ${name}, araç rezervasyon talebiniz başarıyla oluşturulmuştur.`;
+  const greeting = fillDoc(copy.pdfGreeting, { name });
   const max = badgeX - x - 22;
   const size = fitSize(greeting, font, 8.5, max);
   page.drawText(greeting, { x: x + 14, y: y + 15, size, font, color: INK });
   return top + h;
 }
 
-function flightFields(value: string | null | undefined): Field[] {
+function flightFields(value: string | null | undefined, copy: ReservationDoc): Field[] {
   const raw = (value || "").trim();
   if (!raw) return [];
   const parts = raw.split(" | ").map((part) => part.trim()).filter(Boolean);
-  if (parts.length === 1 && !parts[0].includes(":")) return [{ label: "Uçuş No:", value: raw }];
+  if (parts.length === 1 && !parts[0].includes(":")) return [{ label: copy.pdfFlight, value: raw }];
   return parts.map((part) => {
     const split = part.indexOf(":");
-    if (split < 0) return { label: "Uçuş No:", value: part };
+    if (split < 0) return { label: copy.pdfFlight, value: part };
     const key = part.slice(0, split).trim().toLocaleLowerCase("tr");
     const text = part.slice(split + 1).trim() || "—";
     const pretty = key.startsWith("geli")
-      ? "Geliş Uçuş No"
+      ? copy.pdfArrival
       : key.startsWith("dön") || key.startsWith("don")
-        ? "Dönüş Uçuş No"
+        ? copy.pdfReturn
         : key === "not"
-          ? "Not"
-          : part.slice(0, split).trim();
+          ? copy.pdfNote
+          : key.startsWith("ehliyet")
+            ? copy.pdfLicense
+            : part.slice(0, split).trim();
     return { label: `${pretty}:`, value: text };
   });
 }
@@ -170,17 +188,18 @@ function drawInfoCards(
   spec: string,
   top: number,
   contentW: number,
+  copy: ReservationDoc,
 ) {
   const left: Field[] = [
-    { label: "Müşteri Adı Soyadı:", value: customerName, bold: true },
-    { label: "Telefon:", value: input.customer.phone },
+    { label: copy.pdfCustomer, value: customerName, bold: true },
+    { label: copy.pdfPhone, value: input.customer.phone },
   ];
   const birth = birthLabel(input.customer.birthDate);
-  if (birth) left.push({ label: "Doğum Tarihi:", value: birth });
-  for (const field of flightFields(input.reservation.flightNumber)) left.push(field);
+  if (birth) left.push({ label: copy.pdfBirth, value: birth });
+  for (const field of flightFields(input.reservation.flightNumber, copy)) left.push(field);
   const right: Field[] = [
-    { label: "Kiralanan Araç:", value: shortName, color: RED, bold: true },
-    { label: "Vites / Yakıt:", value: spec },
+    { label: copy.pdfVehicle, value: shortName, color: RED, bold: true },
+    { label: copy.pdfSpec, value: spec },
   ];
   return drawPair(page, font, bold, left, right, top, contentW);
 }
@@ -194,14 +213,15 @@ function drawDelivery(
   end: IstanbulStamp,
   top: number,
   contentW: number,
+  copy: ReservationDoc,
 ) {
   const left: Field[] = [
-    { label: "Alış Tarihi & Saati:", value: `${start.date} - ${start.time}`, bold: true },
-    { label: "Alış Lokasyonu:", value: reservation.pickup || "—" },
+    { label: copy.pdfPickupWhen, value: `${start.date} - ${start.time}`, bold: true },
+    { label: copy.pdfPickupWhere, value: reservation.pickup || "—" },
   ];
   const right: Field[] = [
-    { label: "İade Tarihi & Saati:", value: `${end.date} - ${end.time}`, bold: true },
-    { label: "İade Lokasyonu:", value: reservation.dropoff || reservation.pickup || "—" },
+    { label: copy.pdfReturnWhen, value: `${end.date} - ${end.time}`, bold: true },
+    { label: copy.pdfReturnWhere, value: reservation.dropoff || reservation.pickup || "—" },
   ];
   return drawPair(page, font, bold, left, right, top, contentW);
 }
@@ -252,6 +272,7 @@ function drawPrices(
   returnWeekday: string,
   top: number,
   contentW: number,
+  copy: ReservationDoc,
 ) {
   const reservation = input.reservation;
   const days = Math.max(1, reservation.days || 1);
@@ -260,37 +281,45 @@ function drawPrices(
   const extras = picked.length ? picked : extraCodesFromNotes(reservation.notes);
   const rentalTotal = daily * days;
   const gross = rentalTotal + extraAmount(extras, days);
-  const payable = Number(reservation.totalPrice ?? gross);
-  const discount = Math.max(0, Math.round(gross) - Math.round(payable));
-  const duration = `${days} Gün (${returnWeekday} iade)`;
+  const istDrop = dropFeeFor(reservation.pickup, reservation.dropoff);
+  const payable = Number(reservation.totalPrice ?? gross + istDrop);
+  const discounted = input.coupon?.percent ? applyPercent(gross, input.coupon.percent).total : gross;
+  const includeDrop =
+    istDrop > 0 && Math.abs(payable - (discounted + istDrop)) <= Math.abs(payable - discounted);
+  const dropFee = includeDrop ? IST_DROP_FEE : 0;
+  const discount = Math.max(0, Math.round((gross + dropFee) * 100) - Math.round(payable * 100)) / 100;
+  const duration = fillDoc(copy.pdfDuration, { days, weekday: returnWeekday });
   const lines: PriceLine[] = [
     {
-      desc: `${shortName} Araç Kiralama Bedeli`,
+      desc: fillDoc(copy.pdfRental, { name: shortName }),
       duration,
-      daily: money(daily),
-      total: money(rentalTotal),
+      daily: money(daily, copy),
+      total: money(rentalTotal, copy),
     },
   ];
   for (const id of extras) {
     const option = EXTRA_OPTIONS.find((item) => item.id === id);
     if (!option) continue;
     lines.push({
-      desc: EXTRA_TR[id] || id,
+      desc: copy.extras[id] || id,
       duration,
-      daily: money(option.dailyTry),
-      total: money(option.dailyTry * days),
+      daily: money(option.dailyTry, copy),
+      total: money(option.dailyTry * days, copy),
     });
+  }
+  if (dropFee > 0) {
+    lines.push({ desc: copy.pdfDrop, duration: "", daily: "", total: money(dropFee, copy) });
   }
   if (discount > 0) {
     const coupon = input.coupon ? ` (${input.coupon.code} %${input.coupon.percent})` : "";
-    lines.push({ desc: `İndirim${coupon}`, duration: "", daily: "", total: money(-discount) });
+    lines.push({ desc: `${copy.pdfDiscount}${coupon}`, duration: "", daily: "", total: money(-discount, copy) });
   }
 
   const cols = [contentW * 0.4, contentW * 0.24, contentW * 0.18, contentW * 0.18];
   const headerH = 24;
   let y = PAGE_H - top - headerH;
   drawRound(page, M, y, contentW, headerH, 4, { color: HEADER });
-  const headers = ["AÇIKLAMA", "SÜRE", "GÜNLÜK FİYAT", "TOPLAM TUTAR"];
+  const headers = [copy.pdfColDesc, copy.pdfColDuration, copy.pdfColDaily, copy.pdfColTotal];
   let hx = M;
   headers.forEach((label, index) => {
     const size = 7;
@@ -311,8 +340,8 @@ function drawPrices(
   const totalH = 26;
   y = PAGE_H - top - totalH;
   drawRound(page, M, y, contentW, totalH, 4, { color: SOFT });
-  page.drawText("Ödenecek Toplam Tutar", { x: M + 10, y: y + 9, size: 9, font: bold, color: INK });
-  const totalText = money(payable);
+  page.drawText(copy.pdfPayable, { x: M + 10, y: y + 9, size: 9, font: bold, color: INK });
+  const totalText = money(payable, copy);
   const totalW = bold.widthOfTextAtSize(totalText, 11);
   page.drawText(totalText, { x: PAGE_W - M - 10 - totalW, y: y + 8, size: 11, font: bold, color: RED });
   top += totalH;
@@ -320,7 +349,7 @@ function drawPrices(
   const deposit = Number(reservation.deposit || 0);
   if (deposit > 0) {
     top += 8;
-    page.drawText(`Depozito: ${money(deposit)}`, {
+    page.drawText(`${copy.pdfDeposit}: ${money(deposit, copy)}`, {
       x: M,
       y: PAGE_H - top - 10,
       size: 8,
@@ -344,18 +373,26 @@ function drawPriceRow(page: PDFPage, font: PDFFont, line: PriceLine, y: number, 
   });
 }
 
-function drawReminders(page: PDFPage, font: PDFFont, bold: PDFFont, top: number, contentW: number, kmLine: string) {
-  top = drawSection(page, bold, "ÖNEMLİ HATIRLATMALAR", top);
+function drawReminders(
+  page: PDFPage,
+  font: PDFFont,
+  bold: PDFFont,
+  top: number,
+  contentW: number,
+  kmLine: string,
+  copy: ReservationDoc,
+) {
+  top = drawSection(page, bold, copy.pdfSectionReminders, top);
   top += 6;
   const innerW = contentW - 28;
-  const lines = [kmLine, ...REMINDERS].flatMap((item) => wrap(`•  ${item}`, font, 8, innerW));
+  const lines = [kmLine, ...copy.pdfReminders].flatMap((item) => wrap(`•  ${item}`, font, 8, innerW));
   const h = lines.length * 12 + 16;
   const y = PAGE_H - top - h;
   drawRound(page, M, y, contentW, h, 6, { borderColor: LINE, borderWidth: 1, color: WHITE });
   lines.forEach((line, index) => {
     page.drawText(line, { x: M + 14, y: y + h - 18 - index * 12, size: 8, font, color: MUTED });
   });
-  const farewell = "Zak Rent A Car ailesi olarak iyi yolculuklar dileriz!";
+  const farewell = copy.pdfFarewell;
   const size = 10;
   const textW = bold.widthOfTextAtSize(farewell, size);
   page.drawText(farewell, {
@@ -431,16 +468,55 @@ function wrap(text: string, font: PDFFont, size: number, max: number) {
   return lines;
 }
 
-function money(value: number) {
-  const rounded = Math.round(value);
-  const sign = rounded < 0 ? "-" : "";
-  return `${sign}${Math.abs(rounded).toLocaleString("tr-TR")} TL`;
+function visualArabic(input: string): string {
+  const runs: { ar: boolean; text: string }[] = [];
+  for (const ch of input) {
+    const ar = /[\u0600-\u06FF\u0750-\u077F]/.test(ch);
+    const last = runs[runs.length - 1];
+    if (!last || last.ar !== ar) runs.push({ ar, text: ch });
+    else last.text += ch;
+  }
+  return runs
+    .reverse()
+    .map((run) => (run.ar ? [...run.text].reverse().join("") : run.text))
+    .join("");
 }
 
-function titleTr(value: string) {
+function arabicPage(page: PDFPage): PDFPage {
+  return new Proxy(page, {
+    get(target, prop, receiver) {
+      if (prop === "drawText") {
+        return (text: string, options: Parameters<PDFPage["drawText"]>[1]) =>
+          target.drawText(visualArabic(text), options);
+      }
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(target) : value;
+    },
+  });
+}
+
+function arabicFont(font: PDFFont): PDFFont {
+  return new Proxy(font, {
+    get(target, prop, receiver) {
+      if (prop === "widthOfTextAtSize") {
+        return (text: string, size: number) => target.widthOfTextAtSize(visualArabic(text), size);
+      }
+      const value = Reflect.get(target, prop, receiver);
+      return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(target) : value;
+    },
+  });
+}
+
+function money(value: number, copy: ReservationDoc) {
+  const rounded = Math.round(value);
+  const sign = rounded < 0 ? "-" : "";
+  return `${sign}${Math.abs(rounded).toLocaleString(copy.intl)} TL`;
+}
+
+function titleCase(value: string, intl: string) {
   const text = value.trim();
   if (!text) return "";
-  return text.charAt(0).toLocaleUpperCase("tr-TR") + text.slice(1);
+  return text.charAt(0).toLocaleUpperCase(intl) + text.slice(1);
 }
 
 function birthLabel(iso?: string) {
@@ -451,9 +527,9 @@ function birthLabel(iso?: string) {
 
 type IstanbulStamp = { date: string; time: string; weekday: string; year: string };
 
-function istanbulParts(date: Date): IstanbulStamp {
+function istanbulParts(date: Date, intl: string): IstanbulStamp {
   const map: Record<string, string> = {};
-  for (const part of new Intl.DateTimeFormat("tr-TR", {
+  for (const part of new Intl.DateTimeFormat(intl, {
     timeZone: "Europe/Istanbul",
     day: "2-digit",
     month: "2-digit",
@@ -469,7 +545,7 @@ function istanbulParts(date: Date): IstanbulStamp {
   return {
     date: `${map.day}/${map.month}/${map.year}`,
     time: `${map.hour}:${map.minute}`,
-    weekday: weekday ? weekday.charAt(0).toLocaleUpperCase("tr-TR") + weekday.slice(1) : "",
+    weekday: weekday ? weekday.charAt(0).toLocaleUpperCase(intl) + weekday.slice(1) : "",
     year: map.year || String(date.getFullYear()),
   };
 }

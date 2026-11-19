@@ -6,7 +6,8 @@ import type { Vehicle } from "@/lib/types";
 import { vehicleImagePath } from "@/lib/data";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { formatMoney, parseTryAmount, specLabel } from "@/lib/i18n";
-import { depositForDays } from "@/lib/extras";
+import { depositForDays, dropFeeFor } from "@/lib/extras";
+import { useSearch } from "@/hooks/useSearch";
 import { formatTryAmount } from "@/lib/format";
 
 interface VehicleCardProps {
@@ -19,6 +20,8 @@ interface VehicleCardProps {
 
 export function VehicleCard({ vehicle, onSelect, available, days, priceOnly }: VehicleCardProps) {
   const { t, formatPrice, locale, currency } = usePrefs();
+  const { search } = useSearch();
+  const dropFee = dropFeeFor(search.pickup, search.differentDrop ? search.drop : search.pickup);
   const shortName = vehicle.name
     .replace(" Araç Kiralama", "")
     .replace(new RegExp(`^${vehicle.brand}\\s*`, "i"), "")
@@ -66,10 +69,18 @@ export function VehicleCard({ vehicle, onSelect, available, days, priceOnly }: V
 
       <div className="relative px-4 pb-2 pt-3">
         <div className="mb-2 flex items-start justify-between gap-2">
-          <p className="text-xs text-ink-muted">
-            {t("card.deposit")}:{" "}
-            <span className="font-medium text-ink">{formatPrice(formatTryAmount(depositForDays(days ?? 1)))}</span>
-          </p>
+          <div>
+            <p className="text-xs text-ink-muted">
+              {t("card.deposit")}:{" "}
+              <span className="font-medium text-ink">{formatPrice(formatTryAmount(depositForDays(days ?? 1)))}</span>
+            </p>
+            {dropFee > 0 ? (
+              <p className="mt-1 text-xs text-ink-muted">
+                {t("book.dropFee")}:{" "}
+                <span className="font-medium text-ink">{formatPrice(formatTryAmount(dropFee))}</span>
+              </p>
+            ) : null}
+          </div>
           <span className="rounded bg-brand-light px-2 py-0.5 text-[11px] font-semibold text-brand-dark">
             {specLabel(locale, vehicle.group)}
           </span>

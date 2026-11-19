@@ -6,6 +6,7 @@ import { PromoBanners } from "@/components/home/PromoBanners";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
+import type { HeroLine } from "@/lib/content-types";
 import type { MessageKey } from "@/lib/i18n";
 
 const MOTTOS = [
@@ -64,28 +65,76 @@ const MOTTOS = [
   pill: boolean;
 }[];
 
-export function Hero() {
+type Slide = {
+  id: string;
+  a: string;
+  b: string;
+  c: string;
+  sub: string;
+  tag: string;
+  accent: string;
+  pill: boolean;
+};
+
+export function Hero({ backdrop }: { backdrop: string }) {
   const [active, setActive] = useState(0);
+  const [extra, setExtra] = useState<HeroLine[]>([]);
   const { t } = usePrefs();
 
   useEffect(() => {
+    let cancelled = false;
+    fetch("/api/hero-lines")
+      .then((res) => (res.ok ? res.json() : { lines: [] }))
+      .then((data: { lines?: HeroLine[] }) => {
+        if (!cancelled && Array.isArray(data.lines)) setExtra(data.lines);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const slides: Slide[] = [
+    ...MOTTOS.map((item) => ({
+      id: item.a,
+      a: t(item.a),
+      b: t(item.b),
+      c: t(item.c),
+      sub: t(item.sub),
+      tag: t(item.tag),
+      accent: item.accent,
+      pill: item.pill,
+    })),
+    ...extra.map((line) => ({
+      id: line.id,
+      a: line.before,
+      b: line.accent,
+      c: line.after,
+      sub: line.sub,
+      tag: line.tag,
+      accent: "#E30613",
+      pill: Boolean(line.pill && line.tag),
+    })),
+  ];
+  const index = active % slides.length;
+
+  useEffect(() => {
     const id = window.setInterval(() => {
-      setActive((i) => (i + 1) % MOTTOS.length);
+      setActive((i) => (i + 1) % slides.length);
     }, 5500);
     return () => window.clearInterval(id);
-  }, [active]);
+  }, [slides.length]);
 
   return (
     <section className="relative text-ink">
       <div className="container-page relative flex flex-col justify-center pb-2 pt-14 lg:pt-16">
         <div className="mx-auto grid max-w-3xl text-center">
-          {MOTTOS.map((item, i) => {
-            const isActive = i === active;
-            const after = t(item.c);
+          {slides.map((item, i) => {
+            const isActive = i === index;
             const Title = isActive ? "h1" : "div";
             return (
               <div
-                key={item.tag}
+                key={item.id}
                 className={`col-start-1 row-start-1 ${isActive ? "animate-hero-copy" : "invisible"}`}
                 aria-hidden={!isActive}
               >
@@ -93,12 +142,17 @@ export function Hero() {
                   {SITE.shortName} Rent A Car
                 </p>
                 <Title className="mt-4 font-display text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-5xl lg:text-[3.25rem]">
-                  {t(item.a)}{" "}
-                  <span style={{ color: item.accent }}>{t(item.b)}</span>
-                  {after ? ` ${after}` : ""}
+                  {item.a}
+                  {item.b ? (
+                    <>
+                      {" "}
+                      <span style={{ color: item.accent }}>{item.b}</span>
+                    </>
+                  ) : null}
+                  {item.c ? ` ${item.c}` : ""}
                 </Title>
                 <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-ink-muted sm:text-base lg:text-lg">
-                  {t(item.sub)}
+                  {item.sub}
                 </p>
               </div>
             );
@@ -106,23 +160,23 @@ export function Hero() {
         </div>
 
         <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-2">
-          {MOTTOS.map((item, i) =>
+          {slides.map((item, i) =>
             item.pill ? (
               <button
-                key={item.tag}
+                key={item.id}
                 type="button"
                 onClick={() => setActive(i)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition sm:text-sm ${
-                  i === active ? "shadow-md" : "border border-surface-border bg-white text-ink-muted hover:border-brand hover:text-brand"
+                  i === index ? "shadow-md" : "border border-surface-border bg-white text-ink-muted hover:border-brand hover:text-brand"
                 }`}
                 style={
-                  i === active
+                  i === index
                     ? { backgroundColor: item.accent, color: "#fff" }
                     : undefined
                 }
-                aria-pressed={i === active}
+                aria-pressed={i === index}
               >
-                {t(item.tag)}
+                {item.tag}
               </button>
             ) : null
           )}
@@ -130,7 +184,7 @@ export function Hero() {
 
       </div>
       <div className="relative mt-8 w-full lg:mt-10">
-        <HeroBackdrop />
+        <HeroBackdrop src={backdrop} />
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-36 pt-6 sm:pb-44 sm:pt-8 lg:pb-52">
           <SearchBar />
         </div>

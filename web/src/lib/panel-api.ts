@@ -1,3 +1,4 @@
+import { stripLocaleNote } from "@/lib/reservation-copy";
 import { createClient } from "@/lib/supabase/client";
 import type { FleetStatus, FleetVehicle, PanelStats, Rental, RentalStatus } from "@/lib/panel-types";
 import {
@@ -110,7 +111,7 @@ function mapRental(row: RentalRow): Rental {
     totalPrice: money(row.total_price_try),
     deposit: money(row.deposit_try),
     flightNumber: row.flight_number || "",
-    notes: row.notes || undefined,
+    notes: stripLocaleNote(row.notes) || undefined,
   };
 }
 
@@ -592,26 +593,6 @@ export async function releaseFleetVehicle(recordId: string): Promise<void> {
     await updateFleetUnit(recordId, { status: "musait" });
     return;
   }
-  if (error) throw error;
-}
-
-export async function saveFleetLocation(
-  recordId: string,
-  lat: number,
-  lng: number,
-  label: string,
-): Promise<void> {
-  const supabase = createClient();
-  const { error } = await supabase.from("vehicle_locations").upsert(
-    {
-      fleet_vehicle_id: recordId,
-      lat,
-      lng,
-      location_label: label,
-      recorded_at: new Date().toISOString(),
-    },
-    { onConflict: "fleet_vehicle_id" },
-  );
   if (error) throw error;
 }
 

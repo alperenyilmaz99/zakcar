@@ -2,26 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-const MESSAGES: Record<string, string> = {
-  tr: "İnternet bağlantınız kontrol ediliyor..",
-  en: "Checking your internet connection..",
-  de: "Ihre Internetverbindung wird geprüft..",
-  ar: "يتم التحقق من اتصال الإنترنت..",
-  ru: "Проверка подключения к интернету..",
-};
-
 export function BootSplash() {
   const [phase, setPhase] = useState<"show" | "hide" | "gone">("show");
-  const [message, setMessage] = useState(MESSAGES.tr);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("zakcar_prefs");
-      const locale = raw ? (JSON.parse(raw) as { locale?: string }).locale : "tr";
-      if (locale && MESSAGES[locale]) setMessage(MESSAGES[locale]);
-    } catch {
-      /* Türkçe kalsın */
-    }
     const hideAt = window.setTimeout(() => setPhase("hide"), 1400);
     const goneAt = window.setTimeout(() => setPhase("gone"), 1850);
     return () => {
@@ -33,7 +17,7 @@ export function BootSplash() {
   if (phase === "gone") return null;
 
   return (
-    <div className={`boot${phase === "hide" ? " is-done" : ""}`} role="status" aria-live="polite">
+    <div className={`boot${phase === "hide" ? " is-done" : ""}`}>
       <div className="boot-disc">
         <img src="/assets/zakcar/logo-splash.png" alt="Zak Rent A Car" className="boot-logo" />
         <svg className="boot-car" viewBox="0 0 168 56" aria-hidden="true">
@@ -61,7 +45,6 @@ export function BootSplash() {
             <circle cx="118" cy="40" r="1.6" fill="#fff" />
           </g>
         </svg>
-        <p className="boot-msg">{message}</p>
       </div>
     </div>
   );

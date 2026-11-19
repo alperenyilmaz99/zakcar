@@ -9,6 +9,7 @@ import { specLabel } from "@/lib/i18n";
 import { useSearch } from "@/hooks/useSearch";
 import { resolveOfficeId } from "@/lib/offices";
 import { includedKm, rentalDays } from "@/lib/extras";
+import { localizeHref } from "@/lib/localized-paths";
 
 const GROUPS = ["Ekonomik", "SUV", "Minibüs", "Lüks"] as const;
 const FUELS = ["Elektrik", "Dizel", "Benzin", "Hibrit"] as const;
@@ -135,7 +136,7 @@ export function VehicleCatalog({ vehicles, initialGroup }: VehicleCatalogProps) 
                   onSelect={
                     availability && availability[v.slug] === 0
                       ? undefined
-                      : (slug) => router.push(`/rezervasyon?vehicle=${slug}`)
+                      : (slug) => router.push(localizeHref(`/rezervasyon?vehicle=${slug}`, locale))
                   }
                 />
               ))}

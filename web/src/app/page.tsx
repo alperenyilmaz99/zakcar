@@ -3,12 +3,13 @@ import { HomeSections } from "@/components/home/HomeSections";
 import { getPublishedBlogPosts } from "@/lib/blog";
 import { listHiddenKeys, listReviews } from "@/lib/generated-content";
 import { getBrands, getGroups } from "@/lib/data";
+import { loadBackdropImage } from "@/lib/promo-file-store";
 import { loadPublicVehicles } from "@/lib/public-vehicles";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const vehicles = (await loadPublicVehicles()).slice(0, 12);
+  const [vehicles, backdrop] = await Promise.all([loadPublicVehicles().then((items) => items.slice(0, 12)), loadBackdropImage()]);
   const groups = getGroups();
   const brands = getBrands();
   const [published, savedReviews, hiddenReviewIds] = await Promise.all([
@@ -22,7 +23,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Hero />
+      <Hero backdrop={backdrop} />
       <HomeSections
         vehicles={vehicles}
         brands={brands}

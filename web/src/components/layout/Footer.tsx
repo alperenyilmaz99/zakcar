@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { GOOGLE_PLACE, SITE } from "@/lib/constants";
 import { useDistricts } from "@/hooks/useDistricts";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
+import { DEFAULT_FOOTER_SERVICES, type FooterService } from "@/lib/footer-services";
 
 const AIRPORTS = [
   { href: "/sabiha-gokcen-havalimani-arac-kiralama", labelKey: "footer.airportSaw" as const },
@@ -23,6 +25,21 @@ const POPULAR_CARS = [
 export function Footer() {
   const { t } = usePrefs();
   const districts = useDistricts();
+  const [savedServices, setSavedServices] = useState<FooterService[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/footer-services")
+      .then((res) => res.json())
+      .then((data: { configured?: boolean; items?: FooterService[] }) => {
+        if (!active || !data.configured || !Array.isArray(data.items)) return;
+        setSavedServices(data.items);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const company = [
     { href: "/hakkimizda", label: t("nav.about") },
@@ -30,6 +47,10 @@ export function Footer() {
     { href: "/blog", label: t("nav.blog") },
     { href: "/rezervasyon-sorgulama", label: t("nav.lookup") },
   ];
+  const services = (savedServices ?? DEFAULT_FOOTER_SERVICES).map((item) => ({
+    href: item.href,
+    label: item.labelKey ? t(item.labelKey) : item.label,
+  }));
   const info = [
     { href: "/kiralama-kosullari", label: t("nav.terms") },
     { href: "/kiralama-sozlesmesi", label: t("nav.contract") },
@@ -45,8 +66,9 @@ export function Footer() {
 
   return (
     <footer className="mt-16 bg-ink text-white">
-      <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="container-page grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-5">
         <NavCol title={SITE.shortName} items={company} />
+        {services.length ? <NavCol title={t("nav.services")} items={services} /> : null}
         <NavCol title={t("footer.info")} items={info} />
         <NavCol title={t("footer.support")} items={support} />
 

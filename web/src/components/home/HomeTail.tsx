@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { HOME_REVIEW_CARDS } from "@/lib/home-reviews";
 import { defaultPromos, localizedPromo, type PromoCover } from "@/lib/promo";
@@ -198,11 +198,116 @@ function ReviewMarquee({
 }: {
   items: { id: string; title: string; body: string; author: string; place: string; masked?: boolean }[];
 }) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const drag = useRef({ active: false, x: 0 });
+  const over = useRef(false);
+  const paused = useRef(false);
+  const resumeAt = useRef(0);
+
+  useEffect(() => {
+    const node = scrollerRef.current;
+    if (!node || items.length === 0) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let frame = 0;
+    let last = performance.now();
+    let resumeTimer = 0;
+
+    const wrap = () => {
+      const half = node.scrollWidth / 2;
+      if (half < 2) return;
+      if (node.scrollLeft >= half) node.scrollLeft -= half;
+      else if (node.scrollLeft < 0) node.scrollLeft += half;
+    };
+
+    const tick = (now: number) => {
+      const dt = Math.min(34, now - last);
+      last = now;
+      const half = node.scrollWidth / 2;
+      if (!reduce && !paused.current && now >= resumeAt.current && half > 1) {
+        node.scrollLeft += (half / 42000) * dt;
+      }
+      wrap();
+      frame = window.requestAnimationFrame(tick);
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+      event.preventDefault();
+      paused.current = true;
+      node.scrollLeft += event.deltaX;
+      wrap();
+      window.clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(() => {
+        if (over.current || drag.current.active) return;
+        paused.current = false;
+        resumeAt.current = performance.now() + 700;
+      }, 80);
+    };
+
+    frame = window.requestAnimationFrame(tick);
+    node.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(resumeTimer);
+      node.removeEventListener("wheel", onWheel);
+    };
+  }, [items.length]);
+
   if (items.length === 0) return null;
   const loop = items.length === 1 ? [...items, ...items, ...items, ...items] : items;
+
+  const hold = () => {
+    paused.current = true;
+    resumeAt.current = Number.POSITIVE_INFINITY;
+  };
+
+  const release = () => {
+    paused.current = false;
+    resumeAt.current = performance.now() + 900;
+  };
+
   return (
-    <div className="relative mt-10 overflow-hidden">
-      <div className="review-marquee flex w-max items-stretch">
+    <div
+      ref={scrollerRef}
+      className="review-marquee relative mt-10"
+      onPointerEnter={() => {
+        over.current = true;
+        hold();
+      }}
+      onPointerLeave={() => {
+        over.current = false;
+        if (!drag.current.active) release();
+      }}
+      onPointerDown={(event) => {
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+        const node = scrollerRef.current;
+        if (!node) return;
+        drag.current = { active: true, x: event.clientX };
+        hold();
+        node.setPointerCapture(event.pointerId);
+        node.classList.add("is-dragging");
+      }}
+      onPointerMove={(event) => {
+        const node = scrollerRef.current;
+        if (!node || !drag.current.active) return;
+        node.scrollLeft -= event.clientX - drag.current.x;
+        drag.current.x = event.clientX;
+      }}
+      onPointerUp={(event) => {
+        const node = scrollerRef.current;
+        drag.current.active = false;
+        node?.classList.remove("is-dragging");
+        if (node?.hasPointerCapture(event.pointerId)) node.releasePointerCapture(event.pointerId);
+        if (over.current) hold();
+        else release();
+      }}
+      onPointerCancel={() => {
+        drag.current.active = false;
+        scrollerRef.current?.classList.remove("is-dragging");
+        release();
+      }}
+    >
+      <div className="flex w-max items-stretch">
         {[0, 1].map((copy) =>
           loop.map((review, index) => (
             <div key={`${copy}-${review.id}-${index}`} className="flex w-[min(78vw,22rem)] shrink-0 pe-4" aria-hidden={copy === 1}>

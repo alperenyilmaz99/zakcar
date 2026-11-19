@@ -8,7 +8,7 @@ import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { useCustomer } from "@/hooks/useCustomer";
 import { vehicleImagePath } from "@/lib/data";
 import { applyPercent, normalizeCouponCode } from "@/lib/coupon-math";
-import { EXTRA_OPTIONS, depositForDays, extraAmount, includedKm, rentalDays, type ExtraId } from "@/lib/extras";
+import { EXTRA_OPTIONS, depositForDays, dropFeeFor, extraAmount, includedKm, minimumRentalDays, rentalDays, type ExtraId } from "@/lib/extras";
 import { parseTryAmount, specLabel } from "@/lib/i18n";
 import { formatTryAmount } from "@/lib/format";
 import type { Vehicle } from "@/lib/types";
@@ -98,10 +98,13 @@ export default function RezervasyonClient() {
   const days = rentalDays(search.from, search.to);
   const daily = vehicle ? parseTryAmount(vehicle.price) : 0;
   const deposit = depositForDays(days);
+  const dropFee = dropFeeFor(pickupId, dropId);
+  const minDays = minimumRentalDays(pickupId, dropId);
+  const tooShort = days < minDays;
   const extrasTotal = extraAmount(extras, days);
   const subtotal = daily * days + extrasTotal;
   const priced = coupon ? applyPercent(subtotal, coupon.percent) : { discount: 0, total: subtotal };
-  const total = priced.total;
+  const total = priced.total + dropFee;
   const km = includedKm(days);
 
   function goBack() {
@@ -121,6 +124,10 @@ export default function RezervasyonClient() {
     }
     if (step === 0 && pickupHourIsPast(new Date(search.from))) {
       setError(t("book.pastPickup"));
+      return;
+    }
+    if (step === 0 && days < minimumRentalDays(pickupId, dropId)) {
+      setError(t("search.minDays", { days: minimumRentalDays(pickupId, dropId) }));
       return;
     }
     const form = formRef.current;
@@ -215,6 +222,10 @@ export default function RezervasyonClient() {
       setError(t("book.pastPickup"));
       return;
     }
+    if (days < minimumRentalDays(pickupId, dropId)) {
+      setError(t("search.minDays", { days: minimumRentalDays(pickupId, dropId) }));
+      return;
+    }
 
     const fd = new FormData(e.currentTarget);
     const birth = String(fd.get("birth") || "");
@@ -270,6 +281,7 @@ export default function RezervasyonClient() {
           customerNote,
           extraCodes: extras,
           couponCode,
+          locale,
         }),
       });
       const json = (await res.json()) as Reservation & { error?: string; mailSent?: boolean };
@@ -379,6 +391,11 @@ export default function RezervasyonClient() {
         <div className="hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 lg:block">
           {t("book.kmNotice", { days, km: km.toLocaleString("tr-TR") })}
         </div>
+        {tooShort ? (
+          <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700" role="alert">
+            {t("search.minDays", { days: minDays })}
+          </p>
+        ) : null}
 
         <div className="grid items-start gap-5 lg:mt-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-5">
@@ -386,8 +403,15 @@ export default function RezervasyonClient() {
               <div className="lg:hidden">
                 <div className="rounded-2xl border border-surface-border bg-white p-4 shadow-card">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="rounded-full border border-surface-border px-3 py-1 text-xs font-medium text-ink">
-                    {t("card.deposit")}: {money(deposit)}
+                  <span className="flex flex-col gap-1">
+                    <span className="rounded-full border border-surface-border px-3 py-1 text-xs font-medium text-ink">
+                      {t("card.deposit")}: {money(deposit)}
+                    </span>
+                    {dropFee > 0 ? (
+                      <span className="rounded-full border border-surface-border px-3 py-1 text-xs font-medium text-ink">
+                        {t("book.dropFee")}: {money(dropFee)}
+                      </span>
+                    ) : null}
                   </span>
                   <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
                     {specLabel(locale, vehicle.group)}
@@ -475,6 +499,11 @@ export default function RezervasyonClient() {
                   <p className="mt-1 text-xs text-ink-muted">
                     {t("card.deposit")}: {money(deposit)}
                   </p>
+                  {dropFee > 0 ? (
+                    <p className="mt-1 text-xs text-ink-muted">
+                      {t("book.dropFee")}: {money(dropFee)}
+                    </p>
+                  ) : null}
                 </div>
               </div>
 
@@ -711,6 +740,12 @@ export default function RezervasyonClient() {
                 <p>{t("card.deposit")}</p>
                 <p className="shrink-0 font-semibold">{money(deposit)}</p>
               </div>
+              {dropFee > 0 ? (
+                <div className="mt-2 flex items-start justify-between gap-3">
+                  <p>{t("book.dropFee")}</p>
+                  <p className="shrink-0 font-semibold">{money(dropFee)}</p>
+                </div>
+              ) : null}
             </SummaryBlock>
             <SummaryBlock title={t("book.payType")}>
               <p className="font-semibold text-ink">{t("book.payAtPickup")}</p>

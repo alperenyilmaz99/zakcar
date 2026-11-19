@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { composeFlightNumber, pickupHourIsPast, type Reservation } from "@/lib/booking";
-import { depositForDays, extraAmount, rentalDays, sanitizeExtraCodes } from "@/lib/extras";
+import { depositForDays, dropFeeFor, extraAmount, rentalDays, sanitizeExtraCodes } from "@/lib/extras";
+import { docLocale, withLocaleNote } from "@/lib/reservation-copy";
 import { sendReservationConfirmation } from "@/lib/reservation-mail";
 import { bearerToken, createServerSupabase } from "@/lib/supabase/server";
 
@@ -98,6 +99,7 @@ type ManualBody = {
   returnFlight?: string;
   customerNote?: string;
   extraCodes?: string[];
+  locale?: string;
 };
 
 const EXTRA_NOTE: Record<string, string> = {
@@ -247,8 +249,13 @@ export async function POST(req: Request) {
   const daily = Math.round(dailyInput * 100) / 100;
   const deposit = depositForDays(days);
   const extras = sanitizeExtraCodes(body.extraCodes);
-  const total = Math.round((daily * days + extraAmount(extras, days)) * 100) / 100;
-  const notes = ["Panelden oluşturuldu", ...extras.map((id) => EXTRA_NOTE[id])].filter(Boolean).join(" · ");
+  const dropFee = dropFeeFor(pickupCode, dropoffCode);
+  const total = Math.round((daily * days + extraAmount(extras, days) + dropFee) * 100) / 100;
+  const locale = docLocale(body.locale);
+  const notes = withLocaleNote(
+    ["Panelden oluşturuldu", ...extras.map((id) => EXTRA_NOTE[id])].filter(Boolean).join(" · "),
+    locale,
+  );
   const rentalBase = {
     fleet_vehicle_id: vehicle.id,
     customer_id: customerId,
@@ -304,6 +311,7 @@ export async function POST(req: Request) {
     customer: { firstName, lastName, phone, birthDate: birthDate || undefined },
     modelSlug: model.slug,
     extraCodes: extras,
+    locale,
   });
 
   return NextResponse.json({ ...reservation, mailSent });

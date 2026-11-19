@@ -10,3 +10,14 @@ export type SiteReview = {
 };
 
 export type StoredPost = BlogPost & { createdAt: string };
+
+export type HeroLine = {
+  id: string;
+  before: string;
+  accent: string;
+  after: string;
+  sub: string;
+  tag: string;
+  pill: boolean;
+  createdAt: string;
+};

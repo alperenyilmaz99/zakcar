@@ -356,6 +356,16 @@ begin
   end if;
 
   v_days := greatest(1, ceil(extract(epoch from (v_end - v_start)) / 86400.0)::int);
+  if exists (
+    select 1 from public.offices o
+    where o.id in (v_pickup, v_dropoff) and o.code = 'iga'
+  ) then
+    if v_days < 5 then
+      raise exception 'Minimum kiralama günü 5 gündür. Lütfen çağrı merkezimizle iletişime geçiniz.';
+    end if;
+  elsif v_days < 3 then
+    raise exception 'Minimum kiralama günü 3 gündür. Lütfen çağrı merkezimizle iletişime geçiniz.';
+  end if;
   -- web/src/lib/extras.ts depositForDays ile aynı: 1–3 gün 5000, 4–10 gün 10000, sonrası 20000.
   v_deposit := case
     when v_days <= 3 then 5000
@@ -386,7 +396,18 @@ begin
     v_extra := v_extra + (279 * v_days);
     v_note_parts := array_append(v_note_parts, 'Kış lastiği');
   end if;
-  v_total := round(v_model.daily_price_try * v_days + v_extra, 2);
+  v_total := round(
+    v_model.daily_price_try * v_days
+    + v_extra
+    + case
+        when exists (
+          select 1 from public.offices o
+          where o.id in (v_pickup, v_dropoff) and o.code = 'iga'
+        ) then 4000
+        else 0
+      end,
+    2
+  );
   v_notes := nullif(array_to_string(v_note_parts, ', '), '');
 
   insert into public.rentals (

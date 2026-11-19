@@ -8,10 +8,16 @@ import {
   deleteManagedReview,
   listGeneratedPosts,
   listHiddenKeys,
+  deleteHeroLine,
+  listFooterServices,
+  listHeroLines,
   listReviews,
   saveGeneratedPost,
   saveGeneratedReview,
+  saveFooterServices,
+  saveHeroLine,
 } from "@/lib/generated-content";
+import type { FooterService } from "@/lib/footer-services";
 import { HOME_REVIEW_CARDS } from "@/lib/home-reviews";
 import { bearerToken, createServerSupabase } from "@/lib/supabase/server";
 
@@ -32,6 +38,13 @@ async function staffClient(req: Request) {
     .maybeSingle();
   if (!staff?.is_active) return null;
   return supabase;
+}
+
+function normalizeServiceHref(value: string): string {
+  const href = value.trim();
+  if (/^https:\/\/[^\s]+$/i.test(href)) return href.slice(0, 240);
+  if (/^\/[A-Za-z0-9\-._~/?#=&%]+$/.test(href)) return href.slice(0, 240);
+  return "";
 }
 
 function slugify(title: string): string {
@@ -101,7 +114,9 @@ export async function GET(req: Request) {
         source: "site" as const,
       })),
     ];
-    return NextResponse.json({ posts, reviews: reviewRows });
+    const heroLines = await listHeroLines();
+    const footerServices = await listFooterServices();
+    return NextResponse.json({ posts, reviews: reviewRows, heroLines, footerServices: footerServices.items });
   } catch (error) {
     const message = error instanceof Error ? error.message : "İçerik okunamadı.";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -122,6 +137,14 @@ export async function POST(req: Request) {
     author?: string;
     location?: string;
     rating?: number;
+    id?: string;
+    before?: string;
+    accent?: string;
+    after?: string;
+    sub?: string;
+    tag?: string;
+    pill?: boolean;
+    href?: string;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -203,6 +226,46 @@ export async function POST(req: Request) {
       return NextResponse.json({ stored });
     }
 
+    if (body.kind === "hero") {
+      const before = (body.before || "").replace(/\s+/g, " ").trim();
+      const accent = (body.accent || "").replace(/\s+/g, " ").trim();
+      const after = (body.after || "").replace(/\s+/g, " ").trim();
+      const sub = (body.sub || "").replace(/\s+/g, " ").trim();
+      const tag = (body.tag || "").replace(/\s+/g, " ").trim();
+      if (before.length < 2) return NextResponse.json({ error: "Başlık en az 2 karakter olmalı." }, { status: 400 });
+      if (sub.length < 8) return NextResponse.json({ error: "Alt cümle en az 8 karakter olmalı." }, { status: 400 });
+      const id = (body.id || "").trim() || randomUUID();
+      const existing = (await listHeroLines()).find((line) => line.id === id);
+      const stored = await saveHeroLine(
+        {
+          id,
+          before: before.slice(0, 80),
+          accent: accent.slice(0, 40),
+          after: after.slice(0, 40),
+          sub: sub.slice(0, 180),
+          tag: tag.slice(0, 24),
+          pill: Boolean(tag) && body.pill !== false,
+          createdAt: existing?.createdAt || new Date().toISOString(),
+        },
+        staff,
+      );
+      return NextResponse.json({ stored });
+    }
+
+    if (body.kind === "footer-service") {
+      const label = (body.title || "").replace(/\s+/g, " ").trim();
+      const href = normalizeServiceHref(body.href || "");
+      if (label.length < 2) return NextResponse.json({ error: "Hizmet adı en az 2 karakter olmalı." }, { status: 400 });
+      if (!href) return NextResponse.json({ error: "Bağlantı / ile ya da https:// ile başlamalı." }, { status: 400 });
+      const current = await listFooterServices();
+      if (current.items.some((item) => item.href === href)) {
+        return NextResponse.json({ error: "Bu bağlantı footer’da zaten var." }, { status: 400 });
+      }
+      const next: FooterService = { id: randomUUID(), href, label: label.slice(0, 60), labelKey: "" };
+      const stored = await saveFooterServices([...current.items, next], staff);
+      return NextResponse.json({ stored });
+    }
+
     return NextResponse.json({ error: "Kayıt türü geçersiz." }, { status: 400 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Kaydedilemedi.";
@@ -233,6 +296,25 @@ export async function DELETE(req: Request) {
       const id = (body.id || "").trim();
       if (!id) return NextResponse.json({ error: "Yorum bulunamadı." }, { status: 400 });
       await deleteManagedReview(id, staff, id.startsWith("builtin-"));
+      return NextResponse.json({ ok: true });
+    }
+    if (body.kind === "hero") {
+      const id = (body.id || "").trim();
+      if (!id) return NextResponse.json({ error: "Cümle bulunamadı." }, { status: 400 });
+      await deleteHeroLine(id, staff);
+      return NextResponse.json({ ok: true });
+    }
+    if (body.kind === "footer-service") {
+      const id = (body.id || "").trim();
+      if (!id) return NextResponse.json({ error: "Hizmet bulunamadı." }, { status: 400 });
+      const current = await listFooterServices();
+      if (!current.items.some((item) => item.id === id)) {
+        return NextResponse.json({ error: "Hizmet bulunamadı." }, { status: 404 });
+      }
+      await saveFooterServices(
+        current.items.filter((item) => item.id !== id),
+        staff,
+      );
       return NextResponse.json({ ok: true });
     }
     return NextResponse.json({ error: "Kayıt türü geçersiz." }, { status: 400 });

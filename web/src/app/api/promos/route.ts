@@ -1,14 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { isMissingPromoTable, mapPromoRow, normalizePromoSlot, type PromoCover, type PromoRow } from "@/lib/promo";
-import { readPromoFile, removePromoUpload, writePromoFile } from "@/lib/promo-file-store";
-
-function anonClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
-}
+import { normalizePromoSlot, type PromoCover } from "@/lib/promo";
+import { listPublicPromos, readPromoFile, removePromoUpload, writePromoFile } from "@/lib/promo-file-store";
 
 function bySlot(items: PromoCover[], slot: string | null, all: boolean): PromoCover[] {
   const visible = all ? items : items.filter((item) => item.isActive);
@@ -26,18 +18,9 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const all = url.searchParams.get("all") === "1";
   const slot = url.searchParams.get("slot");
-  const supabase = anonClient();
-  if (supabase) {
-    const { data, error } = await supabase.from("promo_covers").select("*").order("sort_order", { ascending: true });
-    if (!error) {
-      return NextResponse.json(bySlot(((data as PromoRow[]) || []).map(mapPromoRow), slot, all));
-    }
-    if (!isMissingPromoTable(error)) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-  }
-
-  return NextResponse.json(bySlot(readPromoFile(), slot, all));
+  const result = await listPublicPromos();
+  if ("error" in result) return NextResponse.json({ error: result.error }, { status: 500 });
+  return NextResponse.json(bySlot(result.items, slot, all));
 }
 
 export async function PUT(req: Request) {

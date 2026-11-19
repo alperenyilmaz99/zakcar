@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { Reservation } from "@/lib/booking";
 import { rentalDays } from "@/lib/extras";
+import { localeFromNotes, reservationDoc } from "@/lib/reservation-copy";
 import { buildReservationPdf } from "@/lib/reservation-pdf";
 import { bearerToken, createServerSupabase } from "@/lib/supabase/server";
 
@@ -106,6 +107,7 @@ export async function GET(req: Request) {
   };
 
   try {
+    const locale = localeFromNotes(row.notes);
     const pdf = await buildReservationPdf({
       reservation,
       customer: {
@@ -116,8 +118,9 @@ export async function GET(req: Request) {
       },
       modelSlug: model?.slug || "",
       issuedAt: new Date(row.created_at),
+      locale,
     });
-    const filename = `ZakCar Rezervasyon Onayi ${row.pnr}.pdf`;
+    const filename = `${reservationDoc(locale).fileName} ${row.pnr}.pdf`;
     return new NextResponse(Buffer.from(pdf), {
       headers: {
         "Content-Type": "application/pdf",

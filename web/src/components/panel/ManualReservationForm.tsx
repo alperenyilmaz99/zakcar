@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { pickupHourIsPast, startOfHour } from "@/lib/booking";
 import { createClient } from "@/lib/supabase/client";
-import { EXTRA_OPTIONS, depositForDays, extraAmount, includedKm, rentalDays, type ExtraId } from "@/lib/extras";
+import { EXTRA_OPTIONS, depositForDays, dropFeeFor, extraAmount, includedKm, rentalDays, type ExtraId } from "@/lib/extras";
 import { downloadReservationPdf } from "@/lib/panel-api";
 
 type VehicleOption = {
@@ -65,6 +65,7 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [locale, setLocale] = useState("tr");
   const [dailyPrice, setDailyPrice] = useState("");
   const [arrivalFlight, setArrivalFlight] = useState("");
   const [returnFlight, setReturnFlight] = useState("");
@@ -106,6 +107,7 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
     return rentalDays(start.toISOString(), end.toISOString());
   }, [startAt, endAt]);
   const deposit = depositForDays(days);
+  const dropFee = dropFeeFor(pickupCode, dropoffCode);
   const daily = Number(dailyPrice.replace(",", ".")) || 0;
   const extrasTotal = extraAmount(extras, days);
 
@@ -151,6 +153,7 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
           returnFlight,
           customerNote,
           extraCodes: extras,
+          locale,
         }),
       });
       const json = (await res.json()) as { pnr?: string; mailSent?: boolean; error?: string };
@@ -224,6 +227,16 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-ink">Doğum tarihi</span>
             <input type="date" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="w-full rounded-xl border border-surface-border px-3 py-2.5" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1.5 block font-medium text-ink">Mail ve PDF dili</span>
+            <select value={locale} onChange={(event) => setLocale(event.target.value)} className="w-full rounded-xl border border-surface-border px-3 py-2.5">
+              <option value="tr">Türkçe</option>
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+              <option value="ar">العربية</option>
+              <option value="ru">Русский</option>
+            </select>
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block font-medium text-ink">Araç</span>
@@ -316,9 +329,11 @@ export function ManualReservationForm({ onCreated }: { onCreated: (pnr: string) 
           </fieldset>
           <p className="text-sm text-ink-muted sm:col-span-2">
             {selected ? `${vehicleLabel(selected, vehicles)} · ` : ""}
-            {days} gün · toplam {Math.round(daily * days + extrasTotal).toLocaleString("tr-TR")} TL
+            {days} gün · toplam {Math.round(daily * days + extrasTotal + dropFee).toLocaleString("tr-TR")} TL
             {extrasTotal > 0 ? ` (ekler ${extrasTotal.toLocaleString("tr-TR")} TL)` : ""} · depozito{" "}
-            {deposit.toLocaleString("tr-TR")} TL · yol hakkı {includedKm(days).toLocaleString("tr-TR")} km
+            {deposit.toLocaleString("tr-TR")} TL
+            {dropFee > 0 ? ` · Drop ücreti ${dropFee.toLocaleString("tr-TR")} TL` : ""} · yol hakkı{" "}
+            {includedKm(days).toLocaleString("tr-TR")} km
           </p>
           {error && <p className="text-sm text-rose-700 sm:col-span-2">{error}</p>}
           {note && <p className="text-sm text-emerald-700 sm:col-span-2">{note}</p>}

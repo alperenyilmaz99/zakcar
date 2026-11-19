@@ -7,8 +7,10 @@ import Image from "next/image";
 import { formatDate, formatTime, useSearch } from "@/hooks/useSearch";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import { DateTimeField } from "@/components/search/DateTimeField";
+import { minimumRentalDays, rentalDays } from "@/lib/extras";
 import { OFFICES, resolveOfficeId } from "@/lib/offices";
 import { SITE } from "@/lib/constants";
+import { canonicalPathname, localizeHref } from "@/lib/localized-paths";
 import type { MessageKey } from "@/lib/i18n";
 
 function locationLabel(value: string, t: (key: MessageKey) => string) {
@@ -37,6 +39,9 @@ export function SearchBar({
   const [seeking, setSeeking] = useState(false);
   const seekTimer = useRef<number | null>(null);
   const different = search.differentDrop;
+  const dropId = different ? search.drop : search.pickup;
+  const minDays = minimumRentalDays(search.pickup, dropId);
+  const tooShort = Boolean(search.from && search.to) && rentalDays(search.from, search.to) < minDays;
 
   useEffect(() => {
     if (defaultPickup && !search.pickup) {
@@ -54,7 +59,7 @@ export function SearchBar({
   }, []);
 
   function handleSearch() {
-    if (seeking) return;
+    if (seeking || tooShort) return;
     const params = new URLSearchParams();
     if (search.pickup) params.set("pickup", search.pickup);
     if (different && search.drop) params.set("drop", search.drop);
@@ -62,11 +67,11 @@ export function SearchBar({
     if (search.brand || defaultBrand) params.set("brand", search.brand || defaultBrand || "");
     if (search.from) params.set("from", search.from);
     if (search.to) params.set("to", search.to);
-    const href = `/arac-modelleri?${params.toString()}`;
+    const href = localizeHref(`/arac-modelleri?${params.toString()}`, locale);
     if (`${window.location.pathname}${window.location.search}` === href) return;
     setSeeking(true);
     seekTimer.current = window.setTimeout(() => {
-      const stayed = window.location.pathname === "/arac-modelleri";
+      const stayed = canonicalPathname(window.location.pathname) === "/arac-modelleri";
       router.push(href);
       if (stayed) setSeeking(false);
     }, 1500);
@@ -144,6 +149,11 @@ export function SearchBar({
           {t("search.action")}
         </button>
       </div>
+      {tooShort ? (
+        <p className="mt-3 text-sm font-medium text-rose-700" role="alert">
+          {t("search.minDays", { days: minDays })}
+        </p>
+      ) : null}
 
       <label className="mt-4 flex cursor-pointer items-center gap-2.5 text-sm text-ink">
         <input

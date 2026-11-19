@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { SITE } from "./constants";
+import { docLocale, fillDoc, reservationDoc } from "./reservation-copy";
 import { buildReservationPdf, type ReservationPdfInput } from "./reservation-pdf";
 
 const OFFICE = SITE.email;
@@ -20,10 +21,10 @@ function notifyCopies(customerEmail: string) {
   return list;
 }
 
-function when(iso: string) {
+function when(iso: string, intl: string) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return new Intl.DateTimeFormat("tr-TR", {
+  return new Intl.DateTimeFormat(intl, {
     timeZone: "Europe/Istanbul",
     day: "numeric",
     month: "long",
@@ -56,7 +57,9 @@ export async function sendReservationConfirmation(input: ReservationPdfInput & {
   if (!host || !user || !pass) return false;
 
   try {
-    const pdf = await buildReservationPdf(input);
+    const locale = docLocale(input.locale);
+    const copy = reservationDoc(locale);
+    const pdf = await buildReservationPdf({ ...input, locale });
     const port = Number(process.env.SMTP_PORT || 587);
     const secure = process.env.SMTP_SECURE === "true" || port === 465;
     const from = senderFrom();
@@ -70,37 +73,39 @@ export async function sendReservationConfirmation(input: ReservationPdfInput & {
     const name = `${input.customer.firstName} ${input.customer.lastName}`.trim();
     const pnr = input.reservation.pnr;
     const vehicle = input.reservation.vehicleName.replace(/\s+Araç Kiralama$/i, "");
-    const pickupWhen = when(input.reservation.startAt);
-    const dropoffWhen = when(input.reservation.endAt);
+    const pickupWhen = when(input.reservation.startAt, copy.intl);
+    const dropoffWhen = when(input.reservation.endAt, copy.intl);
+    const dear = fillDoc(copy.mailDear, { name });
     const lines = [
-      "Tebrikler, rezervasyonunuz oluştu.",
+      copy.mailHeadline,
       "",
-      `Sayın ${name},`,
+      dear,
       "",
-      "ZakCar rezervasyonunuz başarıyla oluşturuldu. Onay belgeniz bu e-postanın ekinde.",
+      copy.mailBody,
       "",
-      `PNR: ${pnr}`,
-      `Araç: ${vehicle}`,
-      `Alış: ${input.reservation.pickup} — ${pickupWhen}`,
-      `Bırakış: ${input.reservation.dropoff} — ${dropoffWhen}`,
-      `Telefon: ${input.customer.phone}`,
+      `${copy.mailPnr}: ${pnr}`,
+      `${copy.mailVehicle}: ${vehicle}`,
+      `${copy.mailPickup}: ${input.reservation.pickup} — ${pickupWhen}`,
+      `${copy.mailDropoff}: ${input.reservation.dropoff} — ${dropoffWhen}`,
+      `${copy.mailPhone}: ${input.customer.phone}`,
       "",
-      "Teslimde kimliğinizi ve sürücü belgenizi yanınızda bulundurun. Ödeme araç tesliminde alınır.",
+      copy.mailHandover,
       "",
       "ZakCar Rent a Car",
       SITE.phone,
       OFFICE,
     ];
-    const html = `<div style="font-family:Arial,sans-serif;color:#1a1d24;line-height:1.5">
-<p style="font-size:22px;font-weight:700;margin:0 0 12px">Tebrikler, rezervasyonunuz oluştu.</p>
-<p>Sayın ${escapeHtml(name)},</p>
-<p>ZakCar rezervasyonunuz başarıyla oluşturuldu. Onay belgeniz bu e-postanın ekinde.</p>
-<p><strong>PNR:</strong> ${escapeHtml(pnr)}<br>
-<strong>Araç:</strong> ${escapeHtml(vehicle)}<br>
-<strong>Alış:</strong> ${escapeHtml(input.reservation.pickup)} — ${escapeHtml(pickupWhen)}<br>
-<strong>Bırakış:</strong> ${escapeHtml(input.reservation.dropoff)} — ${escapeHtml(dropoffWhen)}<br>
-<strong>Telefon:</strong> ${escapeHtml(input.customer.phone)}</p>
-<p>Teslimde kimliğinizi ve sürücü belgenizi yanınızda bulundurun. Ödeme araç tesliminde alınır.</p>
+    const htmlDir = locale === "ar" ? "rtl" : "ltr";
+    const html = `<div dir="${htmlDir}" style="font-family:Arial,sans-serif;color:#1a1d24;line-height:1.5">
+<p style="font-size:22px;font-weight:700;margin:0 0 12px">${escapeHtml(copy.mailHeadline)}</p>
+<p>${escapeHtml(dear)}</p>
+<p>${escapeHtml(copy.mailBody)}</p>
+<p><strong>${escapeHtml(copy.mailPnr)}:</strong> ${escapeHtml(pnr)}<br>
+<strong>${escapeHtml(copy.mailVehicle)}:</strong> ${escapeHtml(vehicle)}<br>
+<strong>${escapeHtml(copy.mailPickup)}:</strong> ${escapeHtml(input.reservation.pickup)} — ${escapeHtml(pickupWhen)}<br>
+<strong>${escapeHtml(copy.mailDropoff)}:</strong> ${escapeHtml(input.reservation.dropoff)} — ${escapeHtml(dropoffWhen)}<br>
+<strong>${escapeHtml(copy.mailPhone)}:</strong> ${escapeHtml(input.customer.phone)}</p>
+<p>${escapeHtml(copy.mailHandover)}</p>
 <p>ZakCar Rent a Car<br>${escapeHtml(SITE.phone)}<br>${escapeHtml(OFFICE)}</p>
 </div>`;
     await transporter.sendMail({
@@ -108,12 +113,12 @@ export async function sendReservationConfirmation(input: ReservationPdfInput & {
       to,
       bcc: notifyCopies(to),
       replyTo: OFFICE,
-      subject: `Tebrikler, rezervasyonunuz oluştu — ${pnr}`,
+      subject: `${copy.mailSubject} — ${pnr}`,
       text: lines.join("\n"),
       html,
       attachments: [
         {
-          filename: `ZakCar Rezervasyon Onayi ${pnr}.pdf`,
+          filename: `${copy.fileName} ${pnr}.pdf`,
           content: Buffer.from(pdf),
           contentType: "application/pdf",
         },

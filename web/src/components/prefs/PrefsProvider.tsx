@@ -10,6 +10,7 @@ import {
   formatPriceIn,
   translate,
 } from "@/lib/i18n";
+import { markLocalePick } from "@/lib/localized-paths";
 
 const STORAGE_KEY = "zakcar_prefs";
 
@@ -84,7 +85,10 @@ export function PrefsProvider({ children }: { children: React.ReactNode }) {
       currency,
       t: (key, vars) => translate(locale, key, vars),
       formatPrice: (price) => formatPriceIn(price, currency, locale),
-      setLocale: setLocaleState,
+      setLocale: (next) => {
+        markLocalePick(next);
+        setLocaleState(next);
+      },
       setCurrency: setCurrencyState,
     }),
     [locale, currency, rates],

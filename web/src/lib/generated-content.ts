@@ -2,16 +2,20 @@ import fs from "fs";
 import path from "path";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BlogBlock } from "@/lib/blog-types";
-import type { SiteReview, StoredPost } from "@/lib/content-types";
+import type { HeroLine, SiteReview, StoredPost } from "@/lib/content-types";
+import { DEFAULT_FOOTER_SERVICES, isFooterService, type FooterService } from "@/lib/footer-services";
 import { createServerSupabase, hasServerSupabase } from "@/lib/supabase/server";
 
-export type { SiteReview, StoredPost };
+export type { HeroLine, SiteReview, StoredPost };
 
 type Store = {
   posts: StoredPost[];
   reviews: SiteReview[];
   hiddenPostSlugs: string[];
   hiddenReviewIds: string[];
+  heroLines: HeroLine[];
+  footerServicesConfigured: boolean;
+  footerServices: FooterService[];
 };
 
 const COVER_IMAGES = [
@@ -32,7 +36,7 @@ function storePath(): string {
 }
 
 function emptyStore(): Store {
-  return { posts: [], reviews: [], hiddenPostSlugs: [], hiddenReviewIds: [] };
+  return { posts: [], reviews: [], hiddenPostSlugs: [], hiddenReviewIds: [], heroLines: [], footerServicesConfigured: false, footerServices: [] };
 }
 
 export function readContentFile(): Store {
@@ -43,6 +47,9 @@ export function readContentFile(): Store {
       reviews: Array.isArray(parsed.reviews) ? parsed.reviews : [],
       hiddenPostSlugs: Array.isArray(parsed.hiddenPostSlugs) ? parsed.hiddenPostSlugs.filter((item) => typeof item === "string") : [],
       hiddenReviewIds: Array.isArray(parsed.hiddenReviewIds) ? parsed.hiddenReviewIds.filter((item) => typeof item === "string") : [],
+      heroLines: Array.isArray(parsed.heroLines) ? parsed.heroLines.filter(isHeroLine) : [],
+      footerServicesConfigured: parsed.footerServicesConfigured === true,
+      footerServices: Array.isArray(parsed.footerServices) ? parsed.footerServices.filter(isFooterService) : [],
     };
   } catch {
     return emptyStore();
@@ -58,6 +65,12 @@ function writeContentFile(store: Store): boolean {
   } catch {
     return false;
   }
+}
+
+function isHeroLine(value: unknown): value is HeroLine {
+  if (!value || typeof value !== "object") return false;
+  const line = value as Partial<HeroLine>;
+  return typeof line.id === "string" && typeof line.before === "string" && typeof line.sub === "string";
 }
 
 function missingTable(error: { code?: string; message?: string } | null): boolean {
@@ -296,4 +309,168 @@ export async function deleteManagedReview(id: string, staff: SupabaseClient | nu
   if (!wroteFile && !wroteRemote) {
     throw new Error("Yorum silinemedi. Supabase SQL Editor’da web/supabase/content.sql dosyasını bir kez çalıştırın.");
   }
+}
+
+function mapHeroLine(row: {
+  id: string;
+  before: string;
+  accent: string | null;
+  after: string | null;
+  sub: string | null;
+  tag: string | null;
+  pill: boolean | null;
+  created_at: string;
+}): HeroLine {
+  return {
+    id: row.id,
+    before: row.before,
+    accent: row.accent || "",
+    after: row.after || "",
+    sub: row.sub || "",
+    tag: row.tag || "",
+    pill: Boolean(row.pill && row.tag),
+    createdAt: row.created_at,
+  };
+}
+
+async function remoteHeroLines(): Promise<HeroLine[]> {
+  if (!hasServerSupabase()) return [];
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.from("site_hero_lines").select("*").order("created_at", { ascending: true });
+  if (error) {
+    if (missingTable(error)) return [];
+    throw new Error(error.message);
+  }
+  return ((data || []) as Parameters<typeof mapHeroLine>[0][]).map(mapHeroLine);
+}
+
+export async function listHeroLines(): Promise<HeroLine[]> {
+  const file = readContentFile().heroLines;
+  const remote = await remoteHeroLines();
+  const seen = new Set<string>();
+  const merged: HeroLine[] = [];
+  for (const line of [...remote, ...file].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+    if (seen.has(line.id)) continue;
+    seen.add(line.id);
+    merged.push(line);
+  }
+  return merged;
+}
+
+export async function saveHeroLine(
+  line: HeroLine,
+  staff?: SupabaseClient | null,
+): Promise<"both" | "file" | "supabase"> {
+  const store = readContentFile();
+  store.heroLines = [...store.heroLines.filter((item) => item.id !== line.id), line];
+  const wroteFile = writeContentFile(store);
+
+  let wroteRemote = false;
+  if (staff) {
+    const { error } = await staff.from("site_hero_lines").upsert({
+      id: line.id,
+      before: line.before,
+      accent: line.accent,
+      after: line.after,
+      sub: line.sub,
+      tag: line.tag,
+      pill: line.pill,
+      created_at: line.createdAt,
+    });
+    if (error && !missingTable(error)) throw new Error(error.message);
+    wroteRemote = !error;
+  }
+
+  if (!wroteFile && !wroteRemote) {
+    throw new Error("Cümle kaydedilemedi. Supabase SQL Editor’da web/supabase/hero-lines.sql dosyasını bir kez çalıştırın.");
+  }
+  if (wroteFile && wroteRemote) return "both";
+  return wroteRemote ? "supabase" : "file";
+}
+
+export async function deleteHeroLine(id: string, staff?: SupabaseClient | null): Promise<void> {
+  const store = readContentFile();
+  store.heroLines = store.heroLines.filter((item) => item.id !== id);
+  const wroteFile = writeContentFile(store);
+  let wroteRemote = false;
+  if (staff) {
+    const { error } = await staff.from("site_hero_lines").delete().eq("id", id);
+    if (error && !missingTable(error)) throw new Error(error.message);
+    wroteRemote = !error;
+  }
+  if (!wroteFile && !wroteRemote) {
+    throw new Error("Cümle silinemedi. Supabase SQL Editor’da web/supabase/hero-lines.sql dosyasını bir kez çalıştırın.");
+  }
+}
+
+const FOOTER_READY = "__ready";
+
+function mapFooterRow(row: { id: string; href: string; label: string | null; label_key: string | null }): FooterService {
+  const key = row.label_key || "";
+  return {
+    id: row.id,
+    href: row.href,
+    label: row.label || "",
+    labelKey: key === "nav.noCard" || key === "nav.findeks" || key === "nav.longTerm" || key === "nav.corporate" ? key : "",
+  };
+}
+
+async function remoteFooterServices(): Promise<{ configured: boolean; items: FooterService[] } | null> {
+  if (!hasServerSupabase()) return null;
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.from("site_footer_services").select("*").order("sort_order", { ascending: true });
+  if (error) {
+    if (missingTable(error)) return null;
+    throw new Error(error.message);
+  }
+  const rows = (data || []) as { id: string; href: string; label: string | null; label_key: string | null }[];
+  return {
+    configured: rows.some((row) => row.id === FOOTER_READY),
+    items: rows.filter((row) => row.id !== FOOTER_READY).map(mapFooterRow),
+  };
+}
+
+export async function listFooterServices(): Promise<{ configured: boolean; items: FooterService[] }> {
+  const file = readContentFile();
+  const remote = await remoteFooterServices();
+  if (remote?.configured) return { configured: true, items: remote.items };
+  if (file.footerServicesConfigured) return { configured: true, items: file.footerServices };
+  return { configured: false, items: DEFAULT_FOOTER_SERVICES };
+}
+
+export async function saveFooterServices(
+  items: FooterService[],
+  staff?: SupabaseClient | null,
+): Promise<"both" | "file" | "supabase"> {
+  const store = readContentFile();
+  store.footerServicesConfigured = true;
+  store.footerServices = items;
+  const wroteFile = writeContentFile(store);
+
+  let wroteRemote = false;
+  if (staff) {
+    const removed = await staff.from("site_footer_services").delete().neq("id", "");
+    if (removed.error && !missingTable(removed.error)) throw new Error(removed.error.message);
+    if (!removed.error) {
+      const rows = [
+        { id: FOOTER_READY, href: "/", label: "", label_key: "", sort_order: -1 },
+        ...items.map((item, index) => ({
+          id: item.id,
+          href: item.href,
+          label: item.label,
+          label_key: item.labelKey,
+          sort_order: index,
+        })),
+      ];
+      const inserted = await staff.from("site_footer_services").insert(rows);
+      if (inserted.error && !missingTable(inserted.error)) throw new Error(inserted.error.message);
+      wroteRemote = !inserted.error;
+    }
+  }
+
+  if (!wroteFile && !wroteRemote) {
+    throw new Error("Hizmet kaydedilemedi. Supabase SQL Editor’da web/supabase/footer-services.sql dosyasını bir kez çalıştırın.");
+  }
+  if (wroteFile && wroteRemote) return "both";
+  return wroteRemote ? "supabase" : "file";
 }

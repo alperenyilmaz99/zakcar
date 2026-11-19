@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { composeFlightNumber, legacyFlightNumber, rpcFailure, validateReservationInput, type Reservation, type ReservationInput } from "@/lib/booking";
-import { normalizeCouponCode } from "@/lib/coupon-math";
+import { applyPercent, normalizeCouponCode } from "@/lib/coupon-math";
 import { resolveCouponPercent } from "@/lib/coupons";
-import { depositForDays, rentalDays, sanitizeExtraCodes } from "@/lib/extras";
+import { depositForDays, dropFeeFor, extraAmount, rentalDays, sanitizeExtraCodes } from "@/lib/extras";
+import { docLocale } from "@/lib/reservation-copy";
 import { sendReservationConfirmation } from "@/lib/reservation-mail";
 import { bearerToken, createServerSupabase, hasServerSupabase } from "@/lib/supabase/server";
 
@@ -80,9 +81,16 @@ export async function POST(req: Request) {
     }
   }
 
+  const dayCount = rentalDays(body.startAt, body.endAt);
+  const dropFee = dropFeeFor(body.pickupCode, body.dropoffCode);
+  const storedTotal = Number(reservation.totalPrice || 0);
+  const rentalGross = Number(reservation.dailyPrice || 0) * dayCount + extraAmount(extras, dayCount);
+  const rentalNet = couponPercent > 0 ? applyPercent(rentalGross, couponPercent).total : rentalGross;
   reservation = {
     ...reservation,
-    deposit: depositForDays(rentalDays(body.startAt, body.endAt)),
+    deposit: depositForDays(dayCount),
+    totalPrice:
+      dropFee > 0 && Math.abs(storedTotal - rentalNet) < 1 ? storedTotal + dropFee : storedTotal,
   };
 
   const mailSent = await sendReservationConfirmation({
@@ -97,6 +105,7 @@ export async function POST(req: Request) {
     modelSlug: body.modelSlug,
     extraCodes: extras,
     coupon: couponPercent > 0 ? { code: couponCode, percent: couponPercent } : undefined,
+    locale: docLocale(body.locale),
   });
 
   return NextResponse.json({ ...reservation, mailSent });

@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
-import { DEFAULT_PROMOS, normalizePromoSlot, type PromoCover } from "@/lib/promo";
+import { DEFAULT_PROMOS, HERO_BACKDROP, isMissingPromoTable, mapPromoRow, normalizePromoSlot, type PromoCover, type PromoRow } from "@/lib/promo";
+import { createServerSupabase, hasServerSupabase } from "@/lib/supabase/server";
 
 function firstExisting(paths: string[], fallback: string): string {
   return paths.find((p) => fs.existsSync(p)) || fallback;
@@ -22,6 +23,23 @@ const uploadDir = firstExisting(
   ],
   path.join(process.cwd(), "public", "assets", "promo", "uploads"),
 );
+
+export async function listPublicPromos(): Promise<{ items: PromoCover[] } | { error: string }> {
+  if (hasServerSupabase()) {
+    const supabase = createServerSupabase();
+    const { data, error } = await supabase.from("promo_covers").select("*").order("sort_order", { ascending: true });
+    if (!error) return { items: ((data as PromoRow[]) || []).map(mapPromoRow) };
+    if (!isMissingPromoTable(error)) return { error: error.message };
+  }
+  return { items: readPromoFile() };
+}
+
+export async function loadBackdropImage(): Promise<string> {
+  const result = await listPublicPromos();
+  if ("error" in result) return HERO_BACKDROP;
+  const found = result.items.find((item) => item.isActive !== false && item.slot === "backdrop" && item.imageUrl);
+  return found?.imageUrl || HERO_BACKDROP;
+}
 
 export function readPromoFile(): PromoCover[] {
   try {

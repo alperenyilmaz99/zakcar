@@ -74,14 +74,11 @@ export default function PanelDashboardPage() {
             Operasyon özeti
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Supabase canlı veri — filo, kiralama ve konum.
+            Supabase canlı veri — filo ve kiralama.
           </p>
         </div>
         <Link href="/panel/kapaklar" className="btn-outline text-sm">
           Kapaklar
-        </Link>
-        <Link href="/panel/konumlar" className="btn-primary text-sm">
-          Haritada gör
         </Link>
       </div>
 

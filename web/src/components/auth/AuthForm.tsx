@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
+import { localizeHref } from "@/lib/localized-paths";
 import { useCustomer } from "@/hooks/useCustomer";
 
 export function AuthForm() {
-  const { t } = usePrefs();
+  const { t, locale } = usePrefs();
   const { user, ready, login, register } = useCustomer();
   const router = useRouter();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -21,8 +22,8 @@ export function AuthForm() {
   }, []);
 
   useEffect(() => {
-    if (ready && user) router.replace("/rezervasyon-sorgulama");
-  }, [ready, user, router]);
+    if (ready && user) router.replace(localizeHref("/rezervasyon-sorgulama", locale));
+  }, [ready, user, router, locale]);
 
   if (!ready || user) return null;
 
@@ -39,7 +40,7 @@ export function AuthForm() {
       } else {
         await login(email.trim(), password);
       }
-      router.push("/rezervasyon-sorgulama");
+      router.push(localizeHref("/rezervasyon-sorgulama", locale));
     } catch (err) {
       const code = err instanceof Error ? err.message : "";
       if (code === "exists") setError(t("auth.exists"));
