@@ -61,9 +61,11 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
 
   const district = (await loadDistricts()).items.find((item) => item.slug === slug) ?? null;
   const seo = resolveSeoPage(slug) ?? (district ? seoForDistrict(district) : null);
-  const service = seo ? null : await footerServicePage(slug);
-  if (!seo && !service) notFound();
-  if (service) return <FooterServicePage title={service.label} body={service.body} />;
+  if (!seo) {
+    const service = await footerServicePage(slug);
+    if (!service) notFound();
+    return <FooterServicePage title={service.label} body={service.body} />;
+  }
   const article = airportArticleId(slug);
   const saved = article
     ? (await loadAirportCards()).items.find((item) => item.href === `/${slug}`)
