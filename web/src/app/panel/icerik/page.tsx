@@ -22,7 +22,7 @@ type PanelHeroLine = {
   tag: string;
   pill: boolean;
 };
-type PanelFooterService = { id: string; href: string; label: string };
+type PanelFooterService = { id: string; href: string; label: string; body?: string };
 type ContentResponse = {
   posts: PanelPost[];
   reviews: PanelReview[];
@@ -70,10 +70,10 @@ export default function PanelContentPage() {
   const [heroBefore, setHeroBefore] = useState("");
   const [heroAccent, setHeroAccent] = useState("");
   const [heroSub, setHeroSub] = useState("");
-  const [heroTag, setHeroTag] = useState("");
   const [footerServices, setFooterServices] = useState<PanelFooterService[]>([]);
   const [serviceLabel, setServiceLabel] = useState("");
   const [serviceHref, setServiceHref] = useState("");
+  const [serviceBody, setServiceBody] = useState("");
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -143,7 +143,6 @@ export default function PanelContentPage() {
     setHeroBefore("");
     setHeroAccent("");
     setHeroSub("");
-    setHeroTag("");
   };
 
   const saveHero = async () => {
@@ -161,8 +160,6 @@ export default function PanelContentPage() {
           before: heroBefore,
           accent: heroAccent,
           sub: heroSub,
-          tag: heroTag,
-          pill: Boolean(heroTag.trim()),
         }),
       });
       const payload = (await res.json()) as GenerateResponse;
@@ -183,7 +180,6 @@ export default function PanelContentPage() {
     setHeroBefore(line.before);
     setHeroAccent(line.accent);
     setHeroSub(line.sub);
-    setHeroTag(line.tag);
     setError("");
     setNote("");
   };
@@ -289,12 +285,13 @@ export default function PanelContentPage() {
       const res = await fetch("/api/panel/content", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ kind: "footer-service", title: serviceLabel, href: serviceHref }),
+        body: JSON.stringify({ kind: "footer-service", title: serviceLabel, href: serviceHref, excerpt: serviceBody }),
       });
       const payload = (await res.json()) as GenerateResponse;
       if (!res.ok) throw new Error(payload.error || "Hizmet eklenemedi");
       setServiceLabel("");
       setServiceHref("");
+      setServiceBody("");
       setNote(
         payload.stored === "file"
           ? "Footer’a eklendi. Canlı sitede kalması için supabase/footer-services.sql dosyasını SQL Editor’da bir kez çalıştırın."
@@ -361,7 +358,7 @@ export default function PanelContentPage() {
             </button>
           ) : null}
         </div>
-        <p className="text-sm text-ink-muted">Başlığın kırmızı kısmı vurgu alanına yazılır. Buton yazısı doluysa alttaki yuvarlak seçeneklere eklenir.</p>
+        <p className="text-sm text-ink-muted">Başlığın kırmızı kısmı vurgu alanına yazılır. Cümle, hazır yazıların ardından döner.</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="text-ink-muted">Başlık</span>
@@ -376,10 +373,6 @@ export default function PanelContentPage() {
           <span className="text-ink-muted">Alt cümle</span>
           <input required value={heroSub} onChange={(event) => setHeroSub(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-surface-border px-3" placeholder="Uçağınız iner inmez aracınız hazır." />
         </label>
-        <label className="block text-sm sm:max-w-xs">
-          <span className="text-ink-muted">Buton yazısı</span>
-          <input value={heroTag} onChange={(event) => setHeroTag(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-surface-border px-3" placeholder="SAW" />
-        </label>
         <button type="submit" className="btn-primary w-fit" disabled={busy !== null}>
           {busy === "save-hero" ? "Kaydediliyor…" : heroId ? "Cümleyi güncelle" : "Cümle ekle"}
         </button>
@@ -392,7 +385,6 @@ export default function PanelContentPage() {
                     {line.before} {line.accent ? <span className="text-brand">{line.accent}</span> : null}
                   </p>
                   <p className="mt-1 text-sm text-ink-muted">{line.sub}</p>
-                  {line.tag ? <p className="mt-1 text-xs text-ink-muted">Buton: {line.tag}</p> : null}
                 </div>
                 <div className="flex gap-2">
                   <button type="button" className="btn-outline text-sm" disabled={busy !== null} onClick={() => editHero(line)}>
@@ -424,7 +416,7 @@ export default function PanelContentPage() {
       >
         <h2 className="font-display text-lg font-semibold text-ink">Footer hizmetleri</h2>
         <p className="text-sm text-ink-muted">
-          Buradaki liste yalnızca sayfanın altındaki Hizmetler sütununu değiştirir. Üst menüdeki dört hizmet aynı kalır.
+          Buradaki liste yalnızca sayfanın altındaki Hizmetler sütununu değiştirir. Üst menüdeki dört hizmet aynı kalır. Sayfa metni yazarsanız, bağlantıdaki yeni adres o metni açar. Örnek adres: /havaalani-transfer. Metin her dilde yazdığınız gibi görünür.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
@@ -448,6 +440,16 @@ export default function PanelContentPage() {
             />
           </label>
         </div>
+        <label className="block text-sm">
+          <span className="text-ink-muted">Sayfa metni</span>
+          <textarea
+            value={serviceBody}
+            onChange={(event) => setServiceBody(event.target.value)}
+            rows={6}
+            className="mt-1 w-full rounded-lg border border-surface-border px-3 py-2"
+            placeholder="Bu hizmete tıklanınca açılacak yazı."
+          />
+        </label>
         <button type="submit" className="btn-primary w-fit" disabled={busy !== null}>
           {busy === "save-service" ? "Ekleniyor…" : "Hizmet ekle"}
         </button>
@@ -457,6 +459,7 @@ export default function PanelContentPage() {
               <div>
                 <p className="font-semibold text-ink">{item.label}</p>
                 <p className="mt-1 text-sm text-ink-muted">{item.href}</p>
+                {item.body ? <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{item.body}</p> : null}
               </div>
               <button
                 type="button"

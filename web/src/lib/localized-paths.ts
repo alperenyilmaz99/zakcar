@@ -58,6 +58,13 @@ const PREFIX: Record<string, Localized> = {
 };
 
 const TOKENS: { tr: string; en: string; de: string; ar: string; ru: string }[] = [
+  {
+    tr: "kredi-kartsiz-arac-kiralama",
+    en: "car-rental-without-a-credit-card",
+    de: "ohne-kreditkarte-autovermietung",
+    ar: "بدون-بطاقة-تأجير-سيارات",
+    ru: "без-карты-аренда-авто",
+  },
   { tr: "kredi-kartsiz", en: "no-credit-card", de: "ohne-kreditkarte", ar: "بدون-بطاقة", ru: "без-карты" },
   { tr: "findeks-sorgusuz", en: "no-findeks", de: "ohne-findeks", ar: "بدون-فيندكس", ru: "без-findeks" },
   { tr: "7-10-kisilik", en: "7-10-seater", de: "7-10-sitzer", ar: "7-10-مقاعد", ru: "7-10-мест" },

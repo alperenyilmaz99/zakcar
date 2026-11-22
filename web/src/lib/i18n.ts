@@ -444,7 +444,7 @@ const en: Record<MessageKey, string> = {
   "nav.people7": "7–10 seats",
   "nav.economic": "Economy",
   "nav.luxury": "Luxury",
-  "nav.noCard": "No credit card",
+  "nav.noCard": "Car rental without a credit card",
   "nav.findeks": "No Findeks check",
   "nav.longTerm": "Long term",
   "nav.corporate": "Corporate",

@@ -231,7 +231,6 @@ export async function POST(req: Request) {
       const accent = (body.accent || "").replace(/\s+/g, " ").trim();
       const after = (body.after || "").replace(/\s+/g, " ").trim();
       const sub = (body.sub || "").replace(/\s+/g, " ").trim();
-      const tag = (body.tag || "").replace(/\s+/g, " ").trim();
       if (before.length < 2) return NextResponse.json({ error: "Başlık en az 2 karakter olmalı." }, { status: 400 });
       if (sub.length < 8) return NextResponse.json({ error: "Alt cümle en az 8 karakter olmalı." }, { status: 400 });
       const id = (body.id || "").trim() || randomUUID();
@@ -243,8 +242,8 @@ export async function POST(req: Request) {
           accent: accent.slice(0, 40),
           after: after.slice(0, 40),
           sub: sub.slice(0, 180),
-          tag: tag.slice(0, 24),
-          pill: Boolean(tag) && body.pill !== false,
+          tag: "",
+          pill: false,
           createdAt: existing?.createdAt || new Date().toISOString(),
         },
         staff,
@@ -255,13 +254,18 @@ export async function POST(req: Request) {
     if (body.kind === "footer-service") {
       const label = (body.title || "").replace(/\s+/g, " ").trim();
       const href = normalizeServiceHref(body.href || "");
+      const text = (body.excerpt || "").replace(/\r\n/g, "\n").trim();
       if (label.length < 2) return NextResponse.json({ error: "Hizmet adı en az 2 karakter olmalı." }, { status: 400 });
       if (!href) return NextResponse.json({ error: "Bağlantı / ile ya da https:// ile başlamalı." }, { status: 400 });
+      if (text && text.length < 8) return NextResponse.json({ error: "Sayfa metni en az 8 karakter olmalı." }, { status: 400 });
+      if (text && !/^\/[a-z0-9-]{2,80}$/.test(href)) {
+        return NextResponse.json({ error: "Metin yazdıysanız bağlantı yeni bir sayfa adresi olmalı. Örnek: /havaalani-transfer" }, { status: 400 });
+      }
       const current = await listFooterServices();
       if (current.items.some((item) => item.href === href)) {
         return NextResponse.json({ error: "Bu bağlantı footer’da zaten var." }, { status: 400 });
       }
-      const next: FooterService = { id: randomUUID(), href, label: label.slice(0, 60), labelKey: "" };
+      const next: FooterService = { id: randomUUID(), href, label: label.slice(0, 60), body: text.slice(0, 5000), labelKey: "" };
       const stored = await saveFooterServices([...current.items, next], staff);
       return NextResponse.json({ stored });
     }

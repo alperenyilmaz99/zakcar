@@ -3,14 +3,36 @@
 import { useEffect, useState } from "react";
 
 export function BootSplash() {
+  const [run, setRun] = useState(0);
   const [phase, setPhase] = useState<"show" | "hide" | "gone">("show");
 
   useEffect(() => {
+    setPhase("show");
     const hideAt = window.setTimeout(() => setPhase("hide"), 1400);
     const goneAt = window.setTimeout(() => setPhase("gone"), 1850);
     return () => {
       window.clearTimeout(hideAt);
       window.clearTimeout(goneAt);
+    };
+  }, [run]);
+
+  useEffect(() => {
+    const replay = () => setRun((value) => value + 1);
+    const onClick = (event: MouseEvent) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = (event.target as Element | null)?.closest?.("a");
+      if (!anchor || !anchor.closest("header") || !anchor.querySelector("img")) return;
+      if (anchor.getAttribute("href") !== "/") return;
+      replay();
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) replay();
+    };
+    document.addEventListener("click", onClick);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      document.removeEventListener("click", onClick);
+      window.removeEventListener("pageshow", onPageShow);
     };
   }, []);
 

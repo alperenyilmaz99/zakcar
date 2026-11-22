@@ -89,7 +89,10 @@ const STOCK_TITLES: Record<string, readonly string[]> = {
 };
 
 export function isStockAirportTitle(id: string, title: string): boolean {
-  return (STOCK_TITLES[id] ?? []).includes(title.trim());
+  const value = title.trim();
+  const base = AIRPORT_CARDS.find((item) => item.id === id);
+  if (base?.title === value) return true;
+  return (STOCK_TITLES[id] ?? []).includes(value);
 }
 
 export function airportCardCopy(

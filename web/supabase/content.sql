@@ -110,8 +110,11 @@ create table if not exists public.site_footer_services (
   href text not null,
   label text not null default '',
   label_key text not null default '',
+  body text not null default '',
   sort_order integer not null default 0
 );
+
+alter table public.site_footer_services add column if not exists body text not null default '';
 
 alter table public.site_footer_services enable row level security;
 

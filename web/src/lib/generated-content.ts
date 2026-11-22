@@ -49,7 +49,9 @@ export function readContentFile(): Store {
       hiddenReviewIds: Array.isArray(parsed.hiddenReviewIds) ? parsed.hiddenReviewIds.filter((item) => typeof item === "string") : [],
       heroLines: Array.isArray(parsed.heroLines) ? parsed.heroLines.filter(isHeroLine) : [],
       footerServicesConfigured: parsed.footerServicesConfigured === true,
-      footerServices: Array.isArray(parsed.footerServices) ? parsed.footerServices.filter(isFooterService) : [],
+      footerServices: Array.isArray(parsed.footerServices)
+        ? parsed.footerServices.filter(isFooterService).map((item) => ({ ...item, body: item.body || "" }))
+        : [],
     };
   } catch {
     return emptyStore();
@@ -405,12 +407,13 @@ export async function deleteHeroLine(id: string, staff?: SupabaseClient | null):
 
 const FOOTER_READY = "__ready";
 
-function mapFooterRow(row: { id: string; href: string; label: string | null; label_key: string | null }): FooterService {
+function mapFooterRow(row: { id: string; href: string; label: string | null; label_key: string | null; body?: string | null }): FooterService {
   const key = row.label_key || "";
   return {
     id: row.id,
     href: row.href,
     label: row.label || "",
+    body: row.body || "",
     labelKey: key === "nav.noCard" || key === "nav.findeks" || key === "nav.longTerm" || key === "nav.corporate" ? key : "",
   };
 }
@@ -423,7 +426,7 @@ async function remoteFooterServices(): Promise<{ configured: boolean; items: Foo
     if (missingTable(error)) return null;
     throw new Error(error.message);
   }
-  const rows = (data || []) as { id: string; href: string; label: string | null; label_key: string | null }[];
+  const rows = (data || []) as { id: string; href: string; label: string | null; label_key: string | null; body?: string | null }[];
   return {
     configured: rows.some((row) => row.id === FOOTER_READY),
     items: rows.filter((row) => row.id !== FOOTER_READY).map(mapFooterRow),
@@ -453,11 +456,12 @@ export async function saveFooterServices(
     if (removed.error && !missingTable(removed.error)) throw new Error(removed.error.message);
     if (!removed.error) {
       const rows = [
-        { id: FOOTER_READY, href: "/", label: "", label_key: "", sort_order: -1 },
+        { id: FOOTER_READY, href: "/", label: "", body: "", label_key: "", sort_order: -1 },
         ...items.map((item, index) => ({
           id: item.id,
           href: item.href,
           label: item.label,
+          body: item.body || "",
           label_key: item.labelKey,
           sort_order: index,
         })),
@@ -473,4 +477,12 @@ export async function saveFooterServices(
   }
   if (wroteFile && wroteRemote) return "both";
   return wroteRemote ? "supabase" : "file";
+}
+
+export async function footerServicePage(slug: string): Promise<FooterService | null> {
+  if (!/^[a-z0-9-]{2,80}$/.test(slug)) return null;
+  const href = `/${slug}`;
+  const { items } = await listFooterServices();
+  const found = items.find((item) => item.href.split("?")[0].replace(/\/$/, "") === href && item.body.trim());
+  return found ?? null;
 }

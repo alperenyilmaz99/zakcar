@@ -111,9 +111,9 @@ export function Hero({ backdrop }: { backdrop: string }) {
       b: line.accent,
       c: line.after,
       sub: line.sub,
-      tag: line.tag,
+      tag: "",
       accent: "#E30613",
-      pill: Boolean(line.pill && line.tag),
+      pill: false,
     })),
   ];
   const index = active % slides.length;
@@ -183,9 +183,9 @@ export function Hero({ backdrop }: { backdrop: string }) {
         </div>
 
       </div>
-      <div className="relative mt-8 w-full lg:mt-10">
+      <div className="relative mt-4 w-full lg:mt-5">
         <HeroBackdrop src={backdrop} />
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-36 pt-6 sm:pb-44 sm:pt-8 lg:pb-52">
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-1 lg:pb-52 lg:pt-2">
           <SearchBar />
         </div>
       </div>

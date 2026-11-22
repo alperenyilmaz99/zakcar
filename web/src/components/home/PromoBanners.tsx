@@ -13,6 +13,7 @@ export function PromoBanners({ slot = "hero" }: { slot?: PromoSlot }) {
   const [active, setActive] = useState(0);
   const [tick, setTick] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [perView, setPerView] = useState(3);
   const touchX = useRef<number | null>(null);
 
   useEffect(() => {
@@ -36,21 +37,120 @@ export function PromoBanners({ slot = "hero" }: { slot?: PromoSlot }) {
   }, [slot]);
 
   useEffect(() => {
-    if (promos.length < 2 || paused) return;
+    if (slot !== "mid") return;
+    const update = () => setPerView(window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [slot]);
+
+  const cardMax = Math.max(0, promos.length - perView);
+
+  useEffect(() => {
+    if (slot !== "mid") return;
+    setActive((index) => Math.min(index, cardMax));
+  }, [slot, cardMax]);
+
+  useEffect(() => {
+    if (promos.length < 2 || paused || slot === "mid") return;
     const id = window.setInterval(() => {
       setActive((i) => (i + 1) % promos.length);
     }, 5500);
     return () => window.clearInterval(id);
-  }, [tick, paused, promos.length]);
+  }, [tick, paused, promos.length, slot]);
+
+  useEffect(() => {
+    if (slot !== "mid" || cardMax < 1 || paused) return;
+    const id = window.setInterval(() => {
+      setActive((index) => (index >= cardMax ? 0 : index + 1));
+    }, 4500);
+    return () => window.clearInterval(id);
+  }, [slot, cardMax, paused, tick]);
 
   function go(index: number) {
     setActive((index + promos.length) % promos.length);
     setTick((n) => n + 1);
   }
 
+  function slideCards(delta: number) {
+    setActive((index) => {
+      const next = index + delta;
+      if (next > cardMax) return 0;
+      if (next < 0) return cardMax;
+      return next;
+    });
+    setTick((n) => n + 1);
+  }
+
+  if (slot === "mid") {
+    const pages = cardMax + 1;
+    return (
+      <section
+        className="bg-white py-12 sm:py-16"
+        aria-roledescription="carousel"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onTouchStart={(event) => {
+          touchX.current = event.changedTouches[0]?.clientX ?? null;
+        }}
+        onTouchEnd={(event) => {
+          if (touchX.current == null) return;
+          const dx = (event.changedTouches[0]?.clientX ?? touchX.current) - touchX.current;
+          touchX.current = null;
+          if (dx > 48) slideCards(-1);
+          else if (dx < -48) slideCards(1);
+        }}
+      >
+        <div className="container-page">
+          <div className="overflow-hidden" dir="ltr">
+            <div
+              className="flex transition-transform duration-500 ease-out"
+              style={{ transform: `translateX(-${active * (100 / perView)}%)` }}
+            >
+              {promos.map((item) => {
+                const promo = localizedPromo(item, t);
+                const title = [promo.title, promo.highlight].filter(Boolean).join(" ");
+                return (
+                  <div key={promo.id} className="shrink-0 px-2 sm:px-3" style={{ width: `${100 / perView}%` }}>
+                    <Link
+                      href={promo.href || "/kampanyalar"}
+                      className="block h-full overflow-hidden rounded-2xl border border-surface-border bg-white shadow-card"
+                    >
+                      <div className="relative aspect-[16/9] bg-surface-soft">
+                        <Image src={promo.imageUrl} alt="" fill className="object-cover" sizes="(max-width: 640px) 100vw, 33vw" />
+                      </div>
+                      <h3 className="px-4 py-4 text-center font-display text-base font-bold leading-snug text-ink sm:text-lg">{title}</h3>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {pages > 1 ? (
+            <div className="mt-5 flex items-center justify-center gap-2">
+              {Array.from({ length: pages }, (_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => {
+                    setActive(index);
+                    setTick((n) => n + 1);
+                  }}
+                  className={`h-1.5 rounded-full transition ${index === active ? "w-7 bg-ink" : "w-4 bg-ink/20 hover:bg-ink/40"}`}
+                  aria-label={`${index + 1}`}
+                  aria-pressed={index === active}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section
-      className="relative mt-8 w-full overflow-hidden bg-[#070b16]"
+      className={`relative w-full overflow-hidden bg-[#070b16] ${slot === "hero" ? "mt-8 lg:mt-0" : "mt-8"}`}
       aria-roledescription="carousel"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}

@@ -15,6 +15,8 @@ import {
   resolveSeoPage,
   seoForDistrict,
 } from "@/lib/data";
+import { FooterServicePage } from "@/components/content/FooterServicePage";
+import { footerServicePage } from "@/lib/generated-content";
 import { filterPublicVehicles, findPublicVehicle, loadPublicVehicles } from "@/lib/public-vehicles";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +47,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const page = seoForDistrict(extra);
     return { title: page.title, description: page.description };
   }
+  const service = await footerServicePage(slug);
+  if (service) return { title: service.label, description: service.body.replace(/\s+/g, " ").slice(0, 180) };
   return { title: slug };
 }
 
@@ -57,7 +61,9 @@ export default async function DynamicLandingPage({ params }: { params: Promise<{
 
   const district = (await loadDistricts()).items.find((item) => item.slug === slug) ?? null;
   const seo = resolveSeoPage(slug) ?? (district ? seoForDistrict(district) : null);
-  if (!seo) notFound();
+  const service = seo ? null : await footerServicePage(slug);
+  if (!seo && !service) notFound();
+  if (service) return <FooterServicePage title={service.label} body={service.body} />;
   const article = airportArticleId(slug);
   const saved = article
     ? (await loadAirportCards()).items.find((item) => item.href === `/${slug}`)

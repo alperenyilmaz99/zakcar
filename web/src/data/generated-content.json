@@ -185,5 +185,39 @@
       "body": "Gece geç saatte indim, SAW'daki ofiste görevli beni bekliyordu ve teslim işlemi birkaç dakikada bitti. Kredi kartım yanımda değildi ama sorun olmadı, ödemeyi araç tesliminde yaptım. Havalimanı teslimi için ayrıca ücret istenmemesi de hoşuma gitti.",
       "createdAt": "2026-10-30T22:35:34.091Z"
     }
+  ],
+  "hiddenPostSlugs": [],
+  "hiddenReviewIds": [],
+  "heroLines": [],
+  "footerServicesConfigured": true,
+  "footerServices": [
+    {
+      "id": "noCard",
+      "href": "/kredi-kartsiz-arac-kiralama",
+      "label": "Kredi Kartsız",
+      "body": "",
+      "labelKey": "nav.noCard"
+    },
+    {
+      "id": "findeks",
+      "href": "/findeks-sorgusuz-arac-kiralama",
+      "label": "Findeks Sorgusuz",
+      "body": "",
+      "labelKey": "nav.findeks"
+    },
+    {
+      "id": "longTerm",
+      "href": "/uzun-donem-arac-kiralama",
+      "label": "Uzun Dönem",
+      "body": "",
+      "labelKey": "nav.longTerm"
+    },
+    {
+      "id": "corporate",
+      "href": "/kurumsal-arac-kiralama",
+      "label": "Kurumsal",
+      "body": "",
+      "labelKey": "nav.corporate"
+    }
   ]
 }
