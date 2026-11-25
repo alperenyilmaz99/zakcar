@@ -1,7 +1,8 @@
 import { Hero } from "@/components/home/Hero";
 import { HomeSections } from "@/components/home/HomeSections";
 import { getPublishedBlogPosts } from "@/lib/blog";
-import { listHiddenKeys, listReviews } from "@/lib/generated-content";
+import { listHeroLines, listHeroOrder, listHiddenKeys, listReviews } from "@/lib/generated-content";
+import { heroSlideOrder } from "@/lib/hero-order";
 import { getBrands, getGroups } from "@/lib/data";
 import { loadBackdropImage } from "@/lib/promo-file-store";
 import { loadPublicVehicles } from "@/lib/public-vehicles";
@@ -9,7 +10,12 @@ import { loadPublicVehicles } from "@/lib/public-vehicles";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [vehicles, backdrop] = await Promise.all([loadPublicVehicles().then((items) => items.slice(0, 12)), loadBackdropImage()]);
+  const [vehicles, backdrop, heroLines, heroOrder] = await Promise.all([
+    loadPublicVehicles().then((items) => items.slice(0, 12)),
+    loadBackdropImage(),
+    listHeroLines(),
+    listHeroOrder(),
+  ]);
   const groups = getGroups();
   const brands = getBrands();
   const [published, savedReviews, hiddenReviewIds] = await Promise.all([
@@ -23,7 +29,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Hero backdrop={backdrop} />
+      <Hero backdrop={backdrop} lines={heroLines} order={heroSlideOrder(heroLines.map((line) => line.id), heroOrder)} />
       <HomeSections
         vehicles={vehicles}
         brands={brands}

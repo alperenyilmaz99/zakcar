@@ -11,12 +11,15 @@ import {
   deleteHeroLine,
   listFooterServices,
   listHeroLines,
+  listHeroOrder,
   listReviews,
   saveGeneratedPost,
   saveGeneratedReview,
   saveFooterServices,
   saveHeroLine,
+  saveHeroOrder,
 } from "@/lib/generated-content";
+import { heroSlideOrder } from "@/lib/hero-order";
 import type { FooterService } from "@/lib/footer-services";
 import { HOME_REVIEW_CARDS } from "@/lib/home-reviews";
 import { bearerToken, createServerSupabase } from "@/lib/supabase/server";
@@ -115,8 +118,12 @@ export async function GET(req: Request) {
       })),
     ];
     const heroLines = await listHeroLines();
+    const heroOrder = heroSlideOrder(
+      heroLines.map((line) => line.id),
+      await listHeroOrder(),
+    );
     const footerServices = await listFooterServices();
-    return NextResponse.json({ posts, reviews: reviewRows, heroLines, footerServices: footerServices.items });
+    return NextResponse.json({ posts, reviews: reviewRows, heroLines, heroOrder, footerServices: footerServices.items });
   } catch (error) {
     const message = error instanceof Error ? error.message : "İçerik okunamadı.";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -138,6 +145,7 @@ export async function POST(req: Request) {
     location?: string;
     rating?: number;
     id?: string;
+    ids?: string[];
     before?: string;
     accent?: string;
     after?: string;
@@ -248,6 +256,17 @@ export async function POST(req: Request) {
         },
         staff,
       );
+      const order = await listHeroOrder();
+      if (order.length && !order.includes(id)) await saveHeroOrder([...order, id], staff);
+      return NextResponse.json({ stored });
+    }
+
+    if (body.kind === "hero-order") {
+      const ids = Array.isArray(body.ids)
+        ? body.ids.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean)
+        : [];
+      if (!ids.length) return NextResponse.json({ error: "Sıra boş olamaz." }, { status: 400 });
+      const stored = await saveHeroOrder(ids, staff);
       return NextResponse.json({ stored });
     }
 

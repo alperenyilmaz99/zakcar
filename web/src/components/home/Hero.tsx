@@ -7,10 +7,12 @@ import { SearchBar } from "@/components/search/SearchBar";
 import { SITE } from "@/lib/constants";
 import { usePrefs } from "@/components/prefs/PrefsProvider";
 import type { HeroLine } from "@/lib/content-types";
+import { heroSlideOrder } from "@/lib/hero-order";
 import type { MessageKey } from "@/lib/i18n";
 
 const MOTTOS = [
   {
+    id: "m1",
     a: "hero.m1.a",
     b: "hero.m1.b",
     c: "hero.m1.c",
@@ -20,6 +22,7 @@ const MOTTOS = [
     pill: true,
   },
   {
+    id: "m2",
     a: "hero.m2.a",
     b: "hero.m2.b",
     c: "hero.m2.c",
@@ -29,6 +32,7 @@ const MOTTOS = [
     pill: true,
   },
   {
+    id: "m3",
     a: "hero.m3.a",
     b: "hero.m3.b",
     c: "hero.m3.c",
@@ -38,6 +42,7 @@ const MOTTOS = [
     pill: false,
   },
   {
+    id: "m4",
     a: "hero.m4.a",
     b: "hero.m4.b",
     c: "hero.m4.c",
@@ -47,6 +52,7 @@ const MOTTOS = [
     pill: false,
   },
   {
+    id: "m5",
     a: "hero.m5.a",
     b: "hero.m5.b",
     c: "hero.m5.c",
@@ -63,6 +69,7 @@ const MOTTOS = [
   tag: MessageKey;
   accent: string;
   pill: boolean;
+  id: string;
 }[];
 
 type Slide = {
@@ -76,17 +83,28 @@ type Slide = {
   pill: boolean;
 };
 
-export function Hero({ backdrop }: { backdrop: string }) {
+export function Hero({
+  backdrop,
+  lines = [],
+  order: initialOrder = [],
+}: {
+  backdrop: string;
+  lines?: HeroLine[];
+  order?: string[];
+}) {
   const [active, setActive] = useState(0);
-  const [extra, setExtra] = useState<HeroLine[]>([]);
+  const [extra, setExtra] = useState<HeroLine[]>(lines);
+  const [order, setOrder] = useState<string[]>(initialOrder);
   const { t } = usePrefs();
 
   useEffect(() => {
     let cancelled = false;
     fetch("/api/hero-lines")
       .then((res) => (res.ok ? res.json() : { lines: [] }))
-      .then((data: { lines?: HeroLine[] }) => {
-        if (!cancelled && Array.isArray(data.lines)) setExtra(data.lines);
+      .then((data: { lines?: HeroLine[]; order?: string[] }) => {
+        if (cancelled) return;
+        if (Array.isArray(data.lines)) setExtra(data.lines);
+        if (Array.isArray(data.order)) setOrder(data.order);
       })
       .catch(() => {});
     return () => {
@@ -94,28 +112,40 @@ export function Hero({ backdrop }: { backdrop: string }) {
     };
   }, []);
 
-  const slides: Slide[] = [
-    ...MOTTOS.map((item) => ({
-      id: item.a,
-      a: t(item.a),
-      b: t(item.b),
-      c: t(item.c),
-      sub: t(item.sub),
-      tag: t(item.tag),
-      accent: item.accent,
-      pill: item.pill,
-    })),
-    ...extra.map((line) => ({
-      id: line.id,
-      a: line.before,
-      b: line.accent,
-      c: line.after,
-      sub: line.sub,
-      tag: "",
-      accent: "#E30613",
-      pill: false,
-    })),
-  ];
+  const slides: Slide[] = (() => {
+    const byId = new Map<string, Slide>();
+    for (const item of MOTTOS) {
+      byId.set(item.id, {
+        id: item.id,
+        a: t(item.a),
+        b: t(item.b),
+        c: t(item.c),
+        sub: t(item.sub),
+        tag: t(item.tag),
+        accent: item.accent,
+        pill: item.pill,
+      });
+    }
+    for (const line of extra) {
+      byId.set(line.id, {
+        id: line.id,
+        a: line.before,
+        b: line.accent,
+        c: line.after,
+        sub: line.sub,
+        tag: "",
+        accent: "#E30613",
+        pill: false,
+      });
+    }
+    return heroSlideOrder(
+      extra.map((line) => line.id),
+      order,
+    ).flatMap((id) => {
+      const slide = byId.get(id);
+      return slide ? [slide] : [];
+    });
+  })();
   const index = active % slides.length;
 
   useEffect(() => {
@@ -185,7 +215,7 @@ export function Hero({ backdrop }: { backdrop: string }) {
       </div>
       <div className="relative mt-4 w-full lg:mt-5">
         <HeroBackdrop src={backdrop} />
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-1 lg:pb-52 lg:pt-2">
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-1 lg:absolute lg:inset-x-0 lg:top-4 lg:pt-0">
           <SearchBar />
         </div>
       </div>

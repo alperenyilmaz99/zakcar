@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BlogBlock } from "@/lib/blog-types";
 import type { HeroLine, SiteReview, StoredPost } from "@/lib/content-types";
 import { DEFAULT_FOOTER_SERVICES, isFooterService, type FooterService } from "@/lib/footer-services";
+import { heroSlideOrder } from "@/lib/hero-order";
 import { createServerSupabase, hasServerSupabase } from "@/lib/supabase/server";
 
 export type { HeroLine, SiteReview, StoredPost };
@@ -14,6 +15,7 @@ type Store = {
   hiddenPostSlugs: string[];
   hiddenReviewIds: string[];
   heroLines: HeroLine[];
+  heroOrder: string[];
   footerServicesConfigured: boolean;
   footerServices: FooterService[];
 };
@@ -36,7 +38,7 @@ function storePath(): string {
 }
 
 function emptyStore(): Store {
-  return { posts: [], reviews: [], hiddenPostSlugs: [], hiddenReviewIds: [], heroLines: [], footerServicesConfigured: false, footerServices: [] };
+  return { posts: [], reviews: [], hiddenPostSlugs: [], hiddenReviewIds: [], heroLines: [], heroOrder: [], footerServicesConfigured: false, footerServices: [] };
 }
 
 export function readContentFile(): Store {
@@ -48,6 +50,7 @@ export function readContentFile(): Store {
       hiddenPostSlugs: Array.isArray(parsed.hiddenPostSlugs) ? parsed.hiddenPostSlugs.filter((item) => typeof item === "string") : [],
       hiddenReviewIds: Array.isArray(parsed.hiddenReviewIds) ? parsed.hiddenReviewIds.filter((item) => typeof item === "string") : [],
       heroLines: Array.isArray(parsed.heroLines) ? parsed.heroLines.filter(isHeroLine) : [],
+      heroOrder: Array.isArray(parsed.heroOrder) ? parsed.heroOrder.filter((item) => typeof item === "string") : [],
       footerServicesConfigured: parsed.footerServicesConfigured === true,
       footerServices: Array.isArray(parsed.footerServices)
         ? parsed.footerServices.filter(isFooterService).map((item) => ({ ...item, body: item.body || "" }))
@@ -403,6 +406,55 @@ export async function deleteHeroLine(id: string, staff?: SupabaseClient | null):
   if (!wroteFile && !wroteRemote) {
     throw new Error("Cümle silinemedi. Supabase SQL Editor’da web/supabase/hero-lines.sql dosyasını bir kez çalıştırın.");
   }
+  const order = await listHeroOrder();
+  if (order.includes(id)) await saveHeroOrder(order.filter((item) => item !== id), staff);
+}
+
+async function remoteHeroOrder(): Promise<string[] | null> {
+  if (!hasServerSupabase()) return null;
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase.from("site_hero_order").select("line_id, sort_order").order("sort_order", { ascending: true });
+  if (error) {
+    if (missingTable(error)) return null;
+    throw new Error(error.message);
+  }
+  return ((data || []) as { line_id: string }[]).map((row) => row.line_id).filter((id) => typeof id === "string" && id);
+}
+
+export async function listHeroOrder(): Promise<string[]> {
+  const remote = await remoteHeroOrder();
+  if (remote && remote.length) return remote;
+  return readContentFile().heroOrder;
+}
+
+export async function saveHeroOrder(
+  ids: string[],
+  staff?: SupabaseClient | null,
+): Promise<"both" | "file" | "supabase"> {
+  const lines = await listHeroLines();
+  const next = heroSlideOrder(lines.map((line) => line.id), ids);
+  const store = readContentFile();
+  store.heroOrder = next;
+  const wroteFile = writeContentFile(store);
+
+  let wroteRemote = false;
+  if (staff) {
+    const removed = await staff.from("site_hero_order").delete().neq("line_id", "");
+    if (removed.error && !missingTable(removed.error)) throw new Error(removed.error.message);
+    if (!removed.error) {
+      const { error } = await staff.from("site_hero_order").insert(
+        next.map((lineId, index) => ({ line_id: lineId, sort_order: index })),
+      );
+      if (error && !missingTable(error)) throw new Error(error.message);
+      wroteRemote = !error;
+    }
+  }
+
+  if (!wroteFile && !wroteRemote) {
+    throw new Error("Sıra kaydedilemedi. Supabase SQL Editor’da web/supabase/hero-order.sql dosyasını bir kez çalıştırın.");
+  }
+  if (wroteFile && wroteRemote) return "both";
+  return wroteRemote ? "supabase" : "file";
 }
 
 const FOOTER_READY = "__ready";

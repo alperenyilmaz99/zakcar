@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { STOCK_HERO, heroSlideOrder } from "@/lib/hero-order";
 import { createClient } from "@/lib/supabase/client";
 
 type PanelPost = { slug: string; title: string; excerpt: string; image: string; source: "panel" | "site" };
@@ -27,6 +28,7 @@ type ContentResponse = {
   posts: PanelPost[];
   reviews: PanelReview[];
   heroLines?: PanelHeroLine[];
+  heroOrder?: string[];
   footerServices?: PanelFooterService[];
   error?: string;
 };
@@ -66,6 +68,7 @@ export default function PanelContentPage() {
   const [posts, setPosts] = useState<PanelPost[]>([]);
   const [reviews, setReviews] = useState<PanelReview[]>([]);
   const [heroLines, setHeroLines] = useState<PanelHeroLine[]>([]);
+  const [heroOrder, setHeroOrder] = useState<string[]>([]);
   const [heroId, setHeroId] = useState("");
   const [heroBefore, setHeroBefore] = useState("");
   const [heroAccent, setHeroAccent] = useState("");
@@ -99,6 +102,7 @@ export default function PanelContentPage() {
     setPosts(data.posts);
     setReviews(data.reviews);
     setHeroLines(data.heroLines || []);
+    setHeroOrder(data.heroOrder || []);
     setFooterServices(data.footerServices || []);
   }, []);
 
@@ -182,6 +186,49 @@ export default function PanelContentPage() {
     setHeroSub(line.sub);
     setError("");
     setNote("");
+  };
+
+  const orderedHero = heroSlideOrder(
+    heroLines.map((line) => line.id),
+    heroOrder,
+  ).map((id) => {
+    const stock = STOCK_HERO.find((item) => item.id === id);
+    if (stock) return { id, stock: true as const, title: stock.title, sub: stock.sub, line: null };
+    const line = heroLines.find((item) => item.id === id);
+    return {
+      id,
+      stock: false as const,
+      title: line ? `${line.before}${line.accent ? ` ${line.accent}` : ""}` : id,
+      sub: line?.sub || "",
+      line: line ?? null,
+    };
+  });
+
+  const moveHero = async (index: number, delta: number) => {
+    const target = index + delta;
+    if (target < 0 || target >= orderedHero.length) return;
+    const ids = orderedHero.map((item) => item.id);
+    const [picked] = ids.splice(index, 1);
+    ids.splice(target, 0, picked);
+    setBusy("hero-order");
+    setError("");
+    setNote("");
+    try {
+      const token = await staffToken();
+      const res = await fetch("/api/panel/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ kind: "hero-order", ids }),
+      });
+      const payload = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(payload.error || "Sıra kaydedilemedi");
+      setNote("Anasayfa sırası güncellendi.");
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Sıra kaydedilemedi");
+    } finally {
+      setBusy(null);
+    }
   };
 
   const saveReview = async () => {
@@ -358,7 +405,9 @@ export default function PanelContentPage() {
             </button>
           ) : null}
         </div>
-        <p className="text-sm text-ink-muted">Başlığın kırmızı kısmı vurgu alanına yazılır. Cümle, hazır yazıların ardından döner.</p>
+        <p className="text-sm text-ink-muted">
+          Başlığın kırmızı kısmı vurgu alanına yazılır. Yeni cümle listenin sonuna eklenir. Anasayfada dönüş sırasını aşağıdaki oklarla değiştirin. Hazır cümleler dile göre çevrilir.
+        </p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
             <span className="text-ink-muted">Başlık</span>
@@ -376,35 +425,47 @@ export default function PanelContentPage() {
         <button type="submit" className="btn-primary w-fit" disabled={busy !== null}>
           {busy === "save-hero" ? "Kaydediliyor…" : heroId ? "Cümleyi güncelle" : "Cümle ekle"}
         </button>
-        {heroLines.length ? (
-          <ul className="mt-2 divide-y divide-surface-border border-t border-surface-border">
-            {heroLines.map((line) => (
-              <li key={line.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
-                <div>
-                  <p className="font-semibold text-ink">
-                    {line.before} {line.accent ? <span className="text-brand">{line.accent}</span> : null}
-                  </p>
-                  <p className="mt-1 text-sm text-ink-muted">{line.sub}</p>
-                </div>
-                <div className="flex gap-2">
-                  <button type="button" className="btn-outline text-sm" disabled={busy !== null} onClick={() => editHero(line)}>
-                    Düzenle
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-outline text-sm"
-                    disabled={busy !== null}
-                    onClick={() => remove("hero", line.id, "Bu cümle")}
-                  >
-                    Sil
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-ink-muted">Henüz ek cümle yok. Sitedeki hazır cümleler duruyor.</p>
-        )}
+        <ul className="mt-2 divide-y divide-surface-border border-t border-surface-border">
+          {orderedHero.map((item, index) => (
+            <li key={item.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
+              <div>
+                <p className="font-semibold text-ink">
+                  {index + 1}. {item.title}
+                  {item.stock ? <span className="ml-2 text-xs font-medium text-ink-muted">Hazır</span> : null}
+                </p>
+                <p className="mt-1 text-sm text-ink-muted">{item.sub}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="btn-outline text-sm" disabled={busy !== null || index === 0} onClick={() => moveHero(index, -1)}>
+                  Yukarı
+                </button>
+                <button
+                  type="button"
+                  className="btn-outline text-sm"
+                  disabled={busy !== null || index === orderedHero.length - 1}
+                  onClick={() => moveHero(index, 1)}
+                >
+                  Aşağı
+                </button>
+                {item.line ? (
+                  <>
+                    <button type="button" className="btn-outline text-sm" disabled={busy !== null} onClick={() => item.line && editHero(item.line)}>
+                      Düzenle
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-outline text-sm"
+                      disabled={busy !== null}
+                      onClick={() => remove("hero", item.id, "Bu cümle")}
+                    >
+                      Sil
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
       </form>
 
       <form
